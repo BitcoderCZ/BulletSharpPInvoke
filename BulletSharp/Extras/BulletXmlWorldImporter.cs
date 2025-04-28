@@ -7,8 +7,8 @@ using System.Xml;
 
 namespace BulletSharp
 {
-	public class BulletXmlWorldImporter : WorldImporter
-	{
+    public class BulletXmlWorldImporter : WorldImporter
+    {
         private int _fileVersion = -1;
         private bool _fileOK = false;
 
@@ -17,10 +17,10 @@ namespace BulletSharp
         private List<byte[]> _rigidBodyData = new List<byte[]>();
         private Dictionary<long, byte[]> _pointerLookup = new Dictionary<long, byte[]>();
 
-		public BulletXmlWorldImporter(DynamicsWorld world)
+        public BulletXmlWorldImporter(DynamicsWorld world)
             : base(world)
-		{
-		}
+        {
+        }
 
         private void AutoSerializeRootLevelChildren(XmlElement parent)
         {
@@ -397,8 +397,8 @@ namespace BulletSharp
             _pointerLookup.Add(ptr, v);
         }
 
-		public bool LoadFile(string fileName)
-		{
+        public bool LoadFile(string fileName)
+        {
             var doc = new XmlDocument();
             doc.Load(fileName);
 
@@ -422,7 +422,7 @@ namespace BulletSharp
             }
 
             return false;
-		}
+        }
 
         private void SetFloatValue(BulletWriter writer, XmlNode valueNode, int offset)
         {
@@ -471,5 +471,5 @@ namespace BulletSharp
                 }
             }
         }
-	}
+    }
 }

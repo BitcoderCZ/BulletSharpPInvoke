@@ -980,7 +980,7 @@ namespace BulletSharp
 
         ~KinematicCharacterController()
         {
-           Dispose(false);
+            Dispose(false);
         }
 
         public void Dispose()

@@ -223,5 +223,5 @@ namespace BulletSharp
 			get { return btBulletFile_getTriangleInfoMaps(_native); }
 		}
         */
-	}
+    }
 }

@@ -6,20 +6,20 @@ using System.Runtime.InteropServices;
 
 namespace BulletSharp
 {
-	public class BulletWorldImporter : WorldImporter
-	{
-		public BulletWorldImporter(DynamicsWorld world)
-			: base(world)
-		{
-		}
+    public class BulletWorldImporter : WorldImporter
+    {
+        public BulletWorldImporter(DynamicsWorld world)
+            : base(world)
+        {
+        }
 
-		public BulletWorldImporter()
-			: base(null)
-		{
-		}
+        public BulletWorldImporter()
+            : base(null)
+        {
+        }
 
-		public bool ConvertAllObjects(BulletFile file)
-		{
+        public bool ConvertAllObjects(BulletFile file)
+        {
             _shapeMap.Clear();
             _bodyMap.Clear();
 
@@ -206,7 +206,7 @@ namespace BulletSharp
             }
 
             return true;
-		}
+        }
 
         // Replaces an identifier in serialized data with an actual pointer to something.
         // The handle should be used to free the pointer once it is no longer used.
@@ -232,7 +232,7 @@ namespace BulletSharp
         }
 
         public bool LoadFile(string fileName, string preSwapFilenameOut)
-		{
+        {
             var bulletFile = new BulletFile(fileName);
             bool result = LoadFileFromMemory(bulletFile);
 
@@ -240,30 +240,30 @@ namespace BulletSharp
             //bulletFile.WriteFile("native.bullet");
             if (result)
             {
-                    if (preSwapFilenameOut != null)
-                    {
-                        bulletFile.PreSwap();
-                        //bulletFile.WriteFile(preSwapFilenameOut);
-                    }
-                
+                if (preSwapFilenameOut != null)
+                {
+                    bulletFile.PreSwap();
+                    //bulletFile.WriteFile(preSwapFilenameOut);
+                }
+
             }
 
             return result;
-		}
+        }
 
         public bool LoadFile(string fileName)
         {
             return LoadFile(fileName, null);
         }
-        
-		public bool LoadFileFromMemory(byte[] memoryBuffer, int len)
-		{
+
+        public bool LoadFileFromMemory(byte[] memoryBuffer, int len)
+        {
             var bulletFile = new BulletFile(memoryBuffer, len);
             return LoadFileFromMemory(bulletFile);
-		}
-        
+        }
+
         public bool LoadFileFromMemory(BulletFile bulletFile)
-		{
+        {
             if (!bulletFile.OK)
             {
                 return false;
@@ -277,6 +277,6 @@ namespace BulletSharp
             }
 
             return ConvertAllObjects(bulletFile);
-		}
-	}
+        }
+    }
 }

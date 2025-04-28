@@ -3,19 +3,19 @@ using System.Numerics;
 
 namespace BulletSharp
 {
-	public abstract class TriangleRaycastCallback : TriangleCallback
-	{
-		[Flags]
-		public enum EFlags
-		{
-			None = 0,
+    public abstract class TriangleRaycastCallback : TriangleCallback
+    {
+        [Flags]
+        public enum EFlags
+        {
+            None = 0,
             FilterBackfaces = 1,
             KeepUnflippedNormal = 2,
             UseSubSimplexConvexCastRaytest = 4,
             UseGjkConvexCastRaytest = 8,
             DisableHeightfieldAccelerator = 16,
             Terminator = -1
-		}
+        }
 
         public TriangleRaycastCallback(ref Vector3 from, ref Vector3 to, EFlags flags)
         {
@@ -103,10 +103,10 @@ namespace BulletSharp
         public Vector3 From { get; set; }
         public float HitFraction { get; set; }
         public Vector3 To { get; set; }
-	}
+    }
 
-	public abstract class TriangleConvexcastCallback : TriangleCallback
-	{
+    public abstract class TriangleConvexcastCallback : TriangleCallback
+    {
         public TriangleConvexcastCallback(ConvexShape convexShape, ref Matrix4x4 convexShapeFrom, ref Matrix4x4 convexShapeTo, ref Matrix4x4 triangleToWorld, float triangleCollisionMargin)
         {
             ConvexShape = convexShape;
@@ -133,5 +133,5 @@ namespace BulletSharp
         public float HitFraction { get; set; }
         public float TriangleCollisionMargin { get; set; }
         public Matrix4x4 TriangleToWorld { get; set; }
-	}
+    }
 }

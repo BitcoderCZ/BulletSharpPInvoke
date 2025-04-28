@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 #if !BULLET_OBJECT_TRACKING
 using System.Diagnostics;
@@ -7,22 +6,22 @@ using System.Diagnostics;
 
 namespace BulletSharp
 {
-	public sealed class BulletObjectTracker
-	{
-		private readonly object _userOwnedObjectsLock = new object();
-		private HashSet<BulletObject> _userOwnedObjects { get; set; } = new HashSet<BulletObject>();
+    public sealed class BulletObjectTracker
+    {
+        private readonly object _userOwnedObjectsLock = new object();
+        private HashSet<BulletObject> _userOwnedObjects { get; set; } = new HashSet<BulletObject>();
 
-		private BulletObjectTracker()
-		{
-		}
+        private BulletObjectTracker()
+        {
+        }
 
-		public IList<BulletObject> GetUserOwnedObjects()
-		{
-			lock (_userOwnedObjectsLock)
-			{
-				return _userOwnedObjects.ToList();
-			}
-		}
+        public IList<BulletObject> GetUserOwnedObjects()
+        {
+            lock (_userOwnedObjectsLock)
+            {
+                return _userOwnedObjects.ToList();
+            }
+        }
 
 #if BULLET_OBJECT_TRACKING
 		public static BulletObjectTracker Current { get; } = new BulletObjectTracker();
@@ -79,17 +78,17 @@ namespace BulletSharp
 			}
 		}
 #else
-		public static BulletObjectTracker Current { get; } = null;
+        public static BulletObjectTracker Current { get; } = null;
 
-		[Conditional("BULLET_OBJECT_TRACKING")]
-		internal static void Add(BulletDisposableObject obj)
-		{
-		}
+        [Conditional("BULLET_OBJECT_TRACKING")]
+        internal static void Add(BulletDisposableObject obj)
+        {
+        }
 
-		[Conditional("BULLET_OBJECT_TRACKING")]
-		internal static void Remove(BulletDisposableObject obj)
-		{
-		}
+        [Conditional("BULLET_OBJECT_TRACKING")]
+        internal static void Remove(BulletDisposableObject obj)
+        {
+        }
 #endif
-	}
+    }
 }

@@ -3,8 +3,8 @@ using System.Numerics;
 
 namespace BulletSharp
 {
-	public struct WheelInfoConstructionInfo
-	{
+    public struct WheelInfoConstructionInfo
+    {
         public bool IsFrontWheel;
         public Vector3 ChassisConnectionCS;
         public float FrictionSlip;
@@ -17,7 +17,7 @@ namespace BulletSharp
         public float WheelRadius;
         public float WheelsDampingCompression;
         public float WheelsDampingRelaxation;
-	}
+    }
 
     public struct RaycastInfo
     {

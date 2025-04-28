@@ -29,7 +29,7 @@ namespace BulletSharp
 
     [StructLayout(LayoutKind.Sequential)]
     public class Chunk8
-	{
+    {
         public Chunk8()
         {
         }
@@ -50,7 +50,7 @@ namespace BulletSharp
         public int UniqueInt2;
         public int StructIndex;
         public int NumBlocks;
-	};
+    };
 
     public class ChunkInd
     {

@@ -25,9 +25,9 @@ namespace BulletSharp
             MaxSuspensionForce = 6000.0f;
         }
     }
-    
+
     public class RaycastVehicle : IAction
-	{
+    {
         WheelInfo[] wheelInfo = new WheelInfo[0];
 
         Vector3[] forwardWS = new Vector3[0];
@@ -305,16 +305,16 @@ namespace BulletSharp
 
         void ResetSuspension()
         {
-	        for (int i = 0; i < NumWheels; i++)
-	        {
-		        WheelInfo wheel = GetWheelInfo(i);
-		        wheel.RaycastInfo.SuspensionLength = wheel.SuspensionRestLength;
-		        wheel.SuspensionRelativeVelocity = 0;
+            for (int i = 0; i < NumWheels; i++)
+            {
+                WheelInfo wheel = GetWheelInfo(i);
+                wheel.RaycastInfo.SuspensionLength = wheel.SuspensionRestLength;
+                wheel.SuspensionRelativeVelocity = 0;
 
-		        wheel.RaycastInfo.ContactNormalWS = -wheel.RaycastInfo.WheelDirectionWS;
-		        //wheel.ContactFriction = 0;
-		        wheel.ClippedInvContactDotSuspension = 1;
-	        }
+                wheel.RaycastInfo.ContactNormalWS = -wheel.RaycastInfo.WheelDirectionWS;
+                //wheel.ContactFriction = 0;
+                wheel.ClippedInvContactDotSuspension = 1;
+            }
         }
 
         private void ResolveSingleBilateral(RigidBody body1, Vector3 pos1, RigidBody body2, Vector3 pos2, float distance, Vector3 normal, ref float impulse, float timeStep)
@@ -721,7 +721,7 @@ namespace BulletSharp
             wheel.RaycastInfo.WheelDirectionWS = Vector3.Transform(wheel.WheelDirectionCS, chassisTransBasis);
             wheel.RaycastInfo.WheelAxleWS = Vector3.Transform(wheel.WheelAxleCS, chassisTransBasis);
         }
-	}
+    }
 
     public class DefaultVehicleRaycaster : IVehicleRaycaster
     {
