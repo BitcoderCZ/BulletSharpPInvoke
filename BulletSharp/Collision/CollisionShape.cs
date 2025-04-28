@@ -3,98 +3,113 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct CollisionShapeData
 {
-    public abstract class CollisionShape : BulletDisposableObject
+    public IntPtr Name;
+    public int ShapeType;
+    public int Padding;
+
+    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(CollisionShapeData), fieldName).ToInt32();
+}
+
+public abstract class CollisionShape : BulletDisposableObject
+{
+    protected internal CollisionShape()
     {
-        protected internal CollisionShape()
+    }
+
+    public float AngularMotionDisc => btCollisionShape_getAngularMotionDisc(Native);
+
+    public Vector3 AnisotropicRollingFrictionDirection
+    {
+        get
         {
+            Vector3 value;
+            btCollisionShape_getAnisotropicRollingFrictionDirection(Native, out value);
+            return value;
         }
+    }
 
-        protected internal void InitializeCollisionShape(IntPtr native, BulletObject owner = null)
+    public bool IsCompound => btCollisionShape_isCompound(Native);
+
+    public bool IsConcave => btCollisionShape_isConcave(Native);
+
+    public bool IsConvex => btCollisionShape_isConvex(Native);
+
+    public bool IsConvex2D => btCollisionShape_isConvex2d(Native);
+
+    public bool IsInfinite => btCollisionShape_isInfinite(Native);
+
+    public bool IsNonMoving => btCollisionShape_isNonMoving(Native);
+
+    public bool IsPolyhedral => btCollisionShape_isPolyhedral(Native);
+
+    public bool IsSoftBody => btCollisionShape_isSoftBody(Native);
+
+    public Vector3 LocalScaling
+    {
+        get
         {
-            if (owner != null)
-            {
-                InitializeSubObject(native, owner);
-            }
-            else
-            {
-                InitializeUserOwned(native);
-
-                AllocateUnmanagedHandle();
-            }
+            Vector3 value;
+            btCollisionShape_getLocalScaling(Native, out value);
+            return value;
         }
+        set => btCollisionShape_setLocalScaling(Native, ref value);
+    }
 
-        internal static CollisionShape GetManaged(IntPtr obj)
-        {
-            if (obj == IntPtr.Zero)
-            {
-                return null;
-            }
+    public float Margin
+    {
+        get => btCollisionShape_getMargin(Native);
+        set => btCollisionShape_setMargin(Native, value);
+    }
 
-            IntPtr userPtr = btCollisionShape_getUserPointer(obj);
-            if (userPtr != IntPtr.Zero)
-            {
-                return GCHandle.FromIntPtr(userPtr).Target as CollisionShape;
-            }
+    public string Name => Marshal.PtrToStringAnsi(btCollisionShape_getName(Native));
 
-            throw new InvalidOperationException("Unknown collision object!");
-        }
+    public BroadphaseNativeType ShapeType => btCollisionShape_getShapeType(Native);
 
-        public Vector3 CalculateLocalInertia(float mass)
-        {
-            Vector3 inertia;
-            btCollisionShape_calculateLocalInertia(Native, mass, out inertia);
-            return inertia;
-        }
+    public object? UserObject { get; set; }
 
-        public void CalculateLocalInertia(float mass, out Vector3 inertia)
-        {
-            btCollisionShape_calculateLocalInertia(Native, mass, out inertia);
-        }
+    public int UserIndex
+    {
+        get => btCollisionShape_getUserIndex(Native);
+        set => btCollisionShape_setUserIndex(Native, value);
+    }
 
-        public int CalculateSerializeBufferSize()
-        {
-            return btCollisionShape_calculateSerializeBufferSize(Native);
-        }
+    public Vector3 CalculateLocalInertia(float mass)
+    {
+        Vector3 inertia;
+        btCollisionShape_calculateLocalInertia(Native, mass, out inertia);
+        return inertia;
+    }
 
-        public void CalculateTemporalAabbRef(ref Matrix4x4 curTrans, ref Vector3 linvel, ref Vector3 angvel,
-            float timeStep, out Vector3 temporalAabbMin, out Vector3 temporalAabbMax)
-        {
-            btCollisionShape_calculateTemporalAabb(Native, ref curTrans, ref linvel, ref angvel, timeStep, out temporalAabbMin, out temporalAabbMax);
-        }
+    public void CalculateLocalInertia(float mass, out Vector3 inertia)
+        => btCollisionShape_calculateLocalInertia(Native, mass, out inertia);
 
-        public void CalculateTemporalAabb(Matrix4x4 curTrans, Vector3 linvel, Vector3 angvel,
-            float timeStep, out Vector3 temporalAabbMin, out Vector3 temporalAabbMax)
-        {
-            btCollisionShape_calculateTemporalAabb(Native, ref curTrans, ref linvel,
-                ref angvel, timeStep, out temporalAabbMin, out temporalAabbMax);
-        }
+    public int CalculateSerializeBufferSize()
+        => btCollisionShape_calculateSerializeBufferSize(Native);
 
-        public void GetAabbRef(ref Matrix4x4 transformation, out Vector3 aabbMin, out Vector3 aabbMax)
-        {
-            btCollisionShape_getAabb(Native, ref transformation, out aabbMin, out aabbMax);
-        }
+    public void CalculateTemporalAabbRef(ref Matrix4x4 curTrans, ref Vector3 linvel, ref Vector3 angvel, float timeStep, out Vector3 temporalAabbMin, out Vector3 temporalAabbMax)
+        => btCollisionShape_calculateTemporalAabb(Native, ref curTrans, ref linvel, ref angvel, timeStep, out temporalAabbMin, out temporalAabbMax);
 
-        public void GetAabb(Matrix4x4 transformation, out Vector3 aabbMin, out Vector3 aabbMax)
-        {
-            btCollisionShape_getAabb(Native, ref transformation, out aabbMin, out aabbMax);
-        }
+    public void CalculateTemporalAabb(Matrix4x4 curTrans, Vector3 linvel, Vector3 angvel, float timeStep, out Vector3 temporalAabbMin, out Vector3 temporalAabbMax)
+        => btCollisionShape_calculateTemporalAabb(Native, ref curTrans, ref linvel, ref angvel, timeStep, out temporalAabbMin, out temporalAabbMax);
 
-        public void GetBoundingSphere(out Vector3 center, out float radius)
-        {
-            btCollisionShape_getBoundingSphere(Native, out center, out radius);
-        }
+    public void GetAabbRef(ref Matrix4x4 transformation, out Vector3 aabbMin, out Vector3 aabbMax)
+        => btCollisionShape_getAabb(Native, ref transformation, out aabbMin, out aabbMax);
 
-        public float GetContactBreakingThreshold(float defaultContactThresholdFactor)
-        {
-            return btCollisionShape_getContactBreakingThreshold(Native, defaultContactThresholdFactor);
-        }
+    public void GetAabb(Matrix4x4 transformation, out Vector3 aabbMin, out Vector3 aabbMax)
+        => btCollisionShape_getAabb(Native, ref transformation, out aabbMin, out aabbMax);
 
-        public virtual string Serialize(IntPtr dataBuffer, Serializer serializer)
-        {
-            return Marshal.PtrToStringAnsi(btCollisionShape_serialize(Native, dataBuffer, serializer.Native));
-            /*
+    public void GetBoundingSphere(out Vector3 center, out float radius)
+        => btCollisionShape_getBoundingSphere(Native, out center, out radius);
+
+    public float GetContactBreakingThreshold(float defaultContactThresholdFactor)
+        => btCollisionShape_getContactBreakingThreshold(Native, defaultContactThresholdFactor);
+
+    public virtual string Serialize(IntPtr dataBuffer, Serializer serializer) => Marshal.PtrToStringAnsi(btCollisionShape_serialize(Native, dataBuffer, serializer.Native));/*
 			IntPtr name = serializer.FindNameForPointer(_native);
 			IntPtr namePtr = serializer.GetUniquePointer(name);
 			Marshal.WriteIntPtr(dataBuffer, namePtr);
@@ -106,113 +121,67 @@ namespace BulletSharp
 			//Marshal.WriteInt32(dataBuffer, IntPtr.Size + sizeof(int), 0); //padding
 			return "btCollisionShapeData";
 			*/
+
+    public void SerializeSingleShape(Serializer serializer)
+    {
+        int len = CalculateSerializeBufferSize();
+        Chunk chunk = serializer.Allocate((uint)len, 1);
+        string structType = Serialize(chunk.OldPtr, serializer);
+        serializer.FinalizeChunk(chunk, structType, DnaID.Shape, Native);
+    }
+
+    public override bool Equals(object obj)
+        => ReferenceEquals(this, obj);
+
+    public override int GetHashCode()
+        => Native.GetHashCode();
+
+    internal static CollisionShape? GetManaged(IntPtr obj)
+    {
+        if (obj == IntPtr.Zero)
+        {
+            return null;
         }
 
-        public void SerializeSingleShape(Serializer serializer)
+        IntPtr userPtr = btCollisionShape_getUserPointer(obj);
+        return userPtr != IntPtr.Zero
+            ? GCHandle.FromIntPtr(userPtr).Target as CollisionShape
+            : throw new InvalidOperationException("Unknown collision object!");
+    }
+
+    internal void AllocateUnmanagedHandle()
+    {
+        GCHandle handle = GCHandle.Alloc(this, GCHandleType.Weak);
+        btCollisionShape_setUserPointer(Native, GCHandle.ToIntPtr(handle));
+    }
+
+    internal void FreeUnmanagedHandle()
+    {
+        IntPtr userPtr = btCollisionShape_getUserPointer(Native);
+        GCHandle.FromIntPtr(userPtr).Free();
+    }
+
+    protected internal void InitializeCollisionShape(IntPtr native, BulletObject? owner = null)
+    {
+        if (owner != null)
         {
-            int len = CalculateSerializeBufferSize();
-            Chunk chunk = serializer.Allocate((uint)len, 1);
-            string structType = Serialize(chunk.OldPtr, serializer);
-            serializer.FinalizeChunk(chunk, structType, DnaID.Shape, Native);
+            InitializeSubObject(native, owner);
         }
-
-        public float AngularMotionDisc => btCollisionShape_getAngularMotionDisc(Native);
-
-        public Vector3 AnisotropicRollingFrictionDirection
+        else
         {
-            get
-            {
-                Vector3 value;
-                btCollisionShape_getAnisotropicRollingFrictionDirection(Native, out value);
-                return value;
-            }
-        }
+            InitializeUserOwned(native);
 
-        public bool IsCompound => btCollisionShape_isCompound(Native);
-
-        public bool IsConcave => btCollisionShape_isConcave(Native);
-
-        public bool IsConvex => btCollisionShape_isConvex(Native);
-
-        public bool IsConvex2D => btCollisionShape_isConvex2d(Native);
-
-        public bool IsInfinite => btCollisionShape_isInfinite(Native);
-
-        public bool IsNonMoving => btCollisionShape_isNonMoving(Native);
-
-        public bool IsPolyhedral => btCollisionShape_isPolyhedral(Native);
-
-        public bool IsSoftBody => btCollisionShape_isSoftBody(Native);
-
-        public Vector3 LocalScaling
-        {
-            get
-            {
-                Vector3 value;
-                btCollisionShape_getLocalScaling(Native, out value);
-                return value;
-            }
-            set => btCollisionShape_setLocalScaling(Native, ref value);
-        }
-
-        public float Margin
-        {
-            get => btCollisionShape_getMargin(Native);
-            set => btCollisionShape_setMargin(Native, value);
-        }
-
-        public string Name => Marshal.PtrToStringAnsi(btCollisionShape_getName(Native));
-
-        public BroadphaseNativeType ShapeType => btCollisionShape_getShapeType(Native);
-
-        public object UserObject { get; set; }
-
-        public int UserIndex
-        {
-            get => btCollisionShape_getUserIndex(Native);
-            set => btCollisionShape_setUserIndex(Native, value);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return ReferenceEquals(this, obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return Native.GetHashCode();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (IsUserOwned)
-            {
-                FreeUnmanagedHandle();
-
-                btCollisionShape_delete(Native);
-            }
-        }
-
-        internal void AllocateUnmanagedHandle()
-        {
-            GCHandle handle = GCHandle.Alloc(this, GCHandleType.Weak);
-            btCollisionShape_setUserPointer(Native, GCHandle.ToIntPtr(handle));
-        }
-
-        internal void FreeUnmanagedHandle()
-        {
-            IntPtr userPtr = btCollisionShape_getUserPointer(Native);
-            GCHandle.FromIntPtr(userPtr).Free();
+            AllocateUnmanagedHandle();
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct CollisionShapeData
+    protected override void Dispose(bool disposing)
     {
-        public IntPtr Name;
-        public int ShapeType;
-        public int Padding;
+        if (IsUserOwned)
+        {
+            FreeUnmanagedHandle();
 
-        public static int Offset(string fieldName) { return Marshal.OffsetOf(typeof(CollisionShapeData), fieldName).ToInt32(); }
+            btCollisionShape_delete(Native);
+        }
     }
 }

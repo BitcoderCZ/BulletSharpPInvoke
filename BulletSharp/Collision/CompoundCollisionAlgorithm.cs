@@ -1,81 +1,67 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class CompoundCollisionAlgorithm : ActivatingCollisionAlgorithm
 {
-    public class CompoundCollisionAlgorithm : ActivatingCollisionAlgorithm
+    public CompoundCollisionAlgorithm(CollisionAlgorithmConstructionInfo ci, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap, bool isSwapped)
     {
-        public class CreateFunc : CollisionAlgorithmCreateFunc
+        IntPtr native = btCompoundCollisionAlgorithm_new(ci.Native, body0Wrap.Native, body1Wrap.Native, isSwapped);
+        InitializeUserOwned(native);
+    }
+
+    internal CompoundCollisionAlgorithm(IntPtr native, BulletObject? owner)
+    {
+        InitializeSubObject(native, owner);
+    }
+
+    protected internal CompoundCollisionAlgorithm()
+    {
+    }
+
+    public CollisionAlgorithm GetChildAlgorithm(int n) => new CollisionAlgorithm(btCompoundCollisionAlgorithm_getChildAlgorithm(Native, n), this);
+
+    public class CreateFunc : CollisionAlgorithmCreateFunc
+    {
+        public CreateFunc()
+            : base(ConstructionInfo.Null)
         {
-            internal CreateFunc(ConstructionInfo info)
-                : base(info)
-            {
-            }
-
-            internal CreateFunc(IntPtr native, BulletObject owner)
-                : base(ConstructionInfo.Null)
-            {
-                InitializeSubObject(native, owner);
-            }
-
-            public CreateFunc()
-                : base(ConstructionInfo.Null)
-            {
-                IntPtr native = btCompoundCollisionAlgorithm_CreateFunc_new();
-                InitializeUserOwned(native);
-            }
-
-            public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0,
-                CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
-            {
-                return new CompoundCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(
-                    Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
-            }
+            IntPtr native = btCompoundCollisionAlgorithm_CreateFunc_new();
+            InitializeUserOwned(native);
         }
 
-        public class SwappedCreateFunc : CollisionAlgorithmCreateFunc
-        {
-            internal SwappedCreateFunc(IntPtr native, BulletObject owner)
-                : base(ConstructionInfo.Null)
-            {
-                InitializeSubObject(native, owner);
-            }
-
-            public SwappedCreateFunc()
-                : base(ConstructionInfo.Null)
-            {
-                IntPtr native = btCompoundCollisionAlgorithm_SwappedCreateFunc_new();
-                InitializeUserOwned(native);
-            }
-
-            public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0,
-                CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
-            {
-                return new CompoundCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(
-                    Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
-            }
-        }
-
-        protected internal CompoundCollisionAlgorithm()
+        internal CreateFunc(ConstructionInfo info)
+            : base(info)
         {
         }
 
-        internal CompoundCollisionAlgorithm(IntPtr native, BulletObject owner)
+        internal CreateFunc(IntPtr native, BulletObject owner)
+            : base(ConstructionInfo.Null)
         {
             InitializeSubObject(native, owner);
         }
 
-        public CompoundCollisionAlgorithm(CollisionAlgorithmConstructionInfo ci,
-            CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap, bool isSwapped)
+        public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
+            => new CompoundCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
+    }
+
+    public class SwappedCreateFunc : CollisionAlgorithmCreateFunc
+    {
+        public SwappedCreateFunc()
+            : base(ConstructionInfo.Null)
         {
-            IntPtr native = btCompoundCollisionAlgorithm_new(ci.Native, body0Wrap.Native,
-                body1Wrap.Native, isSwapped);
+            IntPtr native = btCompoundCollisionAlgorithm_SwappedCreateFunc_new();
             InitializeUserOwned(native);
         }
 
-        public CollisionAlgorithm GetChildAlgorithm(int n)
+        internal SwappedCreateFunc(IntPtr native, BulletObject owner)
+            : base(ConstructionInfo.Null)
         {
-            return new CollisionAlgorithm(btCompoundCollisionAlgorithm_getChildAlgorithm(Native, n), this);
+            InitializeSubObject(native, owner);
         }
+
+        public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
+            => new CompoundCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
     }
 }

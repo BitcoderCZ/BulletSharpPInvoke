@@ -1,6 +1,6 @@
-namespace BulletSharp
-{
-    /*
+namespace BulletSharp;
+
+/*
 	public class SphereTriangleDetector : DiscreteCollisionDetectorInterface
 	{
 		internal SphereTriangleDetector(IntPtr native)
@@ -27,5 +27,4 @@ namespace BulletSharp
 		[return: MarshalAs(UnmanagedType.I1)]
 		static extern bool SphereTriangleDetector_collide(IntPtr obj, [In] ref Vector3 sphereCenter, out Vector3 point, out Vector3 resultNormal, out float depth, out float timeOfImpact, float contactBreakingThreshold);
 	}
-    */
-}
+*/

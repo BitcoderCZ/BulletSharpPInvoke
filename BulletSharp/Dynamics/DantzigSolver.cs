@@ -1,14 +1,13 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class DantzigSolver : MlcpSolverInterface
 {
-    public class DantzigSolver : MlcpSolverInterface
+    public DantzigSolver()
     {
-        public DantzigSolver()
-        {
-            IntPtr native = btDantzigSolver_new();
-            InitializeUserOwned(native);
-        }
+        IntPtr native = btDantzigSolver_new();
+        InitializeUserOwned(native);
     }
 }

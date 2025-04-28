@@ -1,23 +1,22 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class UniformScalingShape : ConvexShape
 {
-    public class UniformScalingShape : ConvexShape
+    public UniformScalingShape(ConvexShape convexChildShape, float uniformScalingFactor)
     {
-        public UniformScalingShape(ConvexShape convexChildShape, float uniformScalingFactor)
-        {
-            IntPtr native = btUniformScalingShape_new(convexChildShape.Native, uniformScalingFactor);
-            InitializeCollisionShape(native);
+        IntPtr native = btUniformScalingShape_new(convexChildShape.Native, uniformScalingFactor);
+        InitializeCollisionShape(native);
 
-            ChildShape = convexChildShape;
-        }
+        ChildShape = convexChildShape;
+    }
 
-        public ConvexShape ChildShape { get; }
+    public ConvexShape ChildShape { get; }
 
-        public float UniformScalingFactor
-        {
-            get { return btUniformScalingShape_getUniformScalingFactor(Native); }
-        }
+    public float UniformScalingFactor
+    {
+        get { return btUniformScalingShape_getUniformScalingFactor(Native); }
     }
 }

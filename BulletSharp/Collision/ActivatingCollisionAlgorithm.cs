@@ -1,9 +1,8 @@
-namespace BulletSharp
+namespace BulletSharp;
+
+public abstract class ActivatingCollisionAlgorithm : CollisionAlgorithm
 {
-    public abstract class ActivatingCollisionAlgorithm : CollisionAlgorithm
+    protected internal ActivatingCollisionAlgorithm()
     {
-        protected internal ActivatingCollisionAlgorithm()
-        {
-        }
     }
 }

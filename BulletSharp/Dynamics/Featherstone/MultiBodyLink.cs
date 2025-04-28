@@ -2,263 +2,245 @@ using System;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public enum FeatherstoneJointType
 {
-    public enum FeatherstoneJointType
+    Revolute = 0,
+    Prismatic = 1,
+    Spherical = 2,
+    Planar = 3,
+    Fixed = 4,
+    Invalid,
+}
+
+[Flags]
+public enum MultiBodyLinkFlags
+{
+    None = 0,
+    DisableParentCollision = 1,
+}
+
+public class MultiBodyLink
+{
+    internal IntPtr Native;
+
+    internal MultiBodyLink(IntPtr native)
     {
-        Revolute = 0,
-        Prismatic = 1,
-        Spherical = 2,
-        Planar = 3,
-        Fixed = 4,
-        Invalid
+        Native = native;
     }
 
-    [Flags]
-    public enum MultiBodyLinkFlags
+    public Vector3 GetAxisBottom(int dof)
     {
-        None = 0,
-        DisableParentCollision = 1
+        Vector3 value;
+        btMultibodyLink_getAxisBottom(Native, dof, out value);
+        return value;
     }
 
-    public class MultiBodyLink
+    public Vector3 GetAxisTop(int dof)
     {
-        internal IntPtr Native;
+        Vector3 value;
+        btMultibodyLink_getAxisTop(Native, dof, out value);
+        return value;
+    }
 
-        internal MultiBodyLink(IntPtr native)
-        {
-            Native = native;
-        }
+    public void SetAxisBottom(int dof, float x, float y, float z) => btMultibodyLink_setAxisBottom(Native, dof, x, y, z);
 
-        public Vector3 GetAxisBottom(int dof)
+    public void SetAxisBottom(int dof, Vector3 axis) => btMultibodyLink_setAxisBottom2(Native, dof, ref axis);
+
+    public void SetAxisTop(int dof, float x, float y, float z) => btMultibodyLink_setAxisTop(Native, dof, x, y, z);
+
+    public void SetAxisTop(int dof, Vector3 axis) => btMultibodyLink_setAxisTop2(Native, dof, ref axis);
+
+    public void UpdateCacheMultiDof(float[] pq = null) => btMultibodyLink_updateCacheMultiDof(Native, pq);
+
+    public void UpdateInterpolationCacheMultiDof() => btMultibodyLink_updateInterpolationCacheMultiDof(Native);
+    /*
+            public SpatialMotionVector AbsFrameLocVelocity
+            {
+                get { return btMultibodyLink_getAbsFrameLocVelocity(_native); }
+                set { btMultibodyLink_setAbsFrameLocVelocity(_native, value._native); }
+            }
+
+            public SpatialMotionVector AbsFrameTotVelocity
+            {
+                get { return btMultibodyLink_getAbsFrameTotVelocity(_native); }
+                set { btMultibodyLink_setAbsFrameTotVelocity(_native, value._native); }
+            }
+    */
+    public Vector3 AppliedConstraintForce
+    {
+        get
         {
             Vector3 value;
-            btMultibodyLink_getAxisBottom(Native, dof, out value);
+            btMultibodyLink_getAppliedConstraintForce(Native, out value);
             return value;
         }
+        set => btMultibodyLink_setAppliedConstraintForce(Native, ref value);
+    }
 
-        public Vector3 GetAxisTop(int dof)
+    public Vector3 AppliedConstraintTorque
+    {
+        get
         {
             Vector3 value;
-            btMultibodyLink_getAxisTop(Native, dof, out value);
+            btMultibodyLink_getAppliedConstraintTorque(Native, out value);
             return value;
         }
+        set => btMultibodyLink_setAppliedConstraintTorque(Native, ref value);
+    }
 
-        public void SetAxisBottom(int dof, float x, float y, float z)
+    public Vector3 AppliedForce
+    {
+        get
         {
-            btMultibodyLink_setAxisBottom(Native, dof, x, y, z);
+            Vector3 value;
+            btMultibodyLink_getAppliedForce(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setAppliedForce(Native, ref value);
+    }
 
-        public void SetAxisBottom(int dof, Vector3 axis)
+    public Vector3 AppliedTorque
+    {
+        get
         {
-            btMultibodyLink_setAxisBottom2(Native, dof, ref axis);
+            Vector3 value;
+            btMultibodyLink_getAppliedTorque(Native, out value);
+            return value;
         }
-
-        public void SetAxisTop(int dof, float x, float y, float z)
-        {
-            btMultibodyLink_setAxisTop(Native, dof, x, y, z);
-        }
-
-        public void SetAxisTop(int dof, Vector3 axis)
-        {
-            btMultibodyLink_setAxisTop2(Native, dof, ref axis);
-        }
-
-        public void UpdateCacheMultiDof(float[] pq = null)
-        {
-            btMultibodyLink_updateCacheMultiDof(Native, pq);
-        }
-
-        public void UpdateInterpolationCacheMultiDof()
-        {
-            btMultibodyLink_updateInterpolationCacheMultiDof(Native);
-        }
-        /*
-                public SpatialMotionVector AbsFrameLocVelocity
-                {
-                    get { return btMultibodyLink_getAbsFrameLocVelocity(_native); }
-                    set { btMultibodyLink_setAbsFrameLocVelocity(_native, value._native); }
-                }
-
-                public SpatialMotionVector AbsFrameTotVelocity
-                {
-                    get { return btMultibodyLink_getAbsFrameTotVelocity(_native); }
-                    set { btMultibodyLink_setAbsFrameTotVelocity(_native, value._native); }
-                }
-        */
-        public Vector3 AppliedConstraintForce
-        {
-            get
+        set => btMultibodyLink_setAppliedTorque(Native, ref value);
+    }
+    /*
+            public SpatialMotionVector[] Axes
             {
-                Vector3 value;
-                btMultibodyLink_getAppliedConstraintForce(Native, out value);
-                return value;
+                get { return btMultibodyLink_getAxes(_native); }
             }
-            set => btMultibodyLink_setAppliedConstraintForce(Native, ref value);
+    */
+    public Quaternion CachedRotParentToThis
+    {
+        get
+        {
+            Quaternion value;
+            btMultibodyLink_getCachedRotParentToThis(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setCachedRotParentToThis(Native, ref value);
+    }
 
-        public Vector3 AppliedConstraintTorque
+    public Quaternion CachedRotParentToThisInterpolate
+    {
+        get
         {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getAppliedConstraintTorque(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setAppliedConstraintTorque(Native, ref value);
+            Quaternion value;
+            btMultibodyLink_getCachedRotParentToThisInterpolate(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setCachedRotParentToThisInterpolate(Native, ref value);
+    }
 
-        public Vector3 AppliedForce
+    public Vector3 CachedRVector
+    {
+        get
         {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getAppliedForce(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setAppliedForce(Native, ref value);
+            Vector3 value;
+            btMultibodyLink_getCachedRVector(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setCachedRVector(Native, ref value);
+    }
 
-        public Vector3 AppliedTorque
+    public Vector3 CachedRVectorInterpolate
+    {
+        get
         {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getAppliedTorque(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setAppliedTorque(Native, ref value);
+            Vector3 value;
+            btMultibodyLink_getCachedRVectorInterpolate(Native, out value);
+            return value;
         }
-        /*
-                public SpatialMotionVector[] Axes
-                {
-                    get { return btMultibodyLink_getAxes(_native); }
-                }
-        */
-        public Quaternion CachedRotParentToThis
-        {
-            get
-            {
-                Quaternion value;
-                btMultibodyLink_getCachedRotParentToThis(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setCachedRotParentToThis(Native, ref value);
-        }
+        set => btMultibodyLink_setCachedRVectorInterpolate(Native, ref value);
+    }
 
-        public Quaternion CachedRotParentToThisInterpolate
+    public Matrix4x4 CachedWorldTransform
+    {
+        get
         {
-            get
-            {
-                Quaternion value;
-                btMultibodyLink_getCachedRotParentToThisInterpolate(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setCachedRotParentToThisInterpolate(Native, ref value);
+            Matrix4x4 value;
+            btMultibodyLink_getCachedWorldTransform(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setCachedWorldTransform(Native, ref value);
+    }
 
-        public Vector3 CachedRVector
-        {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getCachedRVector(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setCachedRVector(Native, ref value);
-        }
+    public int CfgOffset
+    {
+        get => btMultibodyLink_getCfgOffset(Native);
+        set => btMultibodyLink_setCfgOffset(Native, value);
+    }
 
-        public Vector3 CachedRVectorInterpolate
-        {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getCachedRVectorInterpolate(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setCachedRVectorInterpolate(Native, ref value);
-        }
+    public MultiBodyLinkCollider Collider
+    {
+        get => CollisionObject.GetManaged(btMultibodyLink_getCollider(Native)) as MultiBodyLinkCollider;
+        set => btMultibodyLink_setCollider(Native, value.Native);
+    }
 
-        public Matrix4x4 CachedWorldTransform
-        {
-            get
-            {
-                Matrix4x4 value;
-                btMultibodyLink_getCachedWorldTransform(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setCachedWorldTransform(Native, ref value);
-        }
+    public int DofCount
+    {
+        get => btMultibodyLink_getDofCount(Native);
+        set => btMultibodyLink_setDofCount(Native, value);
+    }
 
-        public int CfgOffset
-        {
-            get => btMultibodyLink_getCfgOffset(Native);
-            set => btMultibodyLink_setCfgOffset(Native, value);
-        }
+    public int DofOffset
+    {
+        get => btMultibodyLink_getDofOffset(Native);
+        set => btMultibodyLink_setDofOffset(Native, value);
+    }
 
-        public MultiBodyLinkCollider Collider
+    public Vector3 DVector
+    {
+        get
         {
-            get => CollisionObject.GetManaged(btMultibodyLink_getCollider(Native)) as MultiBodyLinkCollider;
-            set => btMultibodyLink_setCollider(Native, value.Native);
+            Vector3 value;
+            btMultibodyLink_getDVector(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setDVector(Native, ref value);
+    }
 
-        public int DofCount
+    public Vector3 EVector
+    {
+        get
         {
-            get => btMultibodyLink_getDofCount(Native);
-            set => btMultibodyLink_setDofCount(Native, value);
+            Vector3 value;
+            btMultibodyLink_getEVector(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setEVector(Native, ref value);
+    }
 
-        public int DofOffset
-        {
-            get => btMultibodyLink_getDofOffset(Native);
-            set => btMultibodyLink_setDofOffset(Native, value);
-        }
+    public int Flags
+    {
+        get => btMultibodyLink_getFlags(Native);
+        set => btMultibodyLink_setFlags(Native, value);
+    }
 
-        public Vector3 DVector
+    public Vector3 InertiaLocal
+    {
+        get
         {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getDVector(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setDVector(Native, ref value);
+            Vector3 value;
+            btMultibodyLink_getInertiaLocal(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setInertiaLocal(Native, ref value);
+    }
 
-        public Vector3 EVector
-        {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getEVector(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setEVector(Native, ref value);
-        }
-
-        public int Flags
-        {
-            get => btMultibodyLink_getFlags(Native);
-            set => btMultibodyLink_setFlags(Native, value);
-        }
-
-        public Vector3 InertiaLocal
-        {
-            get
-            {
-                Vector3 value;
-                btMultibodyLink_getInertiaLocal(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setInertiaLocal(Native, ref value);
-        }
-
-        public float JointDamping
-        {
-            get => btMultibodyLink_getJointDamping(Native);
-            set => btMultibodyLink_setJointDamping(Native, value);
-        }
-        /*
+    public float JointDamping
+    {
+        get => btMultibodyLink_getJointDamping(Native);
+        set => btMultibodyLink_setJointDamping(Native, value);
+    }
+    /*
 		public MultiBodyJointFeedback JointFeedback
 		{
 			get { return _jointFeedback; }
@@ -269,12 +251,12 @@ namespace BulletSharp
 			}
 		}
 		*/
-        public float JointFriction
-        {
-            get => btMultibodyLink_getJointFriction(Native);
-            set => btMultibodyLink_setJointFriction(Native, value);
-        }
-        /*
+    public float JointFriction
+    {
+        get => btMultibodyLink_getJointFriction(Native);
+        set => btMultibodyLink_setJointFriction(Native, value);
+    }
+    /*
 		public char JointName
 		{
 			get { return btMultibodyLink_getJointName(_native); }
@@ -291,51 +273,50 @@ namespace BulletSharp
 			get { return btMultibodyLink_getJointTorque(_native); }
 		}
 		*/
-        public FeatherstoneJointType JointType
-        {
-            get => btMultibodyLink_getJointType(Native);
-            set => btMultibodyLink_setJointType(Native, value);
-        }
-        /*
-         public char LinkName
-         {
-             get { return btMultibodyLink_getLinkName(_native); }
-             set { btMultibodyLink_setLinkName(_native, value._native); }
-         }
-         */
-        public float Mass
-        {
-            get => btMultibodyLink_getMass(Native);
-            set => btMultibodyLink_setMass(Native, value);
-        }
+    public FeatherstoneJointType JointType
+    {
+        get => btMultibodyLink_getJointType(Native);
+        set => btMultibodyLink_setJointType(Native, value);
+    }
+    /*
+     public char LinkName
+     {
+         get { return btMultibodyLink_getLinkName(_native); }
+         set { btMultibodyLink_setLinkName(_native, value._native); }
+     }
+     */
+    public float Mass
+    {
+        get => btMultibodyLink_getMass(Native);
+        set => btMultibodyLink_setMass(Native, value);
+    }
 
-        public int Parent
-        {
-            get => btMultibodyLink_getParent(Native);
-            set => btMultibodyLink_setParent(Native, value);
-        }
+    public int Parent
+    {
+        get => btMultibodyLink_getParent(Native);
+        set => btMultibodyLink_setParent(Native, value);
+    }
 
-        public int PosVarCount
-        {
-            get => btMultibodyLink_getPosVarCount(Native);
-            set => btMultibodyLink_setPosVarCount(Native, value);
-        }
+    public int PosVarCount
+    {
+        get => btMultibodyLink_getPosVarCount(Native);
+        set => btMultibodyLink_setPosVarCount(Native, value);
+    }
 
-        public IntPtr UserPtr
-        {
-            get => btMultibodyLink_getUserPtr(Native);
-            set => btMultibodyLink_setUserPtr(Native, value);
-        }
+    public IntPtr UserPtr
+    {
+        get => btMultibodyLink_getUserPtr(Native);
+        set => btMultibodyLink_setUserPtr(Native, value);
+    }
 
-        public Quaternion ZeroRotParentToThis
+    public Quaternion ZeroRotParentToThis
+    {
+        get
         {
-            get
-            {
-                Quaternion value;
-                btMultibodyLink_getZeroRotParentToThis(Native, out value);
-                return value;
-            }
-            set => btMultibodyLink_setZeroRotParentToThis(Native, ref value);
+            Quaternion value;
+            btMultibodyLink_getZeroRotParentToThis(Native, out value);
+            return value;
         }
+        set => btMultibodyLink_setZeroRotParentToThis(Native, ref value);
     }
 }

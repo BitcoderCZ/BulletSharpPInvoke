@@ -2,53 +2,46 @@
 using System.Collections.Generic;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp.SoftBody
+namespace BulletSharp.SoftBody;
+
+public class DeformableMultiBodyDynamicsWorld : MultiBodyDynamicsWorld
 {
-    public class DeformableMultiBodyDynamicsWorld : MultiBodyDynamicsWorld
+    private DeformableBodySolver _deformableBodySolver; // private ref passed to bodies during AddSoftBody
+    private HashSet<DeformableLagrangianForce> _forces = [];
+
+    public DeformableMultiBodyDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache,
+        DeformableMultiBodyConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration,
+        DeformableBodySolver deformableBodySolver)
     {
-        private DeformableBodySolver _deformableBodySolver; // private ref passed to bodies during AddSoftBody
-        private HashSet<DeformableLagrangianForce> _forces = new HashSet<DeformableLagrangianForce>();
+        _deformableBodySolver = deformableBodySolver;
 
-        public DeformableMultiBodyDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache,
-            DeformableMultiBodyConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration,
-            DeformableBodySolver deformableBodySolver)
+        IntPtr native = btDeformableMultiBodyDynamicsWorld_new(dispatcher.Native, pairCache.Native,
+            constraintSolver.Native, collisionConfiguration.Native, deformableBodySolver.Native);
+        InitializeUserOwned(native);
+        InitializeMembers(dispatcher, pairCache, constraintSolver);
+
+        WorldInfo = new SoftBodyWorldInfo(btDeformableMultiBodyDynamicsWorld_getWorldInfo(Native), this)
         {
-            _deformableBodySolver = deformableBodySolver;
+            Dispatcher = dispatcher,
+            Broadphase = pairCache,
+        };
+    }
 
-            IntPtr native = btDeformableMultiBodyDynamicsWorld_new(dispatcher.Native, pairCache.Native,
-                constraintSolver.Native, collisionConfiguration.Native, deformableBodySolver.Native);
-            InitializeUserOwned(native);
-            InitializeMembers(dispatcher, pairCache, constraintSolver);
+    public SoftBodyWorldInfo WorldInfo { get; }
 
-            WorldInfo = new SoftBodyWorldInfo(btDeformableMultiBodyDynamicsWorld_getWorldInfo(Native), this)
-            {
-                Dispatcher = dispatcher,
-                Broadphase = pairCache
-            };
-        }
+    public void AddForce(SoftBody psb, DeformableLagrangianForce force)
+    {
+        btDeformableMultiBodyDynamicsWorld_addForce(Native, psb.Native, force.Native);
+        _forces.Add(force);
+    }
 
-        public SoftBodyWorldInfo WorldInfo { get; }
+    public void AddSoftBody(SoftBody body) => AddSoftBody(body, CollisionFilterGroups.DefaultFilter, CollisionFilterGroups.AllFilter);
 
-        public void AddForce(SoftBody psb, DeformableLagrangianForce force)
-        {
-            btDeformableMultiBodyDynamicsWorld_addForce(Native, psb.Native, force.Native);
-            _forces.Add(force);
-        }
+    public void AddSoftBody(SoftBody body, CollisionFilterGroups collisionFilterGroup, CollisionFilterGroups collisionFilterMask) => AddSoftBody(body, (int)collisionFilterGroup, (int)collisionFilterMask);
 
-        public void AddSoftBody(SoftBody body)
-        {
-            AddSoftBody(body, CollisionFilterGroups.DefaultFilter, CollisionFilterGroups.AllFilter);
-        }
-
-        public void AddSoftBody(SoftBody body, CollisionFilterGroups collisionFilterGroup, CollisionFilterGroups collisionFilterMask)
-        {
-            AddSoftBody(body, (int)collisionFilterGroup, (int)collisionFilterMask);
-        }
-
-        public void AddSoftBody(SoftBody body, int collisionFilterGroup, int collisionFilterMask)
-        {
-            body.SoftBodySolver = _deformableBodySolver;
-            CollisionObjectArray.Add(body, collisionFilterGroup, collisionFilterMask);
-        }
+    public void AddSoftBody(SoftBody body, int collisionFilterGroup, int collisionFilterMask)
+    {
+        body.SoftBodySolver = _deformableBodySolver;
+        CollisionObjectArray.Add(body, collisionFilterGroup, collisionFilterMask);
     }
 }

@@ -1,0 +1,6 @@
+<Project>
+	<PropertyGroup>
+		<TrimMode>partial</TrimMode>
+		<SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+	</PropertyGroup>
+</Project>

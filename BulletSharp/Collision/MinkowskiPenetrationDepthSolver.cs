@@ -1,14 +1,13 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class MinkowskiPenetrationDepthSolver : ConvexPenetrationDepthSolver
 {
-    public class MinkowskiPenetrationDepthSolver : ConvexPenetrationDepthSolver
+    public MinkowskiPenetrationDepthSolver()
     {
-        public MinkowskiPenetrationDepthSolver()
-        {
-            IntPtr native = btMinkowskiPenetrationDepthSolver_new();
-            InitializeUserOwned(native);
-        }
+        IntPtr native = btMinkowskiPenetrationDepthSolver_new();
+        InitializeUserOwned(native);
     }
 }

@@ -1,8 +1,8 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
-{/*
+namespace BulletSharp;
+/*
 	public class ConvexTriangleCallback : TriangleCallback
 	{
 		internal ConvexTriangleCallback(IntPtr native)
@@ -90,71 +90,59 @@ namespace BulletSharp
 		static extern void btConvexTriangleCallback_setTriangleCount(IntPtr obj, int value);
 	}
 */
-    public class ConvexConcaveCollisionAlgorithm : ActivatingCollisionAlgorithm
+
+public class ConvexConcaveCollisionAlgorithm : ActivatingCollisionAlgorithm
+{
+    public ConvexConcaveCollisionAlgorithm(CollisionAlgorithmConstructionInfo ci, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap, bool isSwapped)
+        : base()
     {
-        public class CreateFunc : CollisionAlgorithmCreateFunc
+        IntPtr native = btConvexConcaveCollisionAlgorithm_new(ci.Native, body0Wrap.Native, body1Wrap.Native, isSwapped);
+        InitializeUserOwned(native);
+    }
+
+    internal ConvexConcaveCollisionAlgorithm(IntPtr native, BulletObject? owner)
+    {
+        InitializeSubObject(native, owner);
+    }
+
+    public void ClearCache()
+        => btConvexConcaveCollisionAlgorithm_clearCache(Native);
+
+    public class CreateFunc : CollisionAlgorithmCreateFunc
+    {
+        public CreateFunc()
+            : base(ConstructionInfo.Null)
         {
-            internal CreateFunc(IntPtr native, BulletObject owner)
-                : base(ConstructionInfo.Null)
-            {
-                InitializeSubObject(native, owner);
-            }
-
-            public CreateFunc()
-                : base(ConstructionInfo.Null)
-            {
-                IntPtr native = btConvexConcaveCollisionAlgorithm_CreateFunc_new();
-                InitializeUserOwned(native);
-            }
-
-            public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0,
-                CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
-            {
-                return new ConvexConcaveCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(
-                    Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
-            }
+            IntPtr native = btConvexConcaveCollisionAlgorithm_CreateFunc_new();
+            InitializeUserOwned(native);
         }
 
-        public class SwappedCreateFunc : CollisionAlgorithmCreateFunc
-        {
-            internal SwappedCreateFunc(IntPtr native, BulletObject owner)
-                : base(ConstructionInfo.Null)
-            {
-                InitializeSubObject(native, owner);
-            }
-
-            public SwappedCreateFunc()
-                : base(ConstructionInfo.Null)
-            {
-                IntPtr native = btConvexConcaveCollisionAlgorithm_SwappedCreateFunc_new();
-                InitializeUserOwned(native);
-            }
-
-            public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0,
-                CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
-            {
-                return new ConvexConcaveCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(
-                    Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
-            }
-        }
-
-        internal ConvexConcaveCollisionAlgorithm(IntPtr native, BulletObject owner)
+        internal CreateFunc(IntPtr native, BulletObject owner)
+            : base(ConstructionInfo.Null)
         {
             InitializeSubObject(native, owner);
         }
 
-        public ConvexConcaveCollisionAlgorithm(CollisionAlgorithmConstructionInfo ci,
-            CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap, bool isSwapped)
-            : base()
+        public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
+            => new ConvexConcaveCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
+    }
+
+    public class SwappedCreateFunc : CollisionAlgorithmCreateFunc
+    {
+        public SwappedCreateFunc()
+            : base(ConstructionInfo.Null)
         {
-            IntPtr native = btConvexConcaveCollisionAlgorithm_new(ci.Native, body0Wrap.Native,
-                body1Wrap.Native, isSwapped);
+            IntPtr native = btConvexConcaveCollisionAlgorithm_SwappedCreateFunc_new();
             InitializeUserOwned(native);
         }
 
-        public void ClearCache()
+        internal SwappedCreateFunc(IntPtr native, BulletObject owner)
+            : base(ConstructionInfo.Null)
         {
-            btConvexConcaveCollisionAlgorithm_clearCache(Native);
+            InitializeSubObject(native, owner);
         }
+
+        public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
+            => new ConvexConcaveCollisionAlgorithm(btCollisionAlgorithmCreateFunc_CreateCollisionAlgorithm(Native, __unnamed0.Native, body0Wrap.Native, body1Wrap.Native), __unnamed0.Dispatcher);
     }
 }

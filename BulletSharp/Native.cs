@@ -1,10 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public static class Native
 {
-    public static class Native
-    {
-        public const string Dll = "libbulletc";
-        public const CallingConvention Conv = CallingConvention.Cdecl;
-    }
+    public const string Dll = "libbulletc";
+    public const CallingConvention Conv = CallingConvention.Cdecl;
 }

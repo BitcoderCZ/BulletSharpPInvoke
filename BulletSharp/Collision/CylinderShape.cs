@@ -3,88 +3,88 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct CylinderShapeData
 {
-    public class CylinderShape : ConvexInternalShape
+    public ConvexInternalShapeData ConvexInternalShapeData;
+    public int UpAxis;
+    public int Padding;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(CylinderShapeData), fieldName).ToInt32();
+}
+
+public class CylinderShape : ConvexInternalShape
+{
+    public CylinderShape(Vector3 halfExtents)
     {
-        protected internal CylinderShape()
-        {
-        }
-
-        public CylinderShape(Vector3 halfExtents)
-        {
-            IntPtr native = btCylinderShape_new(ref halfExtents);
-            InitializeCollisionShape(native);
-        }
-
-        public CylinderShape(float halfExtentX, float halfExtentY, float halfExtentZ)
-        {
-            IntPtr native = btCylinderShape_new2(halfExtentX, halfExtentY, halfExtentZ);
-            InitializeCollisionShape(native);
-        }
-
-        public Vector3 HalfExtentsWithMargin
-        {
-            get
-            {
-                Vector3 value;
-                btCylinderShape_getHalfExtentsWithMargin(Native, out value);
-                return value;
-            }
-        }
-
-        public Vector3 HalfExtentsWithoutMargin
-        {
-            get
-            {
-                Vector3 value;
-                btCylinderShape_getHalfExtentsWithoutMargin(Native, out value);
-                return value;
-            }
-        }
-
-        public float Radius => btCylinderShape_getRadius(Native);
-
-        public int UpAxis => btCylinderShape_getUpAxis(Native);
+        IntPtr native = btCylinderShape_new(ref halfExtents);
+        InitializeCollisionShape(native);
     }
 
-    public class CylinderShapeX : CylinderShape
+    public CylinderShape(float halfExtentX, float halfExtentY, float halfExtentZ)
     {
-        public CylinderShapeX(Vector3 halfExtents)
-        {
-            IntPtr native = btCylinderShapeX_new(ref halfExtents);
-            InitializeCollisionShape(native);
-        }
+        IntPtr native = btCylinderShape_new2(halfExtentX, halfExtentY, halfExtentZ);
+        InitializeCollisionShape(native);
+    }
 
-        public CylinderShapeX(float halfExtentX, float halfExtentY, float halfExtentZ)
+    protected internal CylinderShape()
+    {
+    }
+
+    public Vector3 HalfExtentsWithMargin
+    {
+        get
         {
-            IntPtr native = btCylinderShapeX_new2(halfExtentX, halfExtentY, halfExtentZ);
-            InitializeCollisionShape(native);
+            Vector3 value;
+            btCylinderShape_getHalfExtentsWithMargin(Native, out value);
+            return value;
         }
     }
 
-    public class CylinderShapeZ : CylinderShape
+    public Vector3 HalfExtentsWithoutMargin
     {
-        public CylinderShapeZ(Vector3 halfExtents)
+        get
         {
-            IntPtr native = btCylinderShapeZ_new(ref halfExtents);
-            InitializeCollisionShape(native);
-        }
-
-        public CylinderShapeZ(float halfExtentX, float halfExtentY, float halfExtentZ)
-        {
-            IntPtr native = btCylinderShapeZ_new2(halfExtentX, halfExtentY, halfExtentZ);
-            InitializeCollisionShape(native);
+            Vector3 value;
+            btCylinderShape_getHalfExtentsWithoutMargin(Native, out value);
+            return value;
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct CylinderShapeData
-    {
-        public ConvexInternalShapeData ConvexInternalShapeData;
-        public int UpAxis;
-        public int Padding;
+    public float Radius => btCylinderShape_getRadius(Native);
 
-        public static int Offset(string fieldName) { return Marshal.OffsetOf(typeof(CylinderShapeData), fieldName).ToInt32(); }
+    public int UpAxis => btCylinderShape_getUpAxis(Native);
+}
+
+public class CylinderShapeX : CylinderShape
+{
+    public CylinderShapeX(Vector3 halfExtents)
+    {
+        IntPtr native = btCylinderShapeX_new(ref halfExtents);
+        InitializeCollisionShape(native);
+    }
+
+    public CylinderShapeX(float halfExtentX, float halfExtentY, float halfExtentZ)
+    {
+        IntPtr native = btCylinderShapeX_new2(halfExtentX, halfExtentY, halfExtentZ);
+        InitializeCollisionShape(native);
+    }
+}
+
+public class CylinderShapeZ : CylinderShape
+{
+    public CylinderShapeZ(Vector3 halfExtents)
+    {
+        IntPtr native = btCylinderShapeZ_new(ref halfExtents);
+        InitializeCollisionShape(native);
+    }
+
+    public CylinderShapeZ(float halfExtentX, float halfExtentY, float halfExtentZ)
+    {
+        IntPtr native = btCylinderShapeZ_new2(halfExtentX, halfExtentY, halfExtentZ);
+        InitializeCollisionShape(native);
     }
 }

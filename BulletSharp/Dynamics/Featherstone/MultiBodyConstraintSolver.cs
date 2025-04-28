@@ -1,22 +1,22 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
-{
-    public class MultiBodyConstraintSolver : SequentialImpulseConstraintSolver
-    {
-        internal MultiBodyConstraintSolver(ConstructionInfo info)
-            : base(info)
-        {
-        }
+namespace BulletSharp;
 
-        public MultiBodyConstraintSolver()
-            : base(ConstructionInfo.Null)
-        {
-            IntPtr native = btMultiBodyConstraintSolver_new();
-            InitializeUserOwned(native);
-        }
-        /*
+public class MultiBodyConstraintSolver : SequentialImpulseConstraintSolver
+{
+    internal MultiBodyConstraintSolver(ConstructionInfo info)
+        : base(info)
+    {
+    }
+
+    public MultiBodyConstraintSolver()
+        : base(ConstructionInfo.Null)
+    {
+        IntPtr native = btMultiBodyConstraintSolver_new();
+        InitializeUserOwned(native);
+    }
+    /*
 		public float SolveGroupCacheFriendlyFinish(CollisionObject bodies, int numBodies,
 			ContactSolverInfo infoGlobal)
 		{
@@ -35,5 +35,4 @@ namespace BulletSharp
 				debugDrawer.Native, dispatcher.Native);
 		}
 		*/
-    }
 }

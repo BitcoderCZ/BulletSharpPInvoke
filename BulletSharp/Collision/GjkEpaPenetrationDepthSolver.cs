@@ -1,14 +1,13 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class GjkEpaPenetrationDepthSolver : ConvexPenetrationDepthSolver
 {
-    public class GjkEpaPenetrationDepthSolver : ConvexPenetrationDepthSolver
+    public GjkEpaPenetrationDepthSolver()
     {
-        public GjkEpaPenetrationDepthSolver()
-        {
-            IntPtr native = btGjkEpaPenetrationDepthSolver_new();
-            InitializeUserOwned(native);
-        }
+        IntPtr native = btGjkEpaPenetrationDepthSolver_new();
+        InitializeUserOwned(native);
     }
 }

@@ -3,103 +3,97 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class DbvtArrayEnumerator : IEnumerator<Dbvt>
 {
-    public class DbvtArrayEnumerator : IEnumerator<Dbvt>
+    private readonly int _count;
+    private readonly IReadOnlyList<Dbvt> _array;
+    private int _i;
+
+    public DbvtArrayEnumerator(IReadOnlyList<Dbvt> array)
     {
-        private int _i;
-        private int _count;
-        private IList<Dbvt> _array;
-
-        public DbvtArrayEnumerator(IList<Dbvt> array)
-        {
-            _array = array;
-            _count = array.Count;
-            _i = -1;
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public bool MoveNext()
-        {
-            _i++;
-            return _i != _count;
-        }
-
-        public void Reset()
-        {
-            _i = 0;
-        }
-
-        public Dbvt Current => _array[_i];
-
-        object System.Collections.IEnumerator.Current => _array[_i];
+        _array = array;
+        _count = array.Count;
+        _i = -1;
     }
 
-    [DebuggerDisplay("Count = {Count}")]
-    [DebuggerTypeProxy(typeof(ListDebugView))]
-    public class DbvtArray : FixedSizeArray<Dbvt>, IList<Dbvt>
+    public Dbvt Current => _array[_i];
+
+    object System.Collections.IEnumerator.Current => _array[_i];
+
+    public void Dispose()
     {
-        internal DbvtArray(IntPtr native, int count)
-            : base(native, count)
-        {
-        }
+    }
 
-        public int IndexOf(Dbvt item)
-        {
-            return btDbvt_array_index_of(Native, item != null ? item.Native : IntPtr.Zero, Count);
-        }
+    public bool MoveNext()
+    {
+        _i++;
+        return _i != _count;
+    }
 
-        public Dbvt this[int index]
+    public void Reset()
+        => _i = 0;
+}
+
+[DebuggerDisplay("Count = {Count}")]
+[DebuggerTypeProxy(typeof(ListDebugView))]
+public class DbvtArray : FixedSizeArray<Dbvt>, IList<Dbvt>, IReadOnlyList<Dbvt>
+{
+    internal DbvtArray(IntPtr native, int count)
+        : base(native, count)
+    {
+    }
+
+    public Dbvt this[int index]
+    {
+        get
         {
-            get
+            if ((uint)index >= (uint)Count)
             {
-                if ((uint)index >= (uint)Count)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(index));
-                }
-                IntPtr ptr = btDbvt_array_at(Native, index);
-                return new Dbvt(ptr);
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
-            set
-            {
-                throw new NotSupportedException();
-            }
+
+            IntPtr ptr = btDbvt_array_at(Native, index);
+            return new Dbvt(ptr);
         }
 
-        public bool Contains(Dbvt item)
+        set => throw new NotSupportedException();
+    }
+
+    public int IndexOf(Dbvt item)
+        => btDbvt_array_index_of(Native, item != null ? item.Native : IntPtr.Zero, Count);
+
+    public bool Contains(Dbvt item)
+        => IndexOf(item) != -1;
+
+    public void CopyTo(Dbvt[] array, int arrayIndex)
+    {
+        if (array == null)
         {
-            return IndexOf(item) != -1;
+            throw new ArgumentNullException(nameof(array));
         }
 
-        public void CopyTo(Dbvt[] array, int arrayIndex)
+        if (arrayIndex < 0)
         {
-            if (array == null)
-                throw new ArgumentNullException(nameof(array));
-
-            if (arrayIndex < 0)
-                throw new ArgumentOutOfRangeException(nameof(array));
-
-            int count = Count;
-            if (arrayIndex + count > array.Length)
-                throw new ArgumentException("Array too small.", "array");
-
-            for (int i = 0; i < count; i++)
-            {
-                array[arrayIndex + i] = this[i];
-            }
+            throw new ArgumentOutOfRangeException(nameof(array));
         }
 
-        public IEnumerator<Dbvt> GetEnumerator()
+        int count = Count;
+        if (arrayIndex + count > array.Length)
         {
-            return new DbvtArrayEnumerator(this);
+            throw new ArgumentException("Array too small.", "array");
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        for (int i = 0; i < count; i++)
         {
-            return new DbvtArrayEnumerator(this);
+            array[arrayIndex + i] = this[i];
         }
     }
+
+    public IEnumerator<Dbvt> GetEnumerator()
+        => new DbvtArrayEnumerator(this);
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        => new DbvtArrayEnumerator(this);
 }

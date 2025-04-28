@@ -2,71 +2,64 @@ using System;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class UniversalConstraint : Generic6DofConstraint
 {
-    public class UniversalConstraint : Generic6DofConstraint
+    public UniversalConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 anchor,
+        Vector3 axis1, Vector3 axis2)
     {
-        public UniversalConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 anchor,
-            Vector3 axis1, Vector3 axis2)
+        IntPtr native = btUniversalConstraint_new(rigidBodyA.Native, rigidBodyB.Native,
+            ref anchor, ref axis1, ref axis2);
+        InitializeUserOwned(native);
+        InitializeMembers(rigidBodyA, rigidBodyB);
+    }
+
+    public void SetLowerLimit(float ang1min, float ang2min) => btUniversalConstraint_setLowerLimit(Native, ang1min, ang2min);
+
+    public void SetUpperLimit(float ang1max, float ang2max) => btUniversalConstraint_setUpperLimit(Native, ang1max, ang2max);
+
+    public Vector3 Anchor
+    {
+        get
         {
-            IntPtr native = btUniversalConstraint_new(rigidBodyA.Native, rigidBodyB.Native,
-                ref anchor, ref axis1, ref axis2);
-            InitializeUserOwned(native);
-            InitializeMembers(rigidBodyA, rigidBodyB);
+            Vector3 value;
+            btUniversalConstraint_getAnchor(Native, out value);
+            return value;
         }
+    }
 
-        public void SetLowerLimit(float ang1min, float ang2min)
+    public Vector3 Anchor2
+    {
+        get
         {
-            btUniversalConstraint_setLowerLimit(Native, ang1min, ang2min);
+            Vector3 value;
+            btUniversalConstraint_getAnchor2(Native, out value);
+            return value;
         }
+    }
 
-        public void SetUpperLimit(float ang1max, float ang2max)
+    public float Angle1 => btUniversalConstraint_getAngle1(Native);
+
+    public float Angle2 => btUniversalConstraint_getAngle2(Native);
+
+    public Vector3 Axis1
+    {
+        get
         {
-            btUniversalConstraint_setUpperLimit(Native, ang1max, ang2max);
+            Vector3 value;
+            btUniversalConstraint_getAxis1(Native, out value);
+            return value;
         }
+    }
 
-        public Vector3 Anchor
+    public Vector3 Axis2
+    {
+        get
         {
-            get
-            {
-                Vector3 value;
-                btUniversalConstraint_getAnchor(Native, out value);
-                return value;
-            }
-        }
-
-        public Vector3 Anchor2
-        {
-            get
-            {
-                Vector3 value;
-                btUniversalConstraint_getAnchor2(Native, out value);
-                return value;
-            }
-        }
-
-        public float Angle1 => btUniversalConstraint_getAngle1(Native);
-
-        public float Angle2 => btUniversalConstraint_getAngle2(Native);
-
-        public Vector3 Axis1
-        {
-            get
-            {
-                Vector3 value;
-                btUniversalConstraint_getAxis1(Native, out value);
-                return value;
-            }
-        }
-
-        public Vector3 Axis2
-        {
-            get
-            {
-                Vector3 value;
-                btUniversalConstraint_getAxis2(Native, out value);
-                return value;
-            }
+            Vector3 value;
+            btUniversalConstraint_getAxis2(Native, out value);
+            return value;
         }
     }
 }

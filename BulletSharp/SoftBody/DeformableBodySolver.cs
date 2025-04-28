@@ -1,14 +1,13 @@
 ﻿using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp.SoftBody
+namespace BulletSharp.SoftBody;
+
+public class DeformableBodySolver : SoftBodySolver
 {
-    public class DeformableBodySolver : SoftBodySolver
+    public DeformableBodySolver()
     {
-        public DeformableBodySolver()
-        {
-            IntPtr native = btDeformableBodySolver_new();
-            InitializeUserOwned(native);
-        }
+        IntPtr native = btDeformableBodySolver_new();
+        InitializeUserOwned(native);
     }
 }

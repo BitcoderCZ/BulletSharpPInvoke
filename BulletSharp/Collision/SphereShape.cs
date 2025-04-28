@@ -1,21 +1,17 @@
 using System;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class SphereShape : ConvexInternalShape
 {
-    public class SphereShape : ConvexInternalShape
+    public SphereShape(float radius)
     {
-        public SphereShape(float radius)
-        {
-            IntPtr native = btSphereShape_new(radius);
-            InitializeCollisionShape(native);
-        }
-
-        public void SetUnscaledRadius(float radius)
-        {
-            btSphereShape_setUnscaledRadius(Native, radius);
-        }
-
-        public float Radius => btSphereShape_getRadius(Native);
+        IntPtr native = btSphereShape_new(radius);
+        InitializeCollisionShape(native);
     }
+
+    public void SetUnscaledRadius(float radius) => btSphereShape_setUnscaledRadius(Native, radius);
+
+    public float Radius => btSphereShape_getRadius(Native);
 }

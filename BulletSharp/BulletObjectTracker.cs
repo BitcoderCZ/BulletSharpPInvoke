@@ -4,24 +4,25 @@ using System.Linq;
 using System.Diagnostics;
 #endif
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public sealed class BulletObjectTracker
 {
-    public sealed class BulletObjectTracker
+    private readonly object _userOwnedObjectsLock = new object();
+
+    private BulletObjectTracker()
     {
-        private readonly object _userOwnedObjectsLock = new object();
-        private HashSet<BulletObject> _userOwnedObjects { get; set; } = new HashSet<BulletObject>();
+    }
 
-        private BulletObjectTracker()
-        {
-        }
+    private HashSet<BulletObject> UserOwnedObjects { get; set; } = [];
 
-        public IList<BulletObject> GetUserOwnedObjects()
+    public IList<BulletObject> GetUserOwnedObjects()
+    {
+        lock (_userOwnedObjectsLock)
         {
-            lock (_userOwnedObjectsLock)
-            {
-                return _userOwnedObjects.ToList();
-            }
+            return UserOwnedObjects.ToList();
         }
+    }
 
 #if BULLET_OBJECT_TRACKING
 		public static BulletObjectTracker Current { get; } = new BulletObjectTracker();
@@ -78,17 +79,18 @@ namespace BulletSharp
 			}
 		}
 #else
-        public static BulletObjectTracker Current { get; } = null;
+#pragma warning disable SA1201 // Elements should appear in the correct order
+    public static BulletObjectTracker Current { get; } = null;
+#pragma warning restore SA1201 // Elements should appear in the correct order
 
-        [Conditional("BULLET_OBJECT_TRACKING")]
-        internal static void Add(BulletDisposableObject obj)
-        {
-        }
-
-        [Conditional("BULLET_OBJECT_TRACKING")]
-        internal static void Remove(BulletDisposableObject obj)
-        {
-        }
-#endif
+    [Conditional("BULLET_OBJECT_TRACKING")]
+    internal static void Add(BulletDisposableObject obj)
+    {
     }
+
+    [Conditional("BULLET_OBJECT_TRACKING")]
+    internal static void Remove(BulletDisposableObject obj)
+    {
+    }
+#endif
 }

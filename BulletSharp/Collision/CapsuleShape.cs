@@ -2,51 +2,50 @@ using System;
 using System.Runtime.InteropServices;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct CapsuleShapeData
 {
-    public class CapsuleShape : ConvexInternalShape
+    public ConvexInternalShapeData ConvexInternalShapeData;
+    public int UpAxis;
+
+    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(CapsuleShapeData), fieldName).ToInt32();
+}
+
+public class CapsuleShape : ConvexInternalShape
+{
+    public CapsuleShape(float radius, float height)
     {
-        protected internal CapsuleShape()
-        {
-        }
-
-        public CapsuleShape(float radius, float height)
-        {
-            IntPtr native = btCapsuleShape_new(radius, height);
-            InitializeCollisionShape(native);
-        }
-
-        public float HalfHeight => btCapsuleShape_getHalfHeight(Native);
-
-        public float Radius => btCapsuleShape_getRadius(Native);
-
-        public int UpAxis => btCapsuleShape_getUpAxis(Native);
+        IntPtr native = btCapsuleShape_new(radius, height);
+        InitializeCollisionShape(native);
     }
 
-    public class CapsuleShapeX : CapsuleShape
+    protected internal CapsuleShape()
     {
-        public CapsuleShapeX(float radius, float height)
-        {
-            IntPtr native = btCapsuleShapeX_new(radius, height);
-            InitializeCollisionShape(native);
-        }
     }
 
-    public class CapsuleShapeZ : CapsuleShape
+    public float HalfHeight => btCapsuleShape_getHalfHeight(Native);
+
+    public float Radius => btCapsuleShape_getRadius(Native);
+
+    public int UpAxis => btCapsuleShape_getUpAxis(Native);
+}
+
+public class CapsuleShapeX : CapsuleShape
+{
+    public CapsuleShapeX(float radius, float height)
     {
-        public CapsuleShapeZ(float radius, float height)
-        {
-            IntPtr native = btCapsuleShapeZ_new(radius, height);
-            InitializeCollisionShape(native);
-        }
+        IntPtr native = btCapsuleShapeX_new(radius, height);
+        InitializeCollisionShape(native);
     }
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct CapsuleShapeData
+public class CapsuleShapeZ : CapsuleShape
+{
+    public CapsuleShapeZ(float radius, float height)
     {
-        public ConvexInternalShapeData ConvexInternalShapeData;
-        public int UpAxis;
-
-        public static int Offset(string fieldName) { return Marshal.OffsetOf(typeof(CapsuleShapeData), fieldName).ToInt32(); }
+        IntPtr native = btCapsuleShapeZ_new(radius, height);
+        InitializeCollisionShape(native);
     }
 }

@@ -2,48 +2,47 @@ using System;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
 
-namespace BulletSharp
+namespace BulletSharp;
+
+public class PointCollector : DiscreteCollisionDetectorInterface.Result
 {
-    public class PointCollector : DiscreteCollisionDetectorInterface.Result
+    public PointCollector()
     {
-        public PointCollector()
-        {
-            IntPtr native = btPointCollector_new();
-            InitializeUserOwned(native);
-        }
+        IntPtr native = btPointCollector_new();
+        InitializeUserOwned(native);
+    }
 
-        public float Distance
-        {
-            get => btPointCollector_getDistance(Native);
-            set => btPointCollector_setDistance(Native, value);
-        }
+    public float Distance
+    {
+        get => btPointCollector_getDistance(Native);
+        set => btPointCollector_setDistance(Native, value);
+    }
 
-        public bool HasResult
-        {
-            get => btPointCollector_getHasResult(Native);
-            set => btPointCollector_setHasResult(Native, value);
-        }
+    public bool HasResult
+    {
+        get => btPointCollector_getHasResult(Native);
+        set => btPointCollector_setHasResult(Native, value);
+    }
 
-        public Vector3 NormalOnBInWorld
+    public Vector3 NormalOnBInWorld
+    {
+        get
         {
-            get
-            {
-                Vector3 value;
-                btPointCollector_getNormalOnBInWorld(Native, out value);
-                return value;
-            }
-            set => btPointCollector_setNormalOnBInWorld(Native, ref value);
+            Vector3 value;
+            btPointCollector_getNormalOnBInWorld(Native, out value);
+            return value;
         }
+        set => btPointCollector_setNormalOnBInWorld(Native, ref value);
+    }
 
-        public Vector3 PointInWorld
+    public Vector3 PointInWorld
+    {
+        get
         {
-            get
-            {
-                Vector3 value;
-                btPointCollector_getPointInWorld(Native, out value);
-                return value;
-            }
-            set => btPointCollector_setPointInWorld(Native, ref value);
+            Vector3 value;
+            btPointCollector_getPointInWorld(Native, out value);
+            return value;
         }
+        set => btPointCollector_setPointInWorld(Native, ref value);
     }
 }
