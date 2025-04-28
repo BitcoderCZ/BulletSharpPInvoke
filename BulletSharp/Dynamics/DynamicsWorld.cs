@@ -39,7 +39,9 @@ namespace BulletSharp
 		{
 		}
 
-		protected internal void InitializeMembers(Dispatcher dispatcher, BroadphaseInterface pairCache, ConstraintSolver constraintSolver)
+		public IReadOnlyList<TypedConstraint> Constraints => _constraints;
+
+        protected internal void InitializeMembers(Dispatcher dispatcher, BroadphaseInterface pairCache, ConstraintSolver constraintSolver)
 		{
 			InitializeMembers(dispatcher, pairCache);
 			_constraintSolver = constraintSolver;
