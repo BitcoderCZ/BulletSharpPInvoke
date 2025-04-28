@@ -134,7 +134,7 @@ namespace BulletSharp
 			}
 		}
 
-		public void RemoveConstraint(TypedConstraint constraint)
+		public bool RemoveConstraint(TypedConstraint constraint)
 		{
 			RigidBody rigidBody = constraint.RigidBodyA;
 			if (rigidBody._constraintRefs != null)
@@ -150,16 +150,46 @@ namespace BulletSharp
 			int itemIndex = _constraints.IndexOf(constraint);
 			if (itemIndex == -1)
 			{
-				return;
+				return false;
 			}
 
 			int lastIndex = _constraints.Count - 1;
 			_constraints[itemIndex] = _constraints[lastIndex];
 			_constraints.RemoveAt(lastIndex);
 			btDynamicsWorld_removeConstraint(Native, constraint.Native);
-		}
 
-		public void RemoveRigidBody(RigidBody body)
+			return true;
+        }
+
+        public bool RemoveConstraintAt(int index)
+        {
+			if (index < 0 ||index >= _constraints.Count)
+			{
+				return false;
+			}
+
+			var constraint = _constraints[index];
+
+            RigidBody rigidBody = constraint.RigidBodyA;
+            if (rigidBody._constraintRefs != null)
+            {
+                rigidBody._constraintRefs.Remove(constraint);
+            }
+            rigidBody = constraint.RigidBodyB;
+            if (rigidBody._constraintRefs != null)
+            {
+                rigidBody._constraintRefs.Remove(constraint);
+            }
+
+            int lastIndex = _constraints.Count - 1;
+            _constraints[index] = _constraints[lastIndex];
+            _constraints.RemoveAt(lastIndex);
+            btDynamicsWorld_removeConstraint(Native, constraint.Native);
+
+			return true;
+        }
+
+        public void RemoveRigidBody(RigidBody body)
 		{
 			CollisionObjectArray.Remove(body);
 		}
