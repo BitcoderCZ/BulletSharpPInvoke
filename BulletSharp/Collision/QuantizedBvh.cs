@@ -5,6 +5,46 @@ using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct QuantizedBvhFloatData
+{
+    public Vector3FloatData BvhAabbMin;
+    public Vector3FloatData BvhAabbMax;
+    public Vector3FloatData BvhQuantization;
+    public int CurNodeIndex;
+    public int UseQuantization;
+    public int NumContiguousLeafNodes;
+    public int NumQuantizedContiguousNodes;
+    public IntPtr ContiguousNodesPtr;
+    public IntPtr QuantizedContiguousNodesPtr;
+    public IntPtr SubTreeInfoPtr;
+    public int TraversalMode;
+    public int NumSubtreeHeaders;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(QuantizedBvhFloatData), fieldName).ToInt32();
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct QuantizedBvhDoubleData
+{
+    public Vector3DoubleData BvhAabbMin;
+    public Vector3DoubleData BvhAabbMax;
+    public Vector3DoubleData BvhQuantization;
+    public int CurNodeIndex;
+    public int UseQuantization;
+    public int NumContiguousLeafNodes;
+    public int NumQuantizedContiguousNodes;
+    public IntPtr ContiguousNodesPtr;
+    public IntPtr QuantizedContiguousNodesPtr;
+    public IntPtr SubTreeInfoPtr;
+    public int TraversalMode;
+    public int NumSubtreeHeaders;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(QuantizedBvhDoubleData), fieldName).ToInt32();
+}
+
 public class QuantizedBvhNode : BulletDisposableObject
 {
     public QuantizedBvhNode()
@@ -24,6 +64,7 @@ public class QuantizedBvhNode : BulletDisposableObject
     public bool IsLeafNode => btQuantizedBvhNode_isLeafNode(Native);
 
     public int PartId => btQuantizedBvhNode_getPartId(Native);
+
     /*
 		public UShortArray QuantizedAabbMax
 		{
@@ -35,9 +76,11 @@ public class QuantizedBvhNode : BulletDisposableObject
 			get { return btQuantizedBvhNode_getQuantizedAabbMin(Native); }
 		}
 		*/
+
     public int TriangleIndex => btQuantizedBvhNode_getTriangleIndex(Native);
 
-    protected override void Dispose(bool disposing) => btQuantizedBvhNode_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btQuantizedBvhNode_delete(Native);
 }
 
 public class OptimizedBvhNode : BulletDisposableObject
@@ -88,22 +131,39 @@ public class OptimizedBvhNode : BulletDisposableObject
         set => btOptimizedBvhNode_setTriangleIndex(Native, value);
     }
 
-    protected override void Dispose(bool disposing) => btOptimizedBvhNode_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btOptimizedBvhNode_delete(Native);
 }
 
 public abstract class NodeOverlapCallback : BulletDisposableObject
 {
+#pragma warning disable IDE0060
     internal NodeOverlapCallback(IntPtr native) // public
+#pragma warning restore IDE0060
     {
     }
 
-    public void ProcessNode(int subPart, int triangleIndex) => btNodeOverlapCallback_processNode(Native, subPart, triangleIndex);
+    public void ProcessNode(int subPart, int triangleIndex)
+        => btNodeOverlapCallback_processNode(Native, subPart, triangleIndex);
 
-    protected override void Dispose(bool disposing) => btNodeOverlapCallback_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btNodeOverlapCallback_delete(Native);
 }
 
 public class QuantizedBvh : BulletDisposableObject
 {
+    public QuantizedBvh()
+    {
+        IntPtr native = btQuantizedBvh_new();
+        InitializeUserOwned(native);
+    }
+
+#pragma warning disable IDE0060
+    internal QuantizedBvh(ConstructionInfo? info)
+#pragma warning restore IDE0060
+    {
+    }
+
     public enum TraversalMode
     {
         Stackless,
@@ -111,25 +171,42 @@ public class QuantizedBvh : BulletDisposableObject
         Recursive,
     }
 
-    internal QuantizedBvh(ConstructionInfo info)
-    {
-    }
+    public static uint AlignmentSerializationPadding => btQuantizedBvh_getAlignmentSerializationPadding();
 
-    public QuantizedBvh()
-    {
-        IntPtr native = btQuantizedBvh_new();
-        InitializeUserOwned(native);
-    }
+    public bool IsQuantized => btQuantizedBvh_isQuantized(Native);
 
-    public void BuildInternal() => btQuantizedBvh_buildInternal(Native);
+    /*
+		public QuantizedNodeArray LeafNodeArray
+		{
+			get { return btQuantizedBvh_getLeafNodeArray(Native); }
+		}
 
-    public uint CalculateSerializeBufferSize() => btQuantizedBvh_calculateSerializeBufferSize(Native);
+		public QuantizedNodeArray QuantizedNodeArray
+		{
+			get { return btQuantizedBvh_getQuantizedNodeArray(Native); }
+		}
 
-    public int CalculateSerializeBufferSizeNew() => btQuantizedBvh_calculateSerializeBufferSizeNew(Native);
+		public BvhSubtreeInfoArray SubtreeInfoArray
+		{
+			get { return btQuantizedBvh_getSubtreeInfoArray(Native); }
+		}
+		*/
 
-    public void DeSerializeDouble(IntPtr quantizedBvhDoubleData) => btQuantizedBvh_deSerializeDouble(Native, quantizedBvhDoubleData);
+    public void BuildInternal()
+        => btQuantizedBvh_buildInternal(Native);
 
-    public void DeSerializeFloat(IntPtr quantizedBvhFloatData) => btQuantizedBvh_deSerializeFloat(Native, quantizedBvhFloatData);
+    public uint CalculateSerializeBufferSize()
+        => btQuantizedBvh_calculateSerializeBufferSize(Native);
+
+    public int CalculateSerializeBufferSizeNew()
+        => btQuantizedBvh_calculateSerializeBufferSizeNew(Native);
+
+    public void DeSerializeDouble(IntPtr quantizedBvhDoubleData)
+        => btQuantizedBvh_deSerializeDouble(Native, quantizedBvhDoubleData);
+
+    public void DeSerializeFloat(IntPtr quantizedBvhFloatData)
+        => btQuantizedBvh_deSerializeFloat(Native, quantizedBvhFloatData);
+
     /*
 		public static QuantizedBvh DeSerializeInPlace(IntPtr alignedDataBuffer, uint dataBufferSize,
 			bool swapEndian)
@@ -148,28 +225,27 @@ public class QuantizedBvh : BulletDisposableObject
 			btQuantizedBvh_quantizeWithClamp(Native, out._native, ref point2, isMax);
 		}
 		*/
-    public void ReportAabbOverlappingNodex(NodeOverlapCallback nodeCallback,
-        Vector3 aabbMin, Vector3 aabbMax) => btQuantizedBvh_reportAabbOverlappingNodex(Native, nodeCallback.Native,
-            ref aabbMin, ref aabbMax);
 
-    public void ReportBoxCastOverlappingNodex(NodeOverlapCallback nodeCallback,
-        Vector3 raySource, Vector3 rayTarget, Vector3 aabbMin, Vector3 aabbMax) => btQuantizedBvh_reportBoxCastOverlappingNodex(Native, nodeCallback.Native,
-            ref raySource, ref rayTarget, ref aabbMin, ref aabbMax);
+    public void ReportAabbOverlappingNodex(NodeOverlapCallback nodeCallback, Vector3 aabbMin, Vector3 aabbMax)
+        => btQuantizedBvh_reportAabbOverlappingNodex(Native, nodeCallback.Native, ref aabbMin, ref aabbMax);
 
-    public void ReportRayOverlappingNodex(NodeOverlapCallback nodeCallback, Vector3 raySource,
-        Vector3 rayTarget) => btQuantizedBvh_reportRayOverlappingNodex(Native, nodeCallback.Native,
-            ref raySource, ref rayTarget);
+    public void ReportBoxCastOverlappingNodex(NodeOverlapCallback nodeCallback, Vector3 raySource, Vector3 rayTarget, Vector3 aabbMin, Vector3 aabbMax)
+        => btQuantizedBvh_reportBoxCastOverlappingNodex(Native, nodeCallback.Native, ref raySource, ref rayTarget, ref aabbMin, ref aabbMax);
 
-    public bool Serialize(IntPtr alignedDataBuffer, uint dataBufferSize, bool swapEndian) => btQuantizedBvh_serialize(Native, alignedDataBuffer, dataBufferSize,
-            swapEndian);
+    public void ReportRayOverlappingNodex(NodeOverlapCallback nodeCallback, Vector3 raySource, Vector3 rayTarget)
+        => btQuantizedBvh_reportRayOverlappingNodex(Native, nodeCallback.Native, ref raySource, ref rayTarget);
+
+    public bool Serialize(IntPtr alignedDataBuffer, uint dataBufferSize, bool swapEndian)
+        => btQuantizedBvh_serialize(Native, alignedDataBuffer, dataBufferSize, swapEndian);
 
     public string Serialize(IntPtr dataBuffer, Serializer serializer) => Marshal.PtrToStringAnsi(btQuantizedBvh_serialize2(Native, dataBuffer, serializer.Native));
 
-    public void SetQuantizationValues(Vector3 bvhAabbMin, Vector3 bvhAabbMax,
-        float quantizationMargin = 1.0f) => btQuantizedBvh_setQuantizationValues(Native, ref bvhAabbMin, ref bvhAabbMax,
-            quantizationMargin);
+    public void SetQuantizationValues(Vector3 bvhAabbMin, Vector3 bvhAabbMax, float quantizationMargin = 1.0f)
+        => btQuantizedBvh_setQuantizationValues(Native, ref bvhAabbMin, ref bvhAabbMax, quantizationMargin);
 
-    public void SetTraversalMode(TraversalMode traversalMode) => btQuantizedBvh_setTraversalMode(Native, traversalMode);
+    public void SetTraversalMode(TraversalMode traversalMode)
+        => btQuantizedBvh_setTraversalMode(Native, traversalMode);
+
     /*
 		public Vector3 UnQuantize(unsigned short vecIn)
 		{
@@ -178,25 +254,7 @@ public class QuantizedBvh : BulletDisposableObject
 			return value;
 		}
 		*/
-    public static uint AlignmentSerializationPadding => btQuantizedBvh_getAlignmentSerializationPadding();
 
-    public bool IsQuantized => btQuantizedBvh_isQuantized(Native);
-    /*
-		public QuantizedNodeArray LeafNodeArray
-		{
-			get { return btQuantizedBvh_getLeafNodeArray(Native); }
-		}
-
-		public QuantizedNodeArray QuantizedNodeArray
-		{
-			get { return btQuantizedBvh_getQuantizedNodeArray(Native); }
-		}
-
-		public BvhSubtreeInfoArray SubtreeInfoArray
-		{
-			get { return btQuantizedBvh_getSubtreeInfoArray(Native); }
-		}
-		*/
     protected override void Dispose(bool disposing)
     {
         if (IsUserOwned)
@@ -204,42 +262,4 @@ public class QuantizedBvh : BulletDisposableObject
             btQuantizedBvh_delete(Native);
         }
     }
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct QuantizedBvhFloatData
-{
-    public Vector3FloatData BvhAabbMin;
-    public Vector3FloatData BvhAabbMax;
-    public Vector3FloatData BvhQuantization;
-    public int CurNodeIndex;
-    public int UseQuantization;
-    public int NumContiguousLeafNodes;
-    public int NumQuantizedContiguousNodes;
-    public IntPtr ContiguousNodesPtr;
-    public IntPtr QuantizedContiguousNodesPtr;
-    public IntPtr SubTreeInfoPtr;
-    public int TraversalMode;
-    public int NumSubtreeHeaders;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(QuantizedBvhFloatData), fieldName).ToInt32();
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct QuantizedBvhDoubleData
-{
-    public Vector3DoubleData BvhAabbMin;
-    public Vector3DoubleData BvhAabbMax;
-    public Vector3DoubleData BvhQuantization;
-    public int CurNodeIndex;
-    public int UseQuantization;
-    public int NumContiguousLeafNodes;
-    public int NumQuantizedContiguousNodes;
-    public IntPtr ContiguousNodesPtr;
-    public IntPtr QuantizedContiguousNodesPtr;
-    public IntPtr SubTreeInfoPtr;
-    public int TraversalMode;
-    public int NumSubtreeHeaders;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(QuantizedBvhDoubleData), fieldName).ToInt32();
 }

@@ -46,7 +46,6 @@ public class DispatcherInfo : BulletObject
         set => btDispatcherInfo_setDeterministicOverlappingPairs(Native, value);
     }
 
-
     public DispatchFunc DispatchFunc
     {
         get => btDispatcherInfo_getDispatchFunc(Native);
@@ -108,30 +107,37 @@ public abstract class Dispatcher : BulletDisposableObject
     {
     }
 
-    public IntPtr AllocateCollisionAlgorithm(int size) => btDispatcher_allocateCollisionAlgorithm(Native, size);
+    public int NumManifolds => btDispatcher_getNumManifolds(Native);
 
-    public void ClearManifold(PersistentManifold manifold) => btDispatcher_clearManifold(Native, manifold.Native);
+    public IntPtr AllocateCollisionAlgorithm(int size)
+        => btDispatcher_allocateCollisionAlgorithm(Native, size);
 
-    public void DispatchAllCollisionPairs(OverlappingPairCache pairCache, DispatcherInfo dispatchInfo,
-        Dispatcher dispatcher) => btDispatcher_dispatchAllCollisionPairs(Native, pairCache.Native, dispatchInfo.Native,
-            dispatcher.Native);
+    public void ClearManifold(PersistentManifold manifold)
+        => btDispatcher_clearManifold(Native, manifold.Native);
 
-    public CollisionAlgorithm FindAlgorithm(CollisionObjectWrapper body0Wrap,
-        CollisionObjectWrapper body1Wrap, PersistentManifold sharedManifold,
-        DispatcherQueryType queryType) => new CollisionAlgorithm(btDispatcher_findAlgorithm(Native, body0Wrap.Native, body1Wrap.Native,
-            sharedManifold.Native, queryType), this);
+    public void DispatchAllCollisionPairs(OverlappingPairCache pairCache, DispatcherInfo dispatchInfo, Dispatcher dispatcher)
+        => btDispatcher_dispatchAllCollisionPairs(Native, pairCache.Native, dispatchInfo.Native, dispatcher.Native);
 
-    public void FreeCollisionAlgorithm(IntPtr ptr) => btDispatcher_freeCollisionAlgorithm(Native, ptr);
+    public CollisionAlgorithm FindAlgorithm(CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap, PersistentManifold sharedManifold, DispatcherQueryType queryType)
+        => new CollisionAlgorithm(btDispatcher_findAlgorithm(Native, body0Wrap.Native, body1Wrap.Native, sharedManifold.Native, queryType), this);
 
-    public PersistentManifold GetManifoldByIndexInternal(int index) => new PersistentManifold(btDispatcher_getManifoldByIndexInternal(Native, index), this);
+    public void FreeCollisionAlgorithm(IntPtr ptr)
+        => btDispatcher_freeCollisionAlgorithm(Native, ptr);
+
+    public PersistentManifold GetManifoldByIndexInternal(int index)
+        => new PersistentManifold(btDispatcher_getManifoldByIndexInternal(Native, index), this);
 
     public PersistentManifold GetNewManifold(CollisionObject b0, CollisionObject b1) => new PersistentManifold(btDispatcher_getNewManifold(Native, b0.Native, b1.Native), this);
 
-    public bool NeedsCollision(CollisionObject body0, CollisionObject body1) => btDispatcher_needsCollision(Native, body0.Native, body1.Native);
+    public bool NeedsCollision(CollisionObject body0, CollisionObject body1)
+        => btDispatcher_needsCollision(Native, body0.Native, body1.Native);
 
-    public bool NeedsResponse(CollisionObject body0, CollisionObject body1) => btDispatcher_needsResponse(Native, body0.Native, body1.Native);
+    public bool NeedsResponse(CollisionObject body0, CollisionObject body1)
+        => btDispatcher_needsResponse(Native, body0.Native, body1.Native);
 
-    public void ReleaseManifold(PersistentManifold manifold) => btDispatcher_releaseManifold(Native, manifold.Native);
+    public void ReleaseManifold(PersistentManifold manifold)
+        => btDispatcher_releaseManifold(Native, manifold.Native);
+
     /*
 		public PersistentManifold InternalManifoldPointer
 		{
@@ -143,7 +149,7 @@ public abstract class Dispatcher : BulletDisposableObject
 			get { return btDispatcher_getInternalManifoldPool(Native); }
 		}
 		*/
-    public int NumManifolds => btDispatcher_getNumManifolds(Native);
 
-    protected override void Dispose(bool disposing) => btDispatcher_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btDispatcher_delete(Native);
 }

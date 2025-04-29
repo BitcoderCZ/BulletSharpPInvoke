@@ -3698,7 +3698,7 @@ internal static class UnsafeNativeMethods
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern void btMultibodyLink_setUserPtr(IntPtr obj, IntPtr value);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
-    public static extern void btMultibodyLink_updateCacheMultiDof(IntPtr obj, float[] pq);
+    public static extern void btMultibodyLink_updateCacheMultiDof(IntPtr obj, float[]? pq);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern void btMultibodyLink_updateInterpolationCacheMultiDof(IntPtr obj);
 
@@ -4103,7 +4103,7 @@ internal static class UnsafeNativeMethods
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern void btMultiBody_setWorldToBaseRot(IntPtr obj, [In] ref Quaternion rot);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
-    public static extern void btMultiBody_stepPositionsMultiDof(IntPtr obj, float dt, float[] pq, float[] pqd);
+    public static extern void btMultiBody_stepPositionsMultiDof(IntPtr obj, float dt, float[]? pq, float[]? pqd);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern void btMultiBody_updateCollisionObjectWorldTransforms(IntPtr obj, IntPtr scratch_q, IntPtr scratch_m);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]

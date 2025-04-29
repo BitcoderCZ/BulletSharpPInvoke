@@ -14,22 +14,6 @@ public class TriangleMesh : TriangleIndexVertexArray
         InitializeMembers();
     }
 
-    public void AddIndex(int index) => btTriangleMesh_addIndex(Native, index);
-
-    public void AddTriangleRef(ref Vector3 vertex0, ref Vector3 vertex1, ref Vector3 vertex2,
-        bool removeDuplicateVertices = false) => btTriangleMesh_addTriangle(Native, ref vertex0, ref vertex1, ref vertex2,
-        removeDuplicateVertices);
-
-    public void AddTriangle(Vector3 vertex0, Vector3 vertex1, Vector3 vertex2,
-        bool removeDuplicateVertices = false) => btTriangleMesh_addTriangle(Native, ref vertex0, ref vertex1, ref vertex2,
-            removeDuplicateVertices);
-
-    public void AddTriangleIndices(int index1, int index2, int index3) => btTriangleMesh_addTriangleIndices(Native, index1, index2, index3);
-
-    public int FindOrAddVertexRef(Vector3 vertex, bool removeDuplicateVertices) => btTriangleMesh_findOrAddVertex(Native, ref vertex, removeDuplicateVertices);
-
-    public int FindOrAddVertex(Vector3 vertex, bool removeDuplicateVertices) => btTriangleMesh_findOrAddVertex(Native, ref vertex, removeDuplicateVertices);
-
     public int NumTriangles => btTriangleMesh_getNumTriangles(Native);
 
     public bool Use32BitIndices => btTriangleMesh_getUse32bitIndices(Native);
@@ -41,4 +25,22 @@ public class TriangleMesh : TriangleIndexVertexArray
         get => btTriangleMesh_getWeldingThreshold(Native);
         set => btTriangleMesh_setWeldingThreshold(Native, value);
     }
+
+    public void AddIndex(int index)
+        => btTriangleMesh_addIndex(Native, index);
+
+    public void AddTriangleRef(ref Vector3 vertex0, ref Vector3 vertex1, ref Vector3 vertex2, bool removeDuplicateVertices = false)
+        => btTriangleMesh_addTriangle(Native, ref vertex0, ref vertex1, ref vertex2, removeDuplicateVertices);
+
+    public void AddTriangle(Vector3 vertex0, Vector3 vertex1, Vector3 vertex2, bool removeDuplicateVertices = false)
+        => btTriangleMesh_addTriangle(Native, ref vertex0, ref vertex1, ref vertex2, removeDuplicateVertices);
+
+    public void AddTriangleIndices(int index1, int index2, int index3)
+        => btTriangleMesh_addTriangleIndices(Native, index1, index2, index3);
+
+    public int FindOrAddVertexRef(Vector3 vertex, bool removeDuplicateVertices)
+        => btTriangleMesh_findOrAddVertex(Native, ref vertex, removeDuplicateVertices);
+
+    public int FindOrAddVertex(Vector3 vertex, bool removeDuplicateVertices)
+        => btTriangleMesh_findOrAddVertex(Native, ref vertex, removeDuplicateVertices);
 }

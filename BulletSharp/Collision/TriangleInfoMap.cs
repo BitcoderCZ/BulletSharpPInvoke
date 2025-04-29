@@ -41,25 +41,16 @@ public class TriangleInfo : BulletDisposableObject
 
 public class TriangleInfoMap : BulletDisposableObject
 {
-    internal TriangleInfoMap(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public TriangleInfoMap()
     {
         IntPtr native = btTriangleInfoMap_new();
         InitializeUserOwned(native);
     }
 
-    public int CalculateSerializeBufferSize() => btTriangleInfoMap_calculateSerializeBufferSize(Native);
-    /*
-		public void DeSerialize(TriangleInfoMapData data)
-		{
-			btTriangleInfoMap_deSerialize(Native, data._native);
-		}
-		*/
-    public string Serialize(IntPtr dataBuffer, Serializer serializer) => Marshal.PtrToStringAnsi(btTriangleInfoMap_serialize(Native, dataBuffer, serializer.Native));
+    internal TriangleInfoMap(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
+    }
 
     public float ConvexEpsilon
     {
@@ -96,6 +87,19 @@ public class TriangleInfoMap : BulletDisposableObject
         get => btTriangleInfoMap_getZeroAreaThreshold(Native);
         set => btTriangleInfoMap_setZeroAreaThreshold(Native, value);
     }
+
+    public int CalculateSerializeBufferSize()
+        => btTriangleInfoMap_calculateSerializeBufferSize(Native);
+
+    /*
+		public void DeSerialize(TriangleInfoMapData data)
+		{
+			btTriangleInfoMap_deSerialize(Native, data._native);
+		}
+		*/
+
+    public string Serialize(IntPtr dataBuffer, Serializer serializer)
+        => Marshal.PtrToStringAnsi(btTriangleInfoMap_serialize(Native, dataBuffer, serializer.Native));
 
     protected override void Dispose(bool disposing)
     {

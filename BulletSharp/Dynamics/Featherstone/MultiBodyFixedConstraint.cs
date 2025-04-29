@@ -6,20 +6,16 @@ namespace BulletSharp;
 
 public class MultiBodyFixedConstraint : MultiBodyConstraint
 {
-    public MultiBodyFixedConstraint(MultiBody body, int link, RigidBody bodyB,
-        Vector3 pivotInA, Vector3 pivotInB, Matrix4x4 frameInA, Matrix4x4 frameInB)
+    public MultiBodyFixedConstraint(MultiBody body, int link, RigidBody bodyB, Vector3 pivotInA, Vector3 pivotInB, Matrix4x4 frameInA, Matrix4x4 frameInB)
     {
-        IntPtr native = btMultiBodyFixedConstraint_new(body.Native, link, bodyB.Native,
-            ref pivotInA, ref pivotInB, ref frameInA, ref frameInB);
+        IntPtr native = btMultiBodyFixedConstraint_new(body.Native, link, bodyB.Native, ref pivotInA, ref pivotInB, ref frameInA, ref frameInB);
         InitializeUserOwned(native);
         InitializeMembers(body, null);
     }
 
-    public MultiBodyFixedConstraint(MultiBody bodyA, int linkA, MultiBody bodyB,
-        int linkB, Vector3 pivotInA, Vector3 pivotInB, Matrix4x4 frameInA, Matrix4x4 frameInB)
+    public MultiBodyFixedConstraint(MultiBody bodyA, int linkA, MultiBody bodyB, int linkB, Vector3 pivotInA, Vector3 pivotInB, Matrix4x4 frameInA, Matrix4x4 frameInB)
     {
-        IntPtr native = btMultiBodyFixedConstraint_new2(bodyA.Native, linkA, bodyB.Native,
-            linkB, ref pivotInA, ref pivotInB, ref frameInA, ref frameInB);
+        IntPtr native = btMultiBodyFixedConstraint_new2(bodyA.Native, linkA, bodyB.Native, linkB, ref pivotInA, ref pivotInB, ref frameInA, ref frameInB);
         InitializeUserOwned(native);
         InitializeMembers(bodyA, bodyB);
     }

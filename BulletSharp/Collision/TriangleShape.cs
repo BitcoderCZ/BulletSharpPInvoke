@@ -6,11 +6,7 @@ namespace BulletSharp;
 
 public class TriangleShape : PolyhedralConvexShape
 {
-    private Vector3Array _vertices;
-
-    internal TriangleShape(ConstructionInfo info)
-    {
-    }
+    private Vector3Array? _vertices;
 
     public TriangleShape()
     {
@@ -24,11 +20,11 @@ public class TriangleShape : PolyhedralConvexShape
         InitializeCollisionShape(native);
     }
 
-    public void CalcNormal(out Vector3 normal) => btTriangleShape_calcNormal(Native, out normal);
-
-    public void GetPlaneEquation(int i, out Vector3 planeNormal, out Vector3 planeSupport) => btTriangleShape_getPlaneEquation(Native, i, out planeNormal, out planeSupport);
-
-    public IntPtr GetVertexPtr(int index) => btTriangleShape_getVertexPtr(Native, index);
+#pragma warning disable IDE0060
+    internal TriangleShape(ConstructionInfo? info)
+#pragma warning restore IDE0060
+    {
+    }
 
     public Vector3Array Vertices
     {
@@ -38,7 +34,17 @@ public class TriangleShape : PolyhedralConvexShape
             {
                 _vertices = new Vector3Array(btTriangleShape_getVertices1(Native), 3);
             }
+
             return _vertices;
         }
     }
+
+    public void CalcNormal(out Vector3 normal)
+        => btTriangleShape_calcNormal(Native, out normal);
+
+    public void GetPlaneEquation(int i, out Vector3 planeNormal, out Vector3 planeSupport)
+        => btTriangleShape_getPlaneEquation(Native, i, out planeNormal, out planeSupport);
+
+    public IntPtr GetVertexPtr(int index)
+        => btTriangleShape_getVertexPtr(Native, index);
 }

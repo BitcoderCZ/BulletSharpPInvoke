@@ -6,8 +6,8 @@ namespace BulletSharp;
 public class ShapeHull : BulletDisposableObject
 {
     private readonly ConvexShape _shape;
-    private UIntArray _indices;
-    private Vector3Array _vertices;
+    private UIntArray? _indices;
+    private Vector3Array? _vertices;
 
     public ShapeHull(ConvexShape shape)
     {
@@ -15,8 +15,6 @@ public class ShapeHull : BulletDisposableObject
         InitializeUserOwned(native);
         _shape = shape;
     }
-
-    public bool BuildHull(float margin, int highRes = 0) => btShapeHull_buildHull(Native, margin, highRes);
 
     public IntPtr IndexPointer => btShapeHull_getIndexPointer(Native);
 
@@ -28,6 +26,7 @@ public class ShapeHull : BulletDisposableObject
             {
                 _indices = new UIntArray(IndexPointer, NumIndices);
             }
+
             return _indices;
         }
     }
@@ -48,9 +47,14 @@ public class ShapeHull : BulletDisposableObject
             {
                 _vertices = new Vector3Array(VertexPointer, NumVertices);
             }
+
             return _vertices;
         }
     }
 
-    protected override void Dispose(bool disposing) => btShapeHull_delete(Native);
+    public bool BuildHull(float margin, int highRes = 0)
+        => btShapeHull_buildHull(Native, margin, highRes);
+
+    protected override void Dispose(bool disposing)
+        => btShapeHull_delete(Native);
 }

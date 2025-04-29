@@ -10,7 +10,7 @@ public class SequentialImpulseConstraintSolver : ConstraintSolver
         InitializeSubObject(native, owner);
     }
 
-    internal SequentialImpulseConstraintSolver(ConstructionInfo info)
+    internal SequentialImpulseConstraintSolver(ConstructionInfo? info)
     {
     }
 

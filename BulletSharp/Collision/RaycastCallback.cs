@@ -5,6 +5,18 @@ namespace BulletSharp;
 
 public abstract class TriangleRaycastCallback : TriangleCallback
 {
+#pragma warning disable IDE0060
+    public TriangleRaycastCallback(ref Vector3 from, ref Vector3 to, EFlags flags)
+#pragma warning restore IDE0060
+    {
+        HitFraction = 1.0f;
+    }
+
+    public TriangleRaycastCallback(ref Vector3 from, ref Vector3 to)
+        : this(ref from, ref to, EFlags.None)
+    {
+    }
+
     [Flags]
     public enum EFlags
     {
@@ -17,15 +29,13 @@ public abstract class TriangleRaycastCallback : TriangleCallback
         Terminator = -1,
     }
 
-    public TriangleRaycastCallback(ref Vector3 from, ref Vector3 to, EFlags flags)
-    {
-        HitFraction = 1.0f;
-    }
+    public EFlags Flags { get; set; }
 
-    public TriangleRaycastCallback(ref Vector3 from, ref Vector3 to)
-        : this(ref from, ref to, EFlags.None)
-    {
-    }
+    public Vector3 From { get; set; }
+
+    public float HitFraction { get; set; }
+
+    public Vector3 To { get; set; }
 
     public override void ProcessTriangle(ref Vector3 point0, ref Vector3 point1, ref Vector3 point2, int partId, int triangleIndex)
     {
@@ -49,9 +59,8 @@ public abstract class TriangleRaycastCallback : TriangleCallback
             return;
         }
 
-
         float proj_length = distA - distB;
-        float distance = (distA) / (proj_length);
+        float distance = distA / proj_length;
         // Now we have the intersection point on the plane, we'll see if it's inside the triangle
         // Add an epsilon as a tolerance for the raycast,
         // in case the ray hits exacly on the edge of the triangle.
@@ -70,7 +79,7 @@ public abstract class TriangleRaycastCallback : TriangleCallback
                 float dot = Vector3.Dot(cp0, triangleNormal);
                 if (dot >= edgeTolerance)
                 {
-                    Vector3 v2p; v2p = point2 - point;
+                    Vector3 v2p = point2 - point;
                     Vector3 cp1 = Vector3.Cross(v1p, v2p);
                     dot = Vector3.Dot(cp1, triangleNormal);
                     if (dot >= edgeTolerance)
@@ -89,6 +98,7 @@ public abstract class TriangleRaycastCallback : TriangleCallback
                             {
                                 triangleNormal = -triangleNormal;
                             }
+
                             HitFraction = ReportHit(ref triangleNormal, distance, partId, triangleIndex);
                         }
                     }
@@ -98,11 +108,6 @@ public abstract class TriangleRaycastCallback : TriangleCallback
     }
 
     public abstract float ReportHit(ref Vector3 hitNormalLocal, float hitFraction, int partId, int triangleIndex);
-
-    public EFlags Flags { get; set; }
-    public Vector3 From { get; set; }
-    public float HitFraction { get; set; }
-    public Vector3 To { get; set; }
 }
 
 public abstract class TriangleConvexcastCallback : TriangleCallback
@@ -119,15 +124,22 @@ public abstract class TriangleConvexcastCallback : TriangleCallback
         HitFraction = 1.0f;
     }
 
-    public override void ProcessTriangle(ref Vector3 point0, ref Vector3 point1, ref Vector3 point2, int partId, int triangleIndex) => throw new NotImplementedException();
+    public float AllowedPenetration { get; set; }
+
+    public ConvexShape ConvexShape { get; set; }
+
+    public Matrix4x4 ConvexShapeFrom { get; set; }
+
+    public Matrix4x4 ConvexShapeTo { get; set; }
+
+    public float HitFraction { get; set; }
+
+    public float TriangleCollisionMargin { get; set; }
+
+    public Matrix4x4 TriangleToWorld { get; set; }
+
+    public override void ProcessTriangle(ref Vector3 point0, ref Vector3 point1, ref Vector3 point2, int partId, int triangleIndex)
+        => throw new NotImplementedException();
 
     public abstract float ReportHit(ref Vector3 hitNormalLocal, ref Vector3 hitPointLocal, float hitFraction, int partId, int triangleIndex);
-
-    public float AllowedPenetration { get; set; }
-    public ConvexShape ConvexShape { get; set; }
-    public Matrix4x4 ConvexShapeFrom { get; set; }
-    public Matrix4x4 ConvexShapeTo { get; set; }
-    public float HitFraction { get; set; }
-    public float TriangleCollisionMargin { get; set; }
-    public Matrix4x4 TriangleToWorld { get; set; }
 }

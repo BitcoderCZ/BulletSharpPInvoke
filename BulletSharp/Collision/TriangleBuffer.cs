@@ -6,15 +6,15 @@ namespace BulletSharp;
 
 public class Triangle : BulletDisposableObject
 {
-    internal Triangle(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public Triangle()
     {
         IntPtr native = btTriangle_new();
         InitializeUserOwned(native);
+    }
+
+    internal Triangle(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
     }
 
     public int PartId
@@ -79,15 +79,19 @@ public class TriangleBuffer : TriangleCallback
 		{
 		}
 		*/
+
     public TriangleBuffer()
     {
     }
 
-    public void ClearBuffer() => btTriangleBuffer_clearBuffer(Native);
-
-    public Triangle GetTriangle(int index) => new Triangle(btTriangleBuffer_getTriangle(Native, index), this);
-
-    public override void ProcessTriangle(ref Vector3 vector0, ref Vector3 vector1, ref Vector3 vector2, int partId, int triangleIndex) => throw new NotImplementedException();
-
     public int NumTriangles => btTriangleBuffer_getNumTriangles(Native);
+
+    public void ClearBuffer()
+        => btTriangleBuffer_clearBuffer(Native);
+
+    public Triangle GetTriangle(int index)
+        => new Triangle(btTriangleBuffer_getTriangle(Native, index), this);
+
+    public override void ProcessTriangle(ref Vector3 vector0, ref Vector3 vector1, ref Vector3 vector2, int partId, int triangleIndex)
+        => throw new NotImplementedException();
 }

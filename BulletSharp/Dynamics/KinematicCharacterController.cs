@@ -989,7 +989,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 ///Support ducking
 public class KinematicClosestNotMeRayResultCallback : ClosestRayResultCallback
 {
-    static Vector3 zero = new Vector3();
+    private static Vector3 zero = new Vector3();
 
     public KinematicClosestNotMeRayResultCallback(CollisionObject me)
         : base(ref zero, ref zero)
@@ -1010,7 +1010,7 @@ public class KinematicClosestNotMeRayResultCallback : ClosestRayResultCallback
 
 public class KinematicClosestNotMeConvexResultCallback : ClosestConvexResultCallback
 {
-    static Vector3 zero = new Vector3();
+    private static Vector3 zero = new Vector3();
 
     protected CollisionObject _me;
     protected Vector3 _up;

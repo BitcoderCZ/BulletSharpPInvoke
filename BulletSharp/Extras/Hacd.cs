@@ -11,7 +11,7 @@ public class Hacd : BulletDisposableObject
 {
     [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
     [SuppressUnmanagedCodeSecurity]
-    delegate bool CallbackFunctionUnmanagedDelegate(IntPtr message, double progress, double globalConcavity, IntPtr numVertices);
+    private delegate bool CallbackFunctionUnmanagedDelegate(IntPtr message, double progress, double globalConcavity, IntPtr numVertices);
 
     public delegate bool CallbackFunction(string message, double progress, double globalConcavity, int numVertices);
 

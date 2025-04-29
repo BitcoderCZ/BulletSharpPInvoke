@@ -242,7 +242,7 @@ public class AngularJoint : Joint
             btSoftBody_AJoint_IControlWrapper_setWrapperData(Native, GCHandle.ToIntPtr(handle));
         }
 
-        static IControl _default;
+        private static IControl _default;
         public static IControl Default =>
             _default ?? (_default = new IControl(btSoftBody_AJoint_IControl_Default()));
 
@@ -2814,7 +2814,7 @@ public class SoftBody : CollisionObject
         return btSoftBody_getLinkVertexNormalData(Native, vertices);
     }
 
-    int GetTetraVertexData(ref Vector3[] vertices)
+    private int GetTetraVertexData(ref Vector3[] vertices)
     {
         int vertexCount = Tetras.Count * 12;
 
@@ -2826,7 +2826,7 @@ public class SoftBody : CollisionObject
         return btSoftBody_getTetraVertexData(Native, vertices);
     }
 
-    int GetTetraVertexNormalData(ref Vector3[] vertices)
+    private int GetTetraVertexNormalData(ref Vector3[] vertices)
     {
         int vertexNormalCount = Tetras.Count * 12 * 2;
 
@@ -2838,7 +2838,7 @@ public class SoftBody : CollisionObject
         return btSoftBody_getTetraVertexNormalData(Native, vertices);
     }
 
-    int GetTetraVertexNormalData(ref Vector3[] vertices, ref Vector3[] normals)
+    private int GetTetraVertexNormalData(ref Vector3[] vertices, ref Vector3[] normals)
     {
         int vertexCount = Tetras.Count * 12;
 

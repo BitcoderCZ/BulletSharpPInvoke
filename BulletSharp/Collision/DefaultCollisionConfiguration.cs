@@ -1,12 +1,13 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
 
 public class DefaultCollisionConstructionInfo : BulletDisposableObject
 {
-    private PoolAllocator _collisionAlgorithmPool;
-    private PoolAllocator _persistentManifoldPool;
+    private PoolAllocator? _collisionAlgorithmPool;
+    private PoolAllocator? _persistentManifoldPool;
 
     public DefaultCollisionConstructionInfo()
     {
@@ -14,7 +15,8 @@ public class DefaultCollisionConstructionInfo : BulletDisposableObject
         InitializeUserOwned(native);
     }
 
-    public PoolAllocator CollisionAlgorithmPool
+    [DisallowNull]
+    public PoolAllocator? CollisionAlgorithmPool
     {
         get => _collisionAlgorithmPool;
         set
@@ -42,7 +44,8 @@ public class DefaultCollisionConstructionInfo : BulletDisposableObject
         set => btDefaultCollisionConstructionInfo_setDefaultMaxPersistentManifoldPoolSize(Native, value);
     }
 
-    public PoolAllocator PersistentManifoldPool
+    [DisallowNull]
+    public PoolAllocator? PersistentManifoldPool
     {
         get => _persistentManifoldPool;
         set
@@ -69,12 +72,8 @@ public class DefaultCollisionConstructionInfo : BulletDisposableObject
 
 public class DefaultCollisionConfiguration : CollisionConfiguration
 {
-    protected PoolAllocator _collisionAlgorithmPool;
-    protected PoolAllocator _persistentManifoldPool;
-
-    internal DefaultCollisionConfiguration(ConstructionInfo info)
-    {
-    }
+    protected PoolAllocator? _collisionAlgorithmPool;
+    protected PoolAllocator? _persistentManifoldPool;
 
     public DefaultCollisionConfiguration()
     {
@@ -96,113 +95,11 @@ public class DefaultCollisionConfiguration : CollisionConfiguration
         InitializeUserOwned(native);
     }
 
-    public override CollisionAlgorithmCreateFunc GetClosestPointsAlgorithmCreateFunc(BroadphaseNativeType proxyType0, BroadphaseNativeType proxyType1)
+#pragma warning disable IDE0060
+    internal DefaultCollisionConfiguration(ConstructionInfo info)
+#pragma warning restore IDE0060
     {
-        IntPtr createFunc = btCollisionConfiguration_getClosestPointsAlgorithmCreateFunc(Native, (int)proxyType0, (int)proxyType1);
-        if (proxyType0 == BroadphaseNativeType.BoxShape && proxyType1 == BroadphaseNativeType.BoxShape)
-        {
-            return new BoxBoxCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.SphereShape)
-        {
-            return new SphereSphereCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.TriangleShape)
-        {
-            return new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.TriangleShape && proxyType1 == BroadphaseNativeType.SphereShape)
-        {
-            return new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType1))
-        {
-            return new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType1 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType0))
-        {
-            return new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConvex(proxyType1))
-        {
-            return new ConvexConvexAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConcave(proxyType1))
-        {
-            return new ConvexConcaveCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConvex(proxyType1) && BroadphaseProxy.IsConcave(proxyType0))
-        {
-            return new ConvexConcaveCollisionAlgorithm.SwappedCreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsCompound(proxyType0))
-        {
-            return new CompoundCompoundCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsCompound(proxyType1))
-        {
-            return new CompoundCompoundCollisionAlgorithm.SwappedCreateFunc(createFunc, this);
-        }
-        return new EmptyAlgorithm.CreateFunc(createFunc, this);
     }
-
-    public override CollisionAlgorithmCreateFunc GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0, BroadphaseNativeType proxyType1)
-    {
-        IntPtr createFunc = btCollisionConfiguration_getCollisionAlgorithmCreateFunc(Native, (int)proxyType0, (int)proxyType1);
-        if (proxyType0 == BroadphaseNativeType.BoxShape && proxyType1 == BroadphaseNativeType.BoxShape)
-        {
-            return new BoxBoxCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.SphereShape)
-        {
-            return new SphereSphereCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.TriangleShape)
-        {
-            return new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.TriangleShape && proxyType1 == BroadphaseNativeType.SphereShape)
-        {
-            return new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType1))
-        {
-            return new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType1 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType0))
-        {
-            return new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConvex(proxyType1))
-        {
-            return new ConvexConvexAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConcave(proxyType1))
-        {
-            return new ConvexConcaveCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConvex(proxyType1) && BroadphaseProxy.IsConcave(proxyType0))
-        {
-            return new ConvexConcaveCollisionAlgorithm.SwappedCreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsCompound(proxyType0))
-        {
-            return new CompoundCompoundCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsCompound(proxyType1))
-        {
-            return new CompoundCompoundCollisionAlgorithm.SwappedCreateFunc(createFunc, this);
-        }
-        return new EmptyAlgorithm.CreateFunc(createFunc, this);
-    }
-
-    public void SetConvexConvexMultipointIterations(int numPerturbationIterations = 3,
-        int minimumPointsPerturbationThreshold = 3) => btDefaultCollisionConfiguration_setConvexConvexMultipointIterations(
-            Native, numPerturbationIterations, minimumPointsPerturbationThreshold);
-
-    public void SetPlaneConvexMultipointIterations(int numPerturbationIterations = 3,
-        int minimumPointsPerturbationThreshold = 3) => btDefaultCollisionConfiguration_setPlaneConvexMultipointIterations(Native,
-            numPerturbationIterations, minimumPointsPerturbationThreshold);
 
     public override PoolAllocator CollisionAlgorithmPool
     {
@@ -212,6 +109,7 @@ public class DefaultCollisionConfiguration : CollisionConfiguration
             {
                 _collisionAlgorithmPool = new PoolAllocator(btCollisionConfiguration_getCollisionAlgorithmPool(Native), this);
             }
+
             return _collisionAlgorithmPool;
         }
     }
@@ -224,7 +122,72 @@ public class DefaultCollisionConfiguration : CollisionConfiguration
             {
                 _persistentManifoldPool = new PoolAllocator(btCollisionConfiguration_getPersistentManifoldPool(Native), this);
             }
+
             return _persistentManifoldPool;
         }
     }
+
+    public override CollisionAlgorithmCreateFunc GetClosestPointsAlgorithmCreateFunc(BroadphaseNativeType proxyType0, BroadphaseNativeType proxyType1)
+    {
+        IntPtr createFunc = btCollisionConfiguration_getClosestPointsAlgorithmCreateFunc(Native, (int)proxyType0, (int)proxyType1);
+
+        return proxyType0 == BroadphaseNativeType.BoxShape && proxyType1 == BroadphaseNativeType.BoxShape
+            ? new BoxBoxCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.SphereShape
+            ? new SphereSphereCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.TriangleShape
+            ? new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.TriangleShape && proxyType1 == BroadphaseNativeType.SphereShape
+            ? new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType1)
+            ? new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType1 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType0)
+            ? new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConvex(proxyType1)
+            ? new ConvexConvexAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConcave(proxyType1)
+            ? new ConvexConcaveCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConvex(proxyType1) && BroadphaseProxy.IsConcave(proxyType0)
+            ? new ConvexConcaveCollisionAlgorithm.SwappedCreateFunc(createFunc, this)
+            : BroadphaseProxy.IsCompound(proxyType0)
+            ? new CompoundCompoundCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsCompound(proxyType1)
+            ? new CompoundCompoundCollisionAlgorithm.SwappedCreateFunc(createFunc, this)
+            : new EmptyAlgorithm.CreateFunc(createFunc, this);
+    }
+
+    public override CollisionAlgorithmCreateFunc GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0, BroadphaseNativeType proxyType1)
+    {
+        IntPtr createFunc = btCollisionConfiguration_getCollisionAlgorithmCreateFunc(Native, (int)proxyType0, (int)proxyType1);
+
+        return proxyType0 == BroadphaseNativeType.BoxShape && proxyType1 == BroadphaseNativeType.BoxShape
+            ? new BoxBoxCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.SphereShape
+            ? new SphereSphereCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.SphereShape && proxyType1 == BroadphaseNativeType.TriangleShape
+            ? new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.TriangleShape && proxyType1 == BroadphaseNativeType.SphereShape
+            ? new SphereTriangleCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType1)
+            ? new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType1 == BroadphaseNativeType.StaticPlaneShape && BroadphaseProxy.IsConvex(proxyType0)
+            ? new ConvexPlaneCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConvex(proxyType1)
+            ? new ConvexConvexAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConvex(proxyType0) && BroadphaseProxy.IsConcave(proxyType1)
+            ? new ConvexConcaveCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConvex(proxyType1) && BroadphaseProxy.IsConcave(proxyType0)
+            ? new ConvexConcaveCollisionAlgorithm.SwappedCreateFunc(createFunc, this)
+            : BroadphaseProxy.IsCompound(proxyType0)
+            ? new CompoundCompoundCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsCompound(proxyType1)
+            ? new CompoundCompoundCollisionAlgorithm.SwappedCreateFunc(createFunc, this)
+            : new EmptyAlgorithm.CreateFunc(createFunc, this);
+    }
+
+    public void SetConvexConvexMultipointIterations(int numPerturbationIterations = 3, int minimumPointsPerturbationThreshold = 3)
+        => btDefaultCollisionConfiguration_setConvexConvexMultipointIterations(Native, numPerturbationIterations, minimumPointsPerturbationThreshold);
+
+    public void SetPlaneConvexMultipointIterations(int numPerturbationIterations = 3, int minimumPointsPerturbationThreshold = 3)
+        => btDefaultCollisionConfiguration_setPlaneConvexMultipointIterations(Native, numPerturbationIterations, minimumPointsPerturbationThreshold);
 }

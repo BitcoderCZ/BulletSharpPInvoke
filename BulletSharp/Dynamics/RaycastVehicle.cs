@@ -28,12 +28,11 @@ public class VehicleTuning
 
 public class RaycastVehicle : IAction
 {
-    WheelInfo[] wheelInfo = new WheelInfo[0];
-
-    Vector3[] forwardWS = new Vector3[0];
-    Vector3[] axle = new Vector3[0];
-    float[] forwardImpulse = new float[0];
-    float[] sideImpulse = new float[0];
+    private WheelInfo[] wheelInfo = new WheelInfo[0];
+    private Vector3[] forwardWS = new Vector3[0];
+    private Vector3[] axle = new Vector3[0];
+    private float[] forwardImpulse = new float[0];
+    private float[] sideImpulse = new float[0];
 
     public Matrix4x4 ChassisWorldTransform
     {
@@ -47,31 +46,29 @@ public class RaycastVehicle : IAction
         }
     }
 
-    float currentVehicleSpeedKmHour;
+    private float currentVehicleSpeedKmHour;
 
     public int NumWheels
     {
         get { return wheelInfo.Length; }
     }
 
-    int indexRightAxis = 0;
+    private int indexRightAxis = 0;
     public int RightAxis
     {
         get { return indexRightAxis; }
     }
 
-    int indexUpAxis = 2;
-    int indexForwardAxis = 1;
-
-    RigidBody chassisBody;
+    private int indexUpAxis = 2;
+    private int indexForwardAxis = 1;
+    private RigidBody chassisBody;
     public RigidBody RigidBody
     {
         get { return chassisBody; }
     }
 
-    IVehicleRaycaster vehicleRaycaster;
-
-    static RigidBody fixedBody;
+    private IVehicleRaycaster vehicleRaycaster;
+    private static RigidBody fixedBody;
 
     public void SetBrake(float brake, int wheelIndex)
     {
@@ -151,7 +148,7 @@ public class RaycastVehicle : IAction
         wheelInfo.EngineForce = force;
     }
 
-    float CalcRollingFriction(RigidBody body0, RigidBody body1, Vector3 contactPosWorld, Vector3 frictionDirectionWorld, float maxImpulse)
+    private float CalcRollingFriction(RigidBody body0, RigidBody body1, Vector3 contactPosWorld, Vector3 frictionDirectionWorld, float maxImpulse)
     {
         float denom0 = body0.ComputeImpulseDenominator(contactPosWorld, frictionDirectionWorld);
         float denom1 = body1.ComputeImpulseDenominator(contactPosWorld, frictionDirectionWorld);
@@ -177,8 +174,8 @@ public class RaycastVehicle : IAction
         return j1;
     }
 
-    Vector3 blue = new Vector3(0, 0, 1);
-    Vector3 magenta = new Vector3(1, 0, 1);
+    private Vector3 blue = new Vector3(0, 0, 1);
+    private Vector3 magenta = new Vector3(1, 0, 1);
     public void DebugDraw(DebugDraw debugDrawer)
     {
         for (int v = 0; v < NumWheels; v++)
@@ -300,7 +297,7 @@ public class RaycastVehicle : IAction
         return depth;
     }
 
-    void ResetSuspension()
+    private void ResetSuspension()
     {
         for (int i = 0; i < NumWheels; i++)
         {
@@ -361,7 +358,7 @@ public class RaycastVehicle : IAction
 
     public void UpdateAction(CollisionWorld collisionWorld, float deltaTimeStep) => UpdateVehicle(deltaTimeStep);
 
-    const float sideFrictionStiffness2 = 1.0f;
+    private const float sideFrictionStiffness2 = 1.0f;
     public void UpdateFriction(float timeStep)
     {
         //calculate the impulse, so that the wheels don't move sidewards
@@ -700,7 +697,7 @@ public class RaycastVehicle : IAction
         wheel.WorldTransform = transform;
     }
 
-    void UpdateWheelTransformsWS(WheelInfo wheel, bool interpolatedTransform)
+    private void UpdateWheelTransformsWS(WheelInfo wheel, bool interpolatedTransform)
     {
         wheel.RaycastInfo.IsInContact = false;
 

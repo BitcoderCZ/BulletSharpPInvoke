@@ -6,8 +6,8 @@ namespace BulletSharp;
 
 public class MultiBodySolverConstraint : BulletDisposableObject
 {
-    protected MultiBody _multiBodyA;
-    protected MultiBody _multiBodyB;
+    protected MultiBody? _multiBodyA;
+    protected MultiBody? _multiBodyB;
 
     public MultiBodySolverConstraint()
     {
@@ -145,8 +145,10 @@ public class MultiBodySolverConstraint : BulletDisposableObject
             {
                 _multiBodyA = new MultiBody(btMultiBodySolverConstraint_getMultiBodyA(Native), this);
             }
+
             return _multiBodyA;
         }
+
         set
         {
             btMultiBodySolverConstraint_setMultiBodyA(Native, value.Native);
@@ -162,14 +164,17 @@ public class MultiBodySolverConstraint : BulletDisposableObject
             {
                 _multiBodyB = new MultiBody(btMultiBodySolverConstraint_getMultiBodyB(Native), this);
             }
+
             return _multiBodyB;
         }
+
         set
         {
             btMultiBodySolverConstraint_setMultiBodyB(Native, value.Native);
             _multiBodyB = value;
         }
     }
+
     /*
 		public MultiBodyConstraint OrgConstraint
 		{
@@ -177,6 +182,7 @@ public class MultiBodySolverConstraint : BulletDisposableObject
 			set { btMultiBodySolverConstraint_setOrgConstraint(_native, value._native); }
 		}
 		*/
+
     public int OrgDofIndex
     {
         get => btMultiBodySolverConstraint_getOrgDofIndex(Native);

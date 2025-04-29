@@ -59,7 +59,8 @@ public class MaterialProperties : BulletDisposableObject
         set => btMaterialProperties_setTriangleType(Native, value);
     }
 
-    protected override void Dispose(bool disposing) => btMaterialProperties_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btMaterialProperties_delete(Native);
 }
 
 public class TriangleIndexVertexMaterialArray : TriangleIndexVertexArray
@@ -70,33 +71,18 @@ public class TriangleIndexVertexMaterialArray : TriangleIndexVertexArray
         InitializeUserOwned(native);
     }
 
-    public TriangleIndexVertexMaterialArray(int numTriangles, IntPtr triangleIndexBase,
-        int triangleIndexStride, int numVertices, IntPtr vertexBase, int vertexStride,
-        int numMaterials, IntPtr materialBase, int materialStride, IntPtr triangleMaterialsBase,
-        int materialIndexStride)
+    public TriangleIndexVertexMaterialArray(int numTriangles, IntPtr triangleIndexBase, int triangleIndexStride, int numVertices, IntPtr vertexBase, int vertexStride, int numMaterials, IntPtr materialBase, int materialStride, IntPtr triangleMaterialsBase, int materialIndexStride)
     {
-        IntPtr native = btTriangleIndexVertexMaterialArray_new2(numTriangles, triangleIndexBase,
-            triangleIndexStride, numVertices, vertexBase, vertexStride,
-            numMaterials, materialBase, materialStride, triangleMaterialsBase,
-            materialIndexStride);
+        IntPtr native = btTriangleIndexVertexMaterialArray_new2(numTriangles, triangleIndexBase, triangleIndexStride, numVertices, vertexBase, vertexStride, numMaterials, materialBase, materialStride, triangleMaterialsBase, materialIndexStride);
         InitializeUserOwned(native);
     }
 
-    public void AddMaterialProperties(MaterialProperties mat, PhyScalarType triangleType = PhyScalarType.Int32) => btTriangleIndexVertexMaterialArray_addMaterialProperties(Native, mat.Native,
-            triangleType);
+    public void AddMaterialProperties(MaterialProperties mat, PhyScalarType triangleType = PhyScalarType.Int32)
+        => btTriangleIndexVertexMaterialArray_addMaterialProperties(Native, mat.Native, triangleType);
 
-    public void GetLockedMaterialBase(out IntPtr materialBase, out int numMaterials,
-        out PhyScalarType materialType, out int materialStride, out IntPtr triangleMaterialBase,
-        out int numTriangles, out int triangleMaterialStride, out PhyScalarType triangleType,
-        int subpart = 0) => btTriangleIndexVertexMaterialArray_getLockedMaterialBase(Native, out materialBase,
-            out numMaterials, out materialType, out materialStride, out triangleMaterialBase,
-            out numTriangles, out triangleMaterialStride, out triangleType, subpart);
+    public void GetLockedMaterialBase(out IntPtr materialBase, out int numMaterials, out PhyScalarType materialType, out int materialStride, out IntPtr triangleMaterialBase, out int numTriangles, out int triangleMaterialStride, out PhyScalarType triangleType, int subpart = 0)
+        => btTriangleIndexVertexMaterialArray_getLockedMaterialBase(Native, out materialBase, out numMaterials, out materialType, out materialStride, out triangleMaterialBase, out numTriangles, out triangleMaterialStride, out triangleType, subpart);
 
-    public void GetLockedReadOnlyMaterialBase(out IntPtr materialBase, out int numMaterials,
-        out PhyScalarType materialType, out int materialStride, out IntPtr triangleMaterialBase,
-        out int numTriangles, out int triangleMaterialStride, out PhyScalarType triangleType,
-        int subpart = 0) => btTriangleIndexVertexMaterialArray_getLockedReadOnlyMaterialBase(Native,
-            out materialBase, out numMaterials, out materialType, out materialStride,
-            out triangleMaterialBase, out numTriangles, out triangleMaterialStride,
-            out triangleType, subpart);
+    public void GetLockedReadOnlyMaterialBase(out IntPtr materialBase, out int numMaterials, out PhyScalarType materialType, out int materialStride, out IntPtr triangleMaterialBase, out int numTriangles, out int triangleMaterialStride, out PhyScalarType triangleType, int subpart = 0)
+        => btTriangleIndexVertexMaterialArray_getLockedReadOnlyMaterialBase(Native, out materialBase, out numMaterials, out materialType, out materialStride, out triangleMaterialBase, out numTriangles, out triangleMaterialStride, out triangleType, subpart);
 }

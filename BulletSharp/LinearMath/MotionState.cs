@@ -33,9 +33,9 @@ public abstract class MotionState : BulletDisposableObject
         InitializeUserOwned(native);
     }
 
-    void GetWorldTransformUnmanaged(out Matrix4x4 worldTrans) => GetWorldTransform(out worldTrans);
+    private void GetWorldTransformUnmanaged(out Matrix4x4 worldTrans) => GetWorldTransform(out worldTrans);
 
-    void SetWorldTransformUnmanaged(ref Matrix4x4 worldTrans) => SetWorldTransform(ref worldTrans);
+    private void SetWorldTransformUnmanaged(ref Matrix4x4 worldTrans) => SetWorldTransform(ref worldTrans);
 
     public abstract void GetWorldTransform(out Matrix4x4 worldTrans);
     public abstract void SetWorldTransform(ref Matrix4x4 worldTrans);

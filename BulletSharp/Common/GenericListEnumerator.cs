@@ -5,11 +5,11 @@ namespace BulletSharp;
 
 public sealed class GenericListEnumerator<T> : IEnumerator<T>
 {
-    private int _i;
     private readonly int _count;
-    private readonly IList<T> _list;
+    private readonly IReadOnlyList<T> _list;
+    private int _i;
 
-    public GenericListEnumerator(IList<T> list)
+    public GenericListEnumerator(IReadOnlyList<T> list)
     {
         _list = list;
         _count = list.Count;
@@ -18,7 +18,7 @@ public sealed class GenericListEnumerator<T> : IEnumerator<T>
 
     public T Current => _list[_i];
 
-    object IEnumerator.Current => _list[_i];
+    object? IEnumerator.Current => _list[_i];
 
     public bool MoveNext()
     {
@@ -26,7 +26,8 @@ public sealed class GenericListEnumerator<T> : IEnumerator<T>
         return _i != _count;
     }
 
-    public void Reset() => _i = 0;
+    public void Reset()
+        => _i = 0;
 
     public void Dispose()
     {

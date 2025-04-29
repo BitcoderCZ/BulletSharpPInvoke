@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace BulletSharp;
 
-class BulletWriter : BinaryWriter
+internal class BulletWriter : BinaryWriter
 {
     public BulletWriter(Stream stream)
         : base(stream)

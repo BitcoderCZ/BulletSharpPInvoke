@@ -6,35 +6,17 @@ namespace BulletSharp;
 
 public class GjkPairDetector : DiscreteCollisionDetectorInterface
 {
-    public GjkPairDetector(ConvexShape objectA, ConvexShape objectB, VoronoiSimplexSolver simplexSolver,
-        ConvexPenetrationDepthSolver penetrationDepthSolver)
+    public GjkPairDetector(ConvexShape objectA, ConvexShape objectB, VoronoiSimplexSolver simplexSolver, ConvexPenetrationDepthSolver? penetrationDepthSolver)
     {
-        IntPtr native = btGjkPairDetector_new(objectA.Native, objectB.Native, simplexSolver.Native,
-            (penetrationDepthSolver != null) ? penetrationDepthSolver.Native : IntPtr.Zero);
+        IntPtr native = btGjkPairDetector_new(objectA.Native, objectB.Native, simplexSolver.Native, (penetrationDepthSolver != null) ? penetrationDepthSolver.Native : IntPtr.Zero);
         InitializeUserOwned(native);
     }
 
-    public GjkPairDetector(ConvexShape objectA, ConvexShape objectB, int shapeTypeA,
-        int shapeTypeB, float marginA, float marginB, VoronoiSimplexSolver simplexSolver,
-        ConvexPenetrationDepthSolver penetrationDepthSolver)
+    public GjkPairDetector(ConvexShape objectA, ConvexShape objectB, int shapeTypeA, int shapeTypeB, float marginA, float marginB, VoronoiSimplexSolver simplexSolver, ConvexPenetrationDepthSolver? penetrationDepthSolver)
     {
-        IntPtr native = btGjkPairDetector_new2(objectA.Native, objectB.Native, shapeTypeA,
-            shapeTypeB, marginA, marginB, simplexSolver.Native,
-            (penetrationDepthSolver != null) ? penetrationDepthSolver.Native : IntPtr.Zero);
+        IntPtr native = btGjkPairDetector_new2(objectA.Native, objectB.Native, shapeTypeA, shapeTypeB, marginA, marginB, simplexSolver.Native, (penetrationDepthSolver != null) ? penetrationDepthSolver.Native : IntPtr.Zero);
         InitializeUserOwned(native);
     }
-
-    public void GetClosestPointsNonVirtual(ClosestPointInput input, Result output,
-        DebugDraw debugDraw) => btGjkPairDetector_getClosestPointsNonVirtual(Native, input.Native,
-            output.Native, debugDraw != null ? debugDraw.Native : IntPtr.Zero);
-
-    public void SetIgnoreMargin(bool ignoreMargin) => btGjkPairDetector_setIgnoreMargin(Native, ignoreMargin);
-
-    public void SetMinkowskiA(ConvexShape minkA) => btGjkPairDetector_setMinkowskiA(Native, minkA.Native);
-
-    public void SetMinkowskiB(ConvexShape minkB) => btGjkPairDetector_setMinkowskiB(Native, minkB.Native);
-
-    public void SetPenetrationDepthSolver(ConvexPenetrationDepthSolver penetrationDepthSolver) => btGjkPairDetector_setPenetrationDepthSolver(Native, penetrationDepthSolver.Native);
 
     public Vector3 CachedSeparatingAxis
     {
@@ -78,4 +60,19 @@ public class GjkPairDetector : DiscreteCollisionDetectorInterface
         get => btGjkPairDetector_getLastUsedMethod(Native);
         set => btGjkPairDetector_setLastUsedMethod(Native, value);
     }
+
+    public void GetClosestPointsNonVirtual(ClosestPointInput input, Result output, DebugDraw debugDraw)
+        => btGjkPairDetector_getClosestPointsNonVirtual(Native, input.Native, output.Native, debugDraw != null ? debugDraw.Native : IntPtr.Zero);
+
+    public void SetIgnoreMargin(bool ignoreMargin)
+        => btGjkPairDetector_setIgnoreMargin(Native, ignoreMargin);
+
+    public void SetMinkowskiA(ConvexShape minkA)
+        => btGjkPairDetector_setMinkowskiA(Native, minkA.Native);
+
+    public void SetMinkowskiB(ConvexShape minkB)
+        => btGjkPairDetector_setMinkowskiB(Native, minkB.Native);
+
+    public void SetPenetrationDepthSolver(ConvexPenetrationDepthSolver penetrationDepthSolver)
+        => btGjkPairDetector_setPenetrationDepthSolver(Native, penetrationDepthSolver.Native);
 }

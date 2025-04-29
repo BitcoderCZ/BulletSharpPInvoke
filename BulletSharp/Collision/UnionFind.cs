@@ -30,23 +30,32 @@ public class UnionFind : BulletObject
         Initialize(native);
     }
 
-    public void Allocate(int n) => btUnionFind_allocate(Native, n);
-
-    public int Find(int p, int q) => btUnionFind_find(Native, p, q);
-
-    public int Find(int x) => btUnionFind_find2(Native, x);
-
-    public void Free() => btUnionFind_Free(Native);
-
-    public Element GetElement(int index) => new Element(btUnionFind_getElement(Native, index));
-
-    public bool IsRoot(int x) => btUnionFind_isRoot(Native, x);
-
-    public void Reset(int n) => btUnionFind_reset(Native, n);
-
-    public void SortIslands() => btUnionFind_sortIslands(Native);
-
-    public void Unite(int p, int q) => btUnionFind_unite(Native, p, q);
-
     public int NumElements => btUnionFind_getNumElements(Native);
+
+    public void Allocate(int n)
+        => btUnionFind_allocate(Native, n);
+
+    public int Find(int p, int q)
+        => btUnionFind_find(Native, p, q);
+
+    public int Find(int x)
+        => btUnionFind_find2(Native, x);
+
+    public void Free()
+        => btUnionFind_Free(Native);
+
+    public Element GetElement(int index)
+        => new Element(btUnionFind_getElement(Native, index));
+
+    public bool IsRoot(int x)
+        => btUnionFind_isRoot(Native, x);
+
+    public void Reset(int n)
+        => btUnionFind_reset(Native, n);
+
+    public void SortIslands()
+        => btUnionFind_sortIslands(Native);
+
+    public void Unite(int p, int q)
+        => btUnionFind_unite(Native, p, q);
 }

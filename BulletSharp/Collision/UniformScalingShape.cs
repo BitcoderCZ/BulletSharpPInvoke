@@ -15,8 +15,5 @@ public class UniformScalingShape : ConvexShape
 
     public ConvexShape ChildShape { get; }
 
-    public float UniformScalingFactor
-    {
-        get { return btUniformScalingShape_getUniformScalingFactor(Native); }
-    }
+    public float UniformScalingFactor => btUniformScalingShape_getUniformScalingFactor(Native);
 }

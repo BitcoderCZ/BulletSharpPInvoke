@@ -5,11 +5,6 @@ namespace BulletSharp;
 
 public class ManifoldResult : DiscreteCollisionDetectorInterface.Result
 {
-    internal ManifoldResult(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public ManifoldResult()
     {
         IntPtr native = btManifoldResult_new();
@@ -22,25 +17,12 @@ public class ManifoldResult : DiscreteCollisionDetectorInterface.Result
         InitializeUserOwned(native);
     }
 
-    public static float CalculateCombinedContactDamping(CollisionObject body0,
-        CollisionObject body1) => btManifoldResult_calculateCombinedContactDamping(body0.Native,
-            body1.Native);
+    internal ManifoldResult(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
+    }
 
-    public static float CalculateCombinedContactStiffness(CollisionObject body0,
-        CollisionObject body1) => btManifoldResult_calculateCombinedContactStiffness(body0.Native,
-            body1.Native);
-
-    public static float CalculateCombinedFriction(CollisionObject body0, CollisionObject body1) => btManifoldResult_calculateCombinedFriction(body0.Native, body1.Native);
-
-    public static float CalculateCombinedRestitution(CollisionObject body0, CollisionObject body1) => btManifoldResult_calculateCombinedRestitution(body0.Native, body1.Native);
-
-    public static float CalculateCombinedRollingFriction(CollisionObject body0,
-        CollisionObject body1) => btManifoldResult_calculateCombinedRollingFriction(body0.Native,
-            body1.Native);
-
-    public void RefreshContactPoints() => btManifoldResult_refreshContactPoints(Native);
-
-    public CollisionObject Body0Internal => CollisionObject.GetManaged(btManifoldResult_getBody0Internal(Native));
+    public CollisionObject? Body0Internal => CollisionObject.GetManaged(btManifoldResult_getBody0Internal(Native));
 
     public CollisionObjectWrapper Body0Wrap
     {
@@ -48,7 +30,7 @@ public class ManifoldResult : DiscreteCollisionDetectorInterface.Result
         set => btManifoldResult_setBody0Wrap(Native, value.Native);
     }
 
-    public CollisionObject Body1Internal => CollisionObject.GetManaged(btManifoldResult_getBody1Internal(Native));
+    public CollisionObject? Body1Internal => CollisionObject.GetManaged(btManifoldResult_getBody1Internal(Native));
 
     public CollisionObjectWrapper Body1Wrap
     {
@@ -67,4 +49,22 @@ public class ManifoldResult : DiscreteCollisionDetectorInterface.Result
         get => new PersistentManifold(btManifoldResult_getPersistentManifold(Native), this);
         set => btManifoldResult_setPersistentManifold(Native, value.Native);
     }
+
+    public static float CalculateCombinedContactDamping(CollisionObject body0, CollisionObject body1)
+        => btManifoldResult_calculateCombinedContactDamping(body0.Native, body1.Native);
+
+    public static float CalculateCombinedContactStiffness(CollisionObject body0, CollisionObject body1)
+        => btManifoldResult_calculateCombinedContactStiffness(body0.Native, body1.Native);
+
+    public static float CalculateCombinedFriction(CollisionObject body0, CollisionObject body1)
+        => btManifoldResult_calculateCombinedFriction(body0.Native, body1.Native);
+
+    public static float CalculateCombinedRestitution(CollisionObject body0, CollisionObject body1)
+        => btManifoldResult_calculateCombinedRestitution(body0.Native, body1.Native);
+
+    public static float CalculateCombinedRollingFriction(CollisionObject body0, CollisionObject body1)
+        => btManifoldResult_calculateCombinedRollingFriction(body0.Native, body1.Native);
+
+    public void RefreshContactPoints()
+        => btManifoldResult_refreshContactPoints(Native);
 }

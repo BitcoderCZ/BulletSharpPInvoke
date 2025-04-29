@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
 
@@ -40,29 +41,6 @@ public class DbvtBroadphase : BroadphaseInterface
         InitializeMembers(pairCache ?? new HashedOverlappingPairCache(
             btBroadphaseInterface_getOverlappingPairCache(Native), this));
     }
-
-    public static void Benchmark(BroadphaseInterface broadphase)
-        => btDbvtBroadphase_benchmark(broadphase.Native);
-
-    public void Collide(Dispatcher dispatcher)
-        => btDbvtBroadphase_collide(Native, dispatcher.Native);
-
-    public override BroadphaseProxy CreateProxy(ref Vector3 aabbMin, ref Vector3 aabbMax, int shapeType, IntPtr userPtr, int collisionFilterGroup, int collisionFilterMask, Dispatcher dispatcher)
-        => new DbvtProxy(btBroadphaseInterface_createProxy(Native, ref aabbMin, ref aabbMax, shapeType, userPtr, collisionFilterGroup, collisionFilterMask, dispatcher.Native));
-
-    public void Optimize()
-        => btDbvtBroadphase_optimize(Native);
-
-    public void PerformDeferredRemoval(Dispatcher dispatcher)
-        => btDbvtBroadphase_performDeferredRemoval(Native, dispatcher.Native);
-
-#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-    public void SetAabbForceUpdateRef(BroadphaseProxy absproxy, ref Vector3 aabbMin, ref Vector3 aabbMax, Dispatcher __unnamed3) => btDbvtBroadphase_setAabbForceUpdate(Native, absproxy.Native, ref aabbMin, ref aabbMax, __unnamed3.Native);
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
-
-    public void SetAabbForceUpdate(BroadphaseProxy absproxy, Vector3 aabbMin,
-        Vector3 aabbMax, Dispatcher __unnamed3) => btDbvtBroadphase_setAabbForceUpdate(Native, absproxy.Native, ref aabbMin,
-            ref aabbMax, __unnamed3.Native);
 
     public int CId
     {
@@ -118,7 +96,8 @@ public class DbvtBroadphase : BroadphaseInterface
         set => btDbvtBroadphase_setNewpairs(Native, value);
     }
 
-    public OverlappingPairCache PairCache
+    [DisallowNull]
+    public OverlappingPairCache? PairCache
     {
         get => OverlappingPairCache;
         set
@@ -179,4 +158,27 @@ public class DbvtBroadphase : BroadphaseInterface
         get => btDbvtBroadphase_getVelocityPrediction(Native);
         set => btDbvtBroadphase_setVelocityPrediction(Native, value);
     }
+
+    public static void Benchmark(BroadphaseInterface broadphase)
+        => btDbvtBroadphase_benchmark(broadphase.Native);
+
+    public void Collide(Dispatcher dispatcher)
+        => btDbvtBroadphase_collide(Native, dispatcher.Native);
+
+    public override BroadphaseProxy CreateProxy(ref Vector3 aabbMin, ref Vector3 aabbMax, int shapeType, IntPtr userPtr, int collisionFilterGroup, int collisionFilterMask, Dispatcher dispatcher)
+        => new DbvtProxy(btBroadphaseInterface_createProxy(Native, ref aabbMin, ref aabbMax, shapeType, userPtr, collisionFilterGroup, collisionFilterMask, dispatcher.Native));
+
+    public void Optimize()
+        => btDbvtBroadphase_optimize(Native);
+
+    public void PerformDeferredRemoval(Dispatcher dispatcher)
+        => btDbvtBroadphase_performDeferredRemoval(Native, dispatcher.Native);
+
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public void SetAabbForceUpdateRef(BroadphaseProxy absproxy, ref Vector3 aabbMin, ref Vector3 aabbMax, Dispatcher __unnamed3)
+        => btDbvtBroadphase_setAabbForceUpdate(Native, absproxy.Native, ref aabbMin, ref aabbMax, __unnamed3.Native);
+
+    public void SetAabbForceUpdate(BroadphaseProxy absproxy, Vector3 aabbMin, Vector3 aabbMax, Dispatcher __unnamed3)
+        => btDbvtBroadphase_setAabbForceUpdate(Native, absproxy.Native, ref aabbMin, ref aabbMax, __unnamed3.Native);
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
 }

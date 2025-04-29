@@ -138,7 +138,7 @@ public class CollisionObject : BulletDisposableObject
     }
 
 #pragma warning disable IDE0060 // Remove unused parameter
-    internal CollisionObject(ConstructionInfo info)
+    internal CollisionObject(ConstructionInfo? info)
 #pragma warning restore IDE0060 // Remove unused parameter
     {
     }

@@ -6,10 +6,6 @@ namespace BulletSharp;
 
 public class BuSimplex1To4 : PolyhedralConvexAabbCachingShape
 {
-    internal BuSimplex1To4(ConstructionInfo info)
-    {
-    }
-
     public BuSimplex1To4()
     {
         IntPtr native = btBU_Simplex1to4_new();
@@ -40,11 +36,21 @@ public class BuSimplex1To4 : PolyhedralConvexAabbCachingShape
         InitializeCollisionShape(native);
     }
 
-    public void AddVertexRef(ref Vector3 pt) => btBU_Simplex1to4_addVertex(Native, ref pt);
+#pragma warning disable IDE0060
+    internal BuSimplex1To4(ConstructionInfo? info)
+#pragma warning restore IDE0060
+    {
+    }
 
-    public void AddVertex(Vector3 pt) => btBU_Simplex1to4_addVertex(Native, ref pt);
+    public void AddVertexRef(ref Vector3 pt)
+        => btBU_Simplex1to4_addVertex(Native, ref pt);
 
-    public int GetIndex(int i) => btBU_Simplex1to4_getIndex(Native, i);
+    public void AddVertex(Vector3 pt)
+        => btBU_Simplex1to4_addVertex(Native, ref pt);
 
-    public void Reset() => btBU_Simplex1to4_reset(Native);
+    public int GetIndex(int i)
+        => btBU_Simplex1to4_getIndex(Native, i);
+
+    public void Reset()
+        => btBU_Simplex1to4_reset(Native);
 }

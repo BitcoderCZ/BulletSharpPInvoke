@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
 
@@ -30,31 +31,6 @@ public class MultiBodyLink
         Native = native;
     }
 
-    public Vector3 GetAxisBottom(int dof)
-    {
-        Vector3 value;
-        btMultibodyLink_getAxisBottom(Native, dof, out value);
-        return value;
-    }
-
-    public Vector3 GetAxisTop(int dof)
-    {
-        Vector3 value;
-        btMultibodyLink_getAxisTop(Native, dof, out value);
-        return value;
-    }
-
-    public void SetAxisBottom(int dof, float x, float y, float z) => btMultibodyLink_setAxisBottom(Native, dof, x, y, z);
-
-    public void SetAxisBottom(int dof, Vector3 axis) => btMultibodyLink_setAxisBottom2(Native, dof, ref axis);
-
-    public void SetAxisTop(int dof, float x, float y, float z) => btMultibodyLink_setAxisTop(Native, dof, x, y, z);
-
-    public void SetAxisTop(int dof, Vector3 axis) => btMultibodyLink_setAxisTop2(Native, dof, ref axis);
-
-    public void UpdateCacheMultiDof(float[] pq = null) => btMultibodyLink_updateCacheMultiDof(Native, pq);
-
-    public void UpdateInterpolationCacheMultiDof() => btMultibodyLink_updateInterpolationCacheMultiDof(Native);
     /*
             public SpatialMotionVector AbsFrameLocVelocity
             {
@@ -68,6 +44,7 @@ public class MultiBodyLink
                 set { btMultibodyLink_setAbsFrameTotVelocity(_native, value._native); }
             }
     */
+
     public Vector3 AppliedConstraintForce
     {
         get
@@ -111,12 +88,14 @@ public class MultiBodyLink
         }
         set => btMultibodyLink_setAppliedTorque(Native, ref value);
     }
+
     /*
             public SpatialMotionVector[] Axes
             {
                 get { return btMultibodyLink_getAxes(_native); }
             }
     */
+
     public Quaternion CachedRotParentToThis
     {
         get
@@ -178,7 +157,8 @@ public class MultiBodyLink
         set => btMultibodyLink_setCfgOffset(Native, value);
     }
 
-    public MultiBodyLinkCollider Collider
+    [DisallowNull]
+    public MultiBodyLinkCollider? Collider
     {
         get => CollisionObject.GetManaged(btMultibodyLink_getCollider(Native)) as MultiBodyLinkCollider;
         set => btMultibodyLink_setCollider(Native, value.Native);
@@ -240,6 +220,7 @@ public class MultiBodyLink
         get => btMultibodyLink_getJointDamping(Native);
         set => btMultibodyLink_setJointDamping(Native, value);
     }
+
     /*
 		public MultiBodyJointFeedback JointFeedback
 		{
@@ -251,11 +232,13 @@ public class MultiBodyLink
 			}
 		}
 		*/
+
     public float JointFriction
     {
         get => btMultibodyLink_getJointFriction(Native);
         set => btMultibodyLink_setJointFriction(Native, value);
     }
+
     /*
 		public char JointName
 		{
@@ -273,11 +256,13 @@ public class MultiBodyLink
 			get { return btMultibodyLink_getJointTorque(_native); }
 		}
 		*/
+
     public FeatherstoneJointType JointType
     {
         get => btMultibodyLink_getJointType(Native);
         set => btMultibodyLink_setJointType(Native, value);
     }
+
     /*
      public char LinkName
      {
@@ -285,6 +270,7 @@ public class MultiBodyLink
          set { btMultibodyLink_setLinkName(_native, value._native); }
      }
      */
+
     public float Mass
     {
         get => btMultibodyLink_getMass(Native);
@@ -319,4 +305,36 @@ public class MultiBodyLink
         }
         set => btMultibodyLink_setZeroRotParentToThis(Native, ref value);
     }
+
+    public Vector3 GetAxisBottom(int dof)
+    {
+        Vector3 value;
+        btMultibodyLink_getAxisBottom(Native, dof, out value);
+        return value;
+    }
+
+    public Vector3 GetAxisTop(int dof)
+    {
+        Vector3 value;
+        btMultibodyLink_getAxisTop(Native, dof, out value);
+        return value;
+    }
+
+    public void SetAxisBottom(int dof, float x, float y, float z)
+        => btMultibodyLink_setAxisBottom(Native, dof, x, y, z);
+
+    public void SetAxisBottom(int dof, Vector3 axis)
+        => btMultibodyLink_setAxisBottom2(Native, dof, ref axis);
+
+    public void SetAxisTop(int dof, float x, float y, float z)
+        => btMultibodyLink_setAxisTop(Native, dof, x, y, z);
+
+    public void SetAxisTop(int dof, Vector3 axis)
+        => btMultibodyLink_setAxisTop2(Native, dof, ref axis);
+
+    public void UpdateCacheMultiDof(float[]? pq = null)
+        => btMultibodyLink_updateCacheMultiDof(Native, pq);
+
+    public void UpdateInterpolationCacheMultiDof()
+        => btMultibodyLink_updateInterpolationCacheMultiDof(Native);
 }

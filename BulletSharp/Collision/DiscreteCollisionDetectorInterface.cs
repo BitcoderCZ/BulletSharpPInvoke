@@ -6,6 +6,16 @@ namespace BulletSharp;
 
 public abstract class DiscreteCollisionDetectorInterface : BulletDisposableObject
 {
+    protected internal DiscreteCollisionDetectorInterface()
+    {
+    }
+
+    public void GetClosestPoints(ClosestPointInput input, Result output, DebugDraw debugDraw, bool swapResults = false)
+        => btDiscreteCollisionDetectorInterface_getClosestPoints(Native, input.Native, output.Native, debugDraw != null ? debugDraw.Native : IntPtr.Zero, swapResults);
+
+    protected override void Dispose(bool disposing)
+        => btDiscreteCollisionDetectorInterface_delete(Native);
+
     public class ClosestPointInput : BulletDisposableObject
     {
         public ClosestPointInput()
@@ -42,7 +52,8 @@ public abstract class DiscreteCollisionDetectorInterface : BulletDisposableObjec
             set => btDiscreteCollisionDetectorInterface_ClosestPointInput_setTransformB(Native, ref value);
         }
 
-        protected override void Dispose(bool disposing) => btDiscreteCollisionDetectorInterface_ClosestPointInput_delete(Native);
+        protected override void Dispose(bool disposing)
+            => btDiscreteCollisionDetectorInterface_ClosestPointInput_delete(Native);
     }
 
     public abstract class Result : BulletDisposableObject
@@ -51,28 +62,18 @@ public abstract class DiscreteCollisionDetectorInterface : BulletDisposableObjec
         {
         }
 
-        public void AddContactPoint(Vector3 normalOnBInWorld, Vector3 pointInWorld,
-            float depth) => btDiscreteCollisionDetectorInterface_Result_addContactPoint(Native,
-                ref normalOnBInWorld, ref pointInWorld, depth);
+        public void AddContactPoint(Vector3 normalOnBInWorld, Vector3 pointInWorld, float depth)
+            => btDiscreteCollisionDetectorInterface_Result_addContactPoint(Native, ref normalOnBInWorld, ref pointInWorld, depth);
 
-        public void SetShapeIdentifiersA(int partId0, int index0) => btDiscreteCollisionDetectorInterface_Result_setShapeIdentifiersA(
-                Native, partId0, index0);
+        public void SetShapeIdentifiersA(int partId0, int index0)
+            => btDiscreteCollisionDetectorInterface_Result_setShapeIdentifiersA(Native, partId0, index0);
 
-        public void SetShapeIdentifiersB(int partId1, int index1) => btDiscreteCollisionDetectorInterface_Result_setShapeIdentifiersB(
-                Native, partId1, index1);
+        public void SetShapeIdentifiersB(int partId1, int index1)
+            => btDiscreteCollisionDetectorInterface_Result_setShapeIdentifiersB(Native, partId1, index1);
 
-        protected override void Dispose(bool disposing) => btDiscreteCollisionDetectorInterface_Result_delete(Native);
+        protected override void Dispose(bool disposing)
+            => btDiscreteCollisionDetectorInterface_Result_delete(Native);
     }
-
-    protected internal DiscreteCollisionDetectorInterface()
-    {
-    }
-
-    public void GetClosestPoints(ClosestPointInput input, Result output, DebugDraw debugDraw,
-        bool swapResults = false) => btDiscreteCollisionDetectorInterface_getClosestPoints(Native, input.Native,
-            output.Native, debugDraw != null ? debugDraw.Native : IntPtr.Zero, swapResults);
-
-    protected override void Dispose(bool disposing) => btDiscreteCollisionDetectorInterface_delete(Native);
 }
 
 public abstract class StorageResult : DiscreteCollisionDetectorInterface.Result

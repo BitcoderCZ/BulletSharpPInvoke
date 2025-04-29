@@ -11,8 +11,6 @@ public class UsageBitfield : BulletObject
         Initialize(native);
     }
 
-    public void Reset() => btUsageBitfield_reset(Native);
-
     public bool Unused1
     {
         get => btUsageBitfield_getUnused1(Native);
@@ -60,39 +58,31 @@ public class UsageBitfield : BulletObject
         get => btUsageBitfield_getUsedVertexD(Native);
         set => btUsageBitfield_setUsedVertexD(Native, value);
     }
+
+    public void Reset()
+        => btUsageBitfield_reset(Native);
 }
 
 public class SubSimplexClosestResult : BulletDisposableObject
 {
-    internal SubSimplexClosestResult(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public SubSimplexClosestResult()
     {
         IntPtr native = btSubSimplexClosestResult_new();
         InitializeUserOwned(native);
     }
 
-    public void Reset() => btSubSimplexClosestResult_reset(Native);
+    internal SubSimplexClosestResult(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
+    }
 
-    public void SetBarycentricCoordinates() => btSubSimplexClosestResult_setBarycentricCoordinates(Native);
-
-    public void SetBarycentricCoordinates(float a) => btSubSimplexClosestResult_setBarycentricCoordinates2(Native, a);
-
-    public void SetBarycentricCoordinates(float a, float b) => btSubSimplexClosestResult_setBarycentricCoordinates3(Native, a, b);
-
-    public void SetBarycentricCoordinates(float a, float b, float c) => btSubSimplexClosestResult_setBarycentricCoordinates4(Native, a, b, c);
-
-    public void SetBarycentricCoordinates(float a, float b, float c, float d) => btSubSimplexClosestResult_setBarycentricCoordinates5(Native, a, b, c,
-            d);
     /*
 		public FloatArray BarycentricCoords
 		{
 			get { return btSubSimplexClosestResult_getBarycentricCoords(Native); }
 		}
 		*/
+
     public Vector3 ClosestPointOnSimplex
     {
         get
@@ -118,7 +108,26 @@ public class SubSimplexClosestResult : BulletDisposableObject
         set => btSubSimplexClosestResult_setUsedVertices(Native, value.Native);
     }
 
-    protected override void Dispose(bool disposing) => btSubSimplexClosestResult_delete(Native);
+    public void Reset()
+        => btSubSimplexClosestResult_reset(Native);
+
+    public void SetBarycentricCoordinates()
+        => btSubSimplexClosestResult_setBarycentricCoordinates(Native);
+
+    public void SetBarycentricCoordinates(float a)
+        => btSubSimplexClosestResult_setBarycentricCoordinates2(Native, a);
+
+    public void SetBarycentricCoordinates(float a, float b)
+        => btSubSimplexClosestResult_setBarycentricCoordinates3(Native, a, b);
+
+    public void SetBarycentricCoordinates(float a, float b, float c)
+        => btSubSimplexClosestResult_setBarycentricCoordinates4(Native, a, b, c);
+
+    public void SetBarycentricCoordinates(float a, float b, float c, float d)
+        => btSubSimplexClosestResult_setBarycentricCoordinates5(Native, a, b, c, d);
+
+    protected override void Dispose(bool disposing)
+        => btSubSimplexClosestResult_delete(Native);
 }
 
 public class VoronoiSimplexSolver : BulletDisposableObject
@@ -128,58 +137,6 @@ public class VoronoiSimplexSolver : BulletDisposableObject
         IntPtr native = btVoronoiSimplexSolver_new();
         InitializeUserOwned(native);
     }
-
-    public void AddVertexRef(ref Vector3 w, ref Vector3 p, ref Vector3 q) => btVoronoiSimplexSolver_addVertex(Native, ref w, ref p, ref q);
-
-    public void AddVertex(Vector3 w, Vector3 p, Vector3 q) => btVoronoiSimplexSolver_addVertex(Native, ref w, ref p, ref q);
-
-    public void BackupClosest(out Vector3 v) => btVoronoiSimplexSolver_backup_closest(Native, out v);
-
-    public bool Closest(out Vector3 v) => btVoronoiSimplexSolver_closest(Native, out v);
-
-    public bool ClosestPtPointTetrahedronRef(ref Vector3 p, ref Vector3 a, ref Vector3 b, ref Vector3 c,
-        ref Vector3 d, SubSimplexClosestResult finalResult) => btVoronoiSimplexSolver_closestPtPointTetrahedron(Native, ref p,
-            ref a, ref b, ref c, ref d, finalResult.Native);
-
-    public bool ClosestPtPointTetrahedron(Vector3 p, Vector3 a, Vector3 b, Vector3 c,
-        Vector3 d, SubSimplexClosestResult finalResult) => btVoronoiSimplexSolver_closestPtPointTetrahedron(Native, ref p,
-            ref a, ref b, ref c, ref d, finalResult.Native);
-
-    public bool ClosestPtPointTriangleRef(ref Vector3 p, ref Vector3 a, ref Vector3 b, ref Vector3 c,
-        SubSimplexClosestResult result) => btVoronoiSimplexSolver_closestPtPointTriangle(Native, ref p,
-            ref a, ref b, ref c, result.Native);
-
-    public bool ClosestPtPointTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c,
-        SubSimplexClosestResult result) => btVoronoiSimplexSolver_closestPtPointTriangle(Native, ref p,
-            ref a, ref b, ref c, result.Native);
-
-    public void ComputePoints(out Vector3 p1, out Vector3 p2) => btVoronoiSimplexSolver_compute_points(Native, out p1, out p2);
-
-    public bool EmptySimplex() => btVoronoiSimplexSolver_emptySimplex(Native);
-
-    public bool FullSimplex() => btVoronoiSimplexSolver_fullSimplex(Native);
-    /*
-		public int GetSimplex(Vector3[] pBuf, Vector3[] qBuf, Vector3[] yBuf)
-		{
-			return btVoronoiSimplexSolver_getSimplex(Native, pBuf, qBuf,
-				yBuf);
-		}
-		*/
-    public bool InSimplex(Vector3 w) => btVoronoiSimplexSolver_inSimplex(Native, ref w);
-
-    public float MaxVertex() => btVoronoiSimplexSolver_maxVertex(Native);
-
-    public int PointOutsideOfPlane(Vector3 p, Vector3 a, Vector3 b, Vector3 c,
-        Vector3 d) => btVoronoiSimplexSolver_pointOutsideOfPlane(Native, ref p, ref a,
-            ref b, ref c, ref d);
-
-    public void ReduceVertices(UsageBitfield usedVerts) => btVoronoiSimplexSolver_reduceVertices(Native, usedVerts.Native);
-
-    public void RemoveVertex(int index) => btVoronoiSimplexSolver_removeVertex(Native, index);
-
-    public void Reset() => btVoronoiSimplexSolver_reset(Native);
-
-    public bool UpdateClosestVectorAndPoints() => btVoronoiSimplexSolver_updateClosestVectorAndPoints(Native);
 
     public SubSimplexClosestResult CachedBC
     {
@@ -254,6 +211,7 @@ public class VoronoiSimplexSolver : BulletDisposableObject
         get => btVoronoiSimplexSolver_getNumVertices(Native);
         set => btVoronoiSimplexSolver_setNumVertices(Native, value);
     }
+
     /*
 		public Vector3[] SimplexPointsP
 		{
@@ -271,5 +229,68 @@ public class VoronoiSimplexSolver : BulletDisposableObject
 		}
 		*/
 
-    protected override void Dispose(bool disposing) => btVoronoiSimplexSolver_delete(Native);
+    public void AddVertexRef(ref Vector3 w, ref Vector3 p, ref Vector3 q)
+        => btVoronoiSimplexSolver_addVertex(Native, ref w, ref p, ref q);
+
+    public void AddVertex(Vector3 w, Vector3 p, Vector3 q)
+        => btVoronoiSimplexSolver_addVertex(Native, ref w, ref p, ref q);
+
+    public void BackupClosest(out Vector3 v)
+        => btVoronoiSimplexSolver_backup_closest(Native, out v);
+
+    public bool Closest(out Vector3 v)
+        => btVoronoiSimplexSolver_closest(Native, out v);
+
+    public bool ClosestPtPointTetrahedronRef(ref Vector3 p, ref Vector3 a, ref Vector3 b, ref Vector3 c, ref Vector3 d, SubSimplexClosestResult finalResult)
+        => btVoronoiSimplexSolver_closestPtPointTetrahedron(Native, ref p, ref a, ref b, ref c, ref d, finalResult.Native);
+
+    public bool ClosestPtPointTetrahedron(Vector3 p, Vector3 a, Vector3 b, Vector3 c, Vector3 d, SubSimplexClosestResult finalResult)
+        => btVoronoiSimplexSolver_closestPtPointTetrahedron(Native, ref p, ref a, ref b, ref c, ref d, finalResult.Native);
+
+    public bool ClosestPtPointTriangleRef(ref Vector3 p, ref Vector3 a, ref Vector3 b, ref Vector3 c, SubSimplexClosestResult result)
+        => btVoronoiSimplexSolver_closestPtPointTriangle(Native, ref p, ref a, ref b, ref c, result.Native);
+
+    public bool ClosestPtPointTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c, SubSimplexClosestResult result)
+        => btVoronoiSimplexSolver_closestPtPointTriangle(Native, ref p, ref a, ref b, ref c, result.Native);
+
+    public void ComputePoints(out Vector3 p1, out Vector3 p2)
+        => btVoronoiSimplexSolver_compute_points(Native, out p1, out p2);
+
+    public bool EmptySimplex()
+        => btVoronoiSimplexSolver_emptySimplex(Native);
+
+    public bool FullSimplex()
+        => btVoronoiSimplexSolver_fullSimplex(Native);
+
+    /*
+		public int GetSimplex(Vector3[] pBuf, Vector3[] qBuf, Vector3[] yBuf)
+		{
+			return btVoronoiSimplexSolver_getSimplex(Native, pBuf, qBuf,
+				yBuf);
+		}
+		*/
+
+    public bool InSimplex(Vector3 w)
+        => btVoronoiSimplexSolver_inSimplex(Native, ref w);
+
+    public float MaxVertex()
+        => btVoronoiSimplexSolver_maxVertex(Native);
+
+    public int PointOutsideOfPlane(Vector3 p, Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        => btVoronoiSimplexSolver_pointOutsideOfPlane(Native, ref p, ref a, ref b, ref c, ref d);
+
+    public void ReduceVertices(UsageBitfield usedVerts)
+        => btVoronoiSimplexSolver_reduceVertices(Native, usedVerts.Native);
+
+    public void RemoveVertex(int index)
+        => btVoronoiSimplexSolver_removeVertex(Native, index);
+
+    public void Reset()
+        => btVoronoiSimplexSolver_reset(Native);
+
+    public bool UpdateClosestVectorAndPoints()
+        => btVoronoiSimplexSolver_updateClosestVectorAndPoints(Native);
+
+    protected override void Dispose(bool disposing)
+        => btVoronoiSimplexSolver_delete(Native);
 }

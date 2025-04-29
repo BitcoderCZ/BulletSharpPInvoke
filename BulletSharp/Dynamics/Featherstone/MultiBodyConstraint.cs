@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
@@ -15,48 +16,11 @@ public enum TypedMultiBodyConstraintType
 
 public abstract class MultiBodyConstraint : BulletDisposableObject
 {
+#pragma warning disable CS8618
     protected internal MultiBodyConstraint()
+#pragma warning restore CS8618
     {
     }
-
-    protected internal void InitializeMembers(MultiBody bodyA, MultiBody bodyB)
-    {
-        MultiBodyA = bodyA;
-        MultiBodyB = bodyB;
-    }
-
-    public void AllocateJacobiansMultiDof() => btMultiBodyConstraint_allocateJacobiansMultiDof(Native);
-    /*
-		public void CreateConstraintRows(MultiBodyConstraintArray constraintRows,
-			MultiBodyJacobianData data, ContactSolverInfo infoGlobal)
-		{
-			btMultiBodyConstraint_createConstraintRows(Native, constraintRows.Native,
-				data.Native, infoGlobal.Native);
-		}
-		*/
-    public void DebugDraw(DebugDraw drawer) => btMultiBodyConstraint_debugDraw(Native, drawer.Native);
-
-    public void FinalizeMultiDof() => btMultiBodyConstraint_finalizeMultiDof(Native);
-
-    public float GetAppliedImpulse(int dof) => btMultiBodyConstraint_getAppliedImpulse(Native, dof);
-
-    public float GetPosition(int row) => btMultiBodyConstraint_getPosition(Native, row);
-
-    public void InternalSetAppliedImpulse(int dof, float appliedImpulse) => btMultiBodyConstraint_internalSetAppliedImpulse(Native, dof, appliedImpulse);
-    /*
-		public float JacobianA(int row)
-		{
-			return btMultiBodyConstraint_jacobianA(Native, row);
-		}
-
-		public float JacobianB(int row)
-		{
-			return btMultiBodyConstraint_jacobianB(Native, row);
-		}
-		*/
-    public void SetPosition(int row, float pos) => btMultiBodyConstraint_setPosition(Native, row, pos);
-
-    public void UpdateJacobianSizes() => btMultiBodyConstraint_updateJacobianSizes(Native);
 
     public TypedMultiBodyConstraintType ConstraintType => (TypedMultiBodyConstraintType)btMultiBodyConstraint_getConstraintType(Native);
 
@@ -74,9 +38,62 @@ public abstract class MultiBodyConstraint : BulletDisposableObject
 
     public MultiBody MultiBodyA { get; private set; }
 
-    public MultiBody MultiBodyB { get; private set; }
+    public MultiBody? MultiBodyB { get; private set; }
 
     public int NumRows => btMultiBodyConstraint_getNumRows(Native);
 
-    protected override void Dispose(bool disposing) => btMultiBodyConstraint_delete(Native);
+    public void AllocateJacobiansMultiDof()
+        => btMultiBodyConstraint_allocateJacobiansMultiDof(Native);
+
+    /*
+		public void CreateConstraintRows(MultiBodyConstraintArray constraintRows,
+			MultiBodyJacobianData data, ContactSolverInfo infoGlobal)
+		{
+			btMultiBodyConstraint_createConstraintRows(Native, constraintRows.Native,
+				data.Native, infoGlobal.Native);
+		}
+		*/
+
+    public void DebugDraw(DebugDraw drawer)
+        => btMultiBodyConstraint_debugDraw(Native, drawer.Native);
+
+    public void FinalizeMultiDof()
+        => btMultiBodyConstraint_finalizeMultiDof(Native);
+
+    public float GetAppliedImpulse(int dof)
+        => btMultiBodyConstraint_getAppliedImpulse(Native, dof);
+
+    public float GetPosition(int row)
+        => btMultiBodyConstraint_getPosition(Native, row);
+
+    public void InternalSetAppliedImpulse(int dof, float appliedImpulse)
+        => btMultiBodyConstraint_internalSetAppliedImpulse(Native, dof, appliedImpulse);
+
+    /*
+		public float JacobianA(int row)
+		{
+			return btMultiBodyConstraint_jacobianA(Native, row);
+		}
+
+		public float JacobianB(int row)
+		{
+			return btMultiBodyConstraint_jacobianB(Native, row);
+		}
+		*/
+
+    public void SetPosition(int row, float pos)
+        => btMultiBodyConstraint_setPosition(Native, row, pos);
+
+    public void UpdateJacobianSizes()
+        => btMultiBodyConstraint_updateJacobianSizes(Native);
+
+    [MemberNotNull(nameof(MultiBodyA))]
+    protected internal void InitializeMembers(MultiBody bodyA, MultiBody? bodyB)
+    {
+        MultiBodyA = bodyA;
+        MultiBodyB = bodyB;
+    }
+
+    protected override void Dispose(bool disposing)
+        => btMultiBodyConstraint_delete(Native);
 }

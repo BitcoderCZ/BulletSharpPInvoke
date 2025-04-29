@@ -5,6 +5,19 @@ using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct StaticPlaneShapeData
+{
+    public CollisionShapeData CollisionShapeData;
+    public Vector3FloatData LocalScaling;
+    public Vector3FloatData PlaneNormal;
+    public float PlaneConstant;
+    public int Padding;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(StaticPlaneShapeData), fieldName).ToInt32();
+}
+
 public class StaticPlaneShape : ConcaveShape
 {
     public StaticPlaneShape(Vector3 planeNormal, float planeConstant)
@@ -24,16 +37,4 @@ public class StaticPlaneShape : ConcaveShape
             return value;
         }
     }
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct StaticPlaneShapeData
-{
-    public CollisionShapeData CollisionShapeData;
-    public Vector3FloatData LocalScaling;
-    public Vector3FloatData PlaneNormal;
-    public float PlaneConstant;
-    public int Padding;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(StaticPlaneShapeData), fieldName).ToInt32();
 }

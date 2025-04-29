@@ -6,11 +6,7 @@ namespace BulletSharp;
 
 public class DiscreteDynamicsWorld : DynamicsWorld
 {
-    private SimulationIslandManager _simulationIslandManager;
-
-    protected internal DiscreteDynamicsWorld()
-    {
-    }
+    private SimulationIslandManager? _simulationIslandManager;
 
     public DiscreteDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache,
         ConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration)
@@ -24,9 +20,15 @@ public class DiscreteDynamicsWorld : DynamicsWorld
         InitializeMembers(dispatcher, pairCache, constraintSolver);
     }
 
-    public void ApplyGravity() => btDiscreteDynamicsWorld_applyGravity(Native);
+    protected internal DiscreteDynamicsWorld()
+    {
+    }
 
-    public void DebugDrawConstraint(TypedConstraint constraint) => btDiscreteDynamicsWorld_debugDrawConstraint(Native, constraint.Native);
+    public void ApplyGravity()
+        => btDiscreteDynamicsWorld_applyGravity(Native);
+
+    public void DebugDrawConstraint(TypedConstraint constraint)
+        => btDiscreteDynamicsWorld_debugDrawConstraint(Native, constraint.Native);
 
     private unsafe void SerializeDynamicsWorldInfo(Serializer serializer)
     {
@@ -71,7 +73,7 @@ public class DiscreteDynamicsWorld : DynamicsWorld
         serializer.FinalizeChunk(chunk, "btDynamicsWorldFloatData", DnaID.DynamicsWorld, chunk.OldPtr);
     }
 
-    void SerializeRigidBodies(Serializer serializer)
+    private void SerializeRigidBodies(Serializer serializer)
     {
         foreach (CollisionObject colObj in CollisionObjectArray)
         {

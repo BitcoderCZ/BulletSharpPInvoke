@@ -8,20 +8,24 @@ namespace BulletSharp;
 
 public abstract class TriangleCallback : BulletDisposableObject
 {
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void ProcessTriangleDelegate(IntPtr triangle, int partId, int triangleIndex);
-
     private readonly ProcessTriangleDelegate _processTriangle;
 
     public TriangleCallback()
     {
         _processTriangle = new ProcessTriangleDelegate(ProcessTriangleUnmanaged);
 
-        IntPtr native = btTriangleCallbackWrapper_new(
-            Marshal.GetFunctionPointerForDelegate(_processTriangle));
+        IntPtr native = btTriangleCallbackWrapper_new(Marshal.GetFunctionPointerForDelegate(_processTriangle));
         InitializeUserOwned(native);
     }
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void ProcessTriangleDelegate(IntPtr triangle, int partId, int triangleIndex);
+
+    public abstract void ProcessTriangle(ref Vector3 point0, ref Vector3 point1, ref Vector3 point2, int partId, int triangleIndex);
+
+    protected override void Dispose(bool disposing)
+        => btTriangleCallback_delete(Native);
 
     private void ProcessTriangleUnmanaged(IntPtr triangle, int partId, int triangleIndex)
     {
@@ -32,18 +36,10 @@ public abstract class TriangleCallback : BulletDisposableObject
         Vector3 p2 = new Vector3(triangleData[8], triangleData[9], triangleData[10]);
         ProcessTriangle(ref p0, ref p1, ref p2, partId, triangleIndex);
     }
-
-    public abstract void ProcessTriangle(ref Vector3 point0, ref Vector3 point1, ref Vector3 point2, int partId, int triangleIndex);
-
-    protected override void Dispose(bool disposing) => btTriangleCallback_delete(Native);
 }
 
 public abstract class InternalTriangleIndexCallback : BulletDisposableObject
 {
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    delegate void InternalProcessTriangleIndexDelegate(IntPtr triangle, int partId, int triangleIndex);
-
     private readonly InternalProcessTriangleIndexDelegate _internalProcessTriangleIndex;
 
     internal InternalTriangleIndexCallback()
@@ -55,6 +51,15 @@ public abstract class InternalTriangleIndexCallback : BulletDisposableObject
         InitializeUserOwned(native);
     }
 
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void InternalProcessTriangleIndexDelegate(IntPtr triangle, int partId, int triangleIndex);
+
+    public abstract void InternalProcessTriangleIndex(ref Vector3 point0, ref Vector3 point1, ref Vector3 point2, int partId, int triangleIndex);
+
+    protected override void Dispose(bool disposing)
+        => btInternalTriangleIndexCallback_delete(Native);
+
     private void InternalProcessTriangleIndexUnmanaged(IntPtr triangle, int partId, int triangleIndex)
     {
         float[] triangleData = new float[11];
@@ -64,8 +69,4 @@ public abstract class InternalTriangleIndexCallback : BulletDisposableObject
         Vector3 p2 = new Vector3(triangleData[8], triangleData[9], triangleData[10]);
         InternalProcessTriangleIndex(ref p0, ref p1, ref p2, partId, triangleIndex);
     }
-
-    public abstract void InternalProcessTriangleIndex(ref Vector3 point0, ref Vector3 point1, ref Vector3 point2, int partId, int triangleIndex);
-
-    protected override void Dispose(bool disposing) => btInternalTriangleIndexCallback_delete(Native);
 }

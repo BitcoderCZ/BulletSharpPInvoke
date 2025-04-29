@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -11,111 +12,15 @@ public class IndexedMesh : BulletDisposableObject
 {
     private bool _ownsData;
 
-    internal IndexedMesh(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public IndexedMesh()
     {
         IntPtr native = btIndexedMesh_new();
         InitializeUserOwned(native);
     }
 
-    public void Allocate(int numTriangles, int numVertices, int triangleIndexStride = sizeof(int) * 3, int vertexStride = sizeof(float) * 3)
+    internal IndexedMesh(IntPtr native, BulletObject owner)
     {
-        if (_ownsData)
-        {
-            Free();
-        }
-        else
-        {
-            _ownsData = true;
-        }
-
-        switch (triangleIndexStride)
-        {
-            case sizeof(byte) * 3:
-                IndexType = PhyScalarType.Byte;
-                break;
-            case sizeof(short) * 3:
-                IndexType = PhyScalarType.Int16;
-                break;
-            case sizeof(int) * 3:
-            default:
-                IndexType = PhyScalarType.Int32;
-                break;
-        }
-        VertexType = PhyScalarType.Single;
-
-        NumTriangles = numTriangles;
-        TriangleIndexBase = Marshal.AllocHGlobal(numTriangles * triangleIndexStride);
-        TriangleIndexStride = triangleIndexStride;
-        NumVertices = numVertices;
-        VertexBase = Marshal.AllocHGlobal(numVertices * vertexStride);
-        VertexStride = vertexStride;
-    }
-
-    public void Free()
-    {
-        if (_ownsData)
-        {
-            Marshal.FreeHGlobal(TriangleIndexBase);
-            Marshal.FreeHGlobal(VertexBase);
-            _ownsData = false;
-        }
-    }
-
-    public unsafe UnmanagedMemoryStream GetTriangleStream()
-    {
-        int length = NumTriangles * TriangleIndexStride;
-        return new UnmanagedMemoryStream((byte*)TriangleIndexBase.ToPointer(), length, length, FileAccess.ReadWrite);
-    }
-
-    public unsafe UnmanagedMemoryStream GetVertexStream()
-    {
-        int length = NumVertices * VertexStride;
-        return new UnmanagedMemoryStream((byte*)btIndexedMesh_getVertexBase(Native).ToPointer(), length, length, FileAccess.ReadWrite);
-    }
-
-    public void SetData(ICollection<int> triangles, ICollection<float> vertices)
-    {
-        SetTriangles(triangles);
-
-        float[] vertexArray = vertices as float[];
-        if (vertexArray == null)
-        {
-            vertexArray = new float[vertices.Count];
-            vertices.CopyTo(vertexArray, 0);
-        }
-        Marshal.Copy(vertexArray, 0, VertexBase, vertices.Count);
-    }
-
-    public void SetData(ICollection<int> triangles, ICollection<Vector3> vertices)
-    {
-        SetTriangles(triangles);
-
-        float[] vertexArray = new float[vertices.Count * 3];
-        int i = 0;
-        foreach (Vector3 v in vertices)
-        {
-            vertexArray[i] = v.X;
-            vertexArray[i + 1] = v.Y;
-            vertexArray[i + 2] = v.Z;
-            i += 3;
-        }
-        Marshal.Copy(vertexArray, 0, VertexBase, vertexArray.Length);
-    }
-
-    private void SetTriangles(ICollection<int> triangles)
-    {
-        int[] triangleArray = triangles as int[];
-        if (triangleArray == null)
-        {
-            triangleArray = new int[triangles.Count];
-            triangles.CopyTo(triangleArray, 0);
-        }
-        Marshal.Copy(triangleArray, 0, TriangleIndexBase, triangleArray.Length);
+        InitializeSubObject(native, owner);
     }
 
     public PhyScalarType IndexType
@@ -166,6 +71,87 @@ public class IndexedMesh : BulletDisposableObject
         set => btIndexedMesh_setVertexType(Native, value);
     }
 
+    public void Allocate(int numTriangles, int numVertices, int triangleIndexStride = sizeof(int) * 3, int vertexStride = sizeof(float) * 3)
+    {
+        if (_ownsData)
+        {
+            Free();
+        }
+        else
+        {
+            _ownsData = true;
+        }
+
+        IndexType = triangleIndexStride switch
+        {
+            sizeof(byte) * 3 => PhyScalarType.Byte,
+            sizeof(short) * 3 => PhyScalarType.Int16,
+            _ => PhyScalarType.Int32,
+        };
+
+        VertexType = PhyScalarType.Single;
+
+        NumTriangles = numTriangles;
+        TriangleIndexBase = Marshal.AllocHGlobal(numTriangles * triangleIndexStride);
+        TriangleIndexStride = triangleIndexStride;
+        NumVertices = numVertices;
+        VertexBase = Marshal.AllocHGlobal(numVertices * vertexStride);
+        VertexStride = vertexStride;
+    }
+
+    public void Free()
+    {
+        if (_ownsData)
+        {
+            Marshal.FreeHGlobal(TriangleIndexBase);
+            Marshal.FreeHGlobal(VertexBase);
+            _ownsData = false;
+        }
+    }
+
+    public unsafe UnmanagedMemoryStream GetTriangleStream()
+    {
+        int length = NumTriangles * TriangleIndexStride;
+        return new UnmanagedMemoryStream((byte*)TriangleIndexBase.ToPointer(), length, length, FileAccess.ReadWrite);
+    }
+
+    public unsafe UnmanagedMemoryStream GetVertexStream()
+    {
+        int length = NumVertices * VertexStride;
+        return new UnmanagedMemoryStream((byte*)btIndexedMesh_getVertexBase(Native).ToPointer(), length, length, FileAccess.ReadWrite);
+    }
+
+    public void SetData(ICollection<int> triangles, ICollection<float> vertices)
+    {
+        SetTriangles(triangles);
+
+        float[]? vertexArray = vertices as float[];
+        if (vertexArray == null)
+        {
+            vertexArray = new float[vertices.Count];
+            vertices.CopyTo(vertexArray, 0);
+        }
+
+        Marshal.Copy(vertexArray, 0, VertexBase, vertices.Count);
+    }
+
+    public void SetData(ICollection<int> triangles, ICollection<Vector3> vertices)
+    {
+        SetTriangles(triangles);
+
+        float[] vertexArray = new float[vertices.Count * 3];
+        int i = 0;
+        foreach (Vector3 v in vertices)
+        {
+            vertexArray[i] = v.X;
+            vertexArray[i + 1] = v.Y;
+            vertexArray[i + 2] = v.Z;
+            i += 3;
+        }
+
+        Marshal.Copy(vertexArray, 0, VertexBase, vertexArray.Length);
+    }
+
     protected override void Dispose(bool disposing)
     {
         Free();
@@ -174,15 +160,23 @@ public class IndexedMesh : BulletDisposableObject
             btIndexedMesh_delete(Native);
         }
     }
+
+    private void SetTriangles(ICollection<int> triangles)
+    {
+        int[]? triangleArray = triangles as int[];
+        if (triangleArray == null)
+        {
+            triangleArray = new int[triangles.Count];
+            triangles.CopyTo(triangleArray, 0);
+        }
+
+        Marshal.Copy(triangleArray, 0, TriangleIndexBase, triangleArray.Length);
+    }
 }
 
 public class TriangleIndexVertexArray : StridingMeshInterface
 {
-    private IndexedMesh _initialMesh;
-
-    internal TriangleIndexVertexArray(ConstructionInfo info)
-    {
-    }
+    private IndexedMesh? _initialMesh;
 
     public TriangleIndexVertexArray()
     {
@@ -222,7 +216,15 @@ public class TriangleIndexVertexArray : StridingMeshInterface
         InitializeMembers();
     }
 
-    protected internal void InitializeMembers() => IndexedMeshArray = new AlignedIndexedMeshArray(btTriangleIndexVertexArray_getIndexedMeshArray(Native), this);
+#pragma warning disable CS8618
+#pragma warning disable IDE0060
+    internal TriangleIndexVertexArray(ConstructionInfo? info)
+#pragma warning restore IDE0060
+#pragma warning restore CS8618
+    {
+    }
+
+    public AlignedIndexedMeshArray IndexedMeshArray { get; private set; }
 
     public void AddIndexedMesh(IndexedMesh mesh, PhyScalarType indexType = PhyScalarType.Int32)
     {
@@ -230,7 +232,9 @@ public class TriangleIndexVertexArray : StridingMeshInterface
         IndexedMeshArray.Add(mesh);
     }
 
-    public AlignedIndexedMeshArray IndexedMeshArray { get; private set; }
+    [MemberNotNull(nameof(IndexedMeshArray))]
+    protected internal void InitializeMembers()
+        => IndexedMeshArray = new AlignedIndexedMeshArray(btTriangleIndexVertexArray_getIndexedMeshArray(Native), this);
 
     protected override void Dispose(bool disposing)
     {
@@ -242,6 +246,7 @@ public class TriangleIndexVertexArray : StridingMeshInterface
                 _initialMesh = null;
             }
         }
+
         base.Dispose(disposing);
     }
 }

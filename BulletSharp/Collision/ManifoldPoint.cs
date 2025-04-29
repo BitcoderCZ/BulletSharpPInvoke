@@ -6,6 +6,8 @@ using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
 
+public delegate void ContactAddedEventHandler(ManifoldPoint cp, CollisionObjectWrapper colObj0Wrap, int partId0, int index0, CollisionObjectWrapper colObj1Wrap, int partId1, int index1);
+
 [Flags]
 public enum ContactPointFlags
 {
@@ -17,50 +19,11 @@ public enum ContactPointFlags
     FrictionAnchor = 16,
 }
 
-public delegate void ContactAddedEventHandler(ManifoldPoint cp, CollisionObjectWrapper colObj0Wrap, int partId0, int index0, CollisionObjectWrapper colObj1Wrap, int partId1, int index1);
-
 public class ManifoldPoint : BulletDisposableObject
 {
-    private static ContactAddedEventHandler _contactAdded;
-    private static ContactAddedUnmanagedDelegate _contactAddedUnmanaged;
+    private static ContactAddedEventHandler? _contactAdded;
+    private static ContactAddedUnmanagedDelegate? _contactAddedUnmanaged;
     private static IntPtr _contactAddedUnmanagedPtr;
-
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate bool ContactAddedUnmanagedDelegate(IntPtr cp, IntPtr colObj0Wrap, int partId0, int index0, IntPtr colObj1Wrap, int partId1, int index1);
-
-    static bool ContactAddedUnmanaged(IntPtr cp, IntPtr colObj0Wrap, int partId0, int index0, IntPtr colObj1Wrap, int partId1, int index1)
-    {
-        _contactAdded.Invoke(new ManifoldPoint(cp), new CollisionObjectWrapper(colObj0Wrap), partId0, index0, new CollisionObjectWrapper(colObj1Wrap), partId1, index1);
-        return false;
-    }
-
-    public static event ContactAddedEventHandler ContactAdded
-    {
-        add
-        {
-            if (_contactAddedUnmanaged == null)
-            {
-                _contactAddedUnmanaged = new ContactAddedUnmanagedDelegate(ContactAddedUnmanaged);
-                _contactAddedUnmanagedPtr = Marshal.GetFunctionPointerForDelegate(_contactAddedUnmanaged);
-            }
-            setGContactAddedCallback(_contactAddedUnmanagedPtr);
-            _contactAdded += value;
-        }
-        remove
-        {
-            _contactAdded -= value;
-            if (_contactAdded == null)
-            {
-                setGContactAddedCallback(IntPtr.Zero);
-            }
-        }
-    }
-
-    internal ManifoldPoint(IntPtr native)
-    {
-        InitializeSubObject(native, this);
-    }
 
     public ManifoldPoint()
     {
@@ -72,6 +35,39 @@ public class ManifoldPoint : BulletDisposableObject
     {
         IntPtr native = btManifoldPoint_new2(ref pointA, ref pointB, ref normal, distance);
         InitializeUserOwned(native);
+    }
+
+    internal ManifoldPoint(IntPtr native)
+    {
+        InitializeSubObject(native, this);
+    }
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate bool ContactAddedUnmanagedDelegate(IntPtr cp, IntPtr colObj0Wrap, int partId0, int index0, IntPtr colObj1Wrap, int partId1, int index1);
+
+    public static event ContactAddedEventHandler ContactAdded
+    {
+        add
+        {
+            if (_contactAddedUnmanaged == null)
+            {
+                _contactAddedUnmanaged = new ContactAddedUnmanagedDelegate(ContactAddedUnmanaged);
+                _contactAddedUnmanagedPtr = Marshal.GetFunctionPointerForDelegate(_contactAddedUnmanaged);
+            }
+
+            setGContactAddedCallback(_contactAddedUnmanagedPtr);
+            _contactAdded += value;
+        }
+
+        remove
+        {
+            _contactAdded -= value;
+            if (_contactAdded == null)
+            {
+                setGContactAddedCallback(IntPtr.Zero);
+            }
+        }
     }
 
     public float AppliedImpulse
@@ -277,13 +273,14 @@ public class ManifoldPoint : BulletDisposableObject
         set => btManifoldPoint_setPositionWorldOnB(Native, ref value);
     }
 
-    public object UserPersistentData
+    public object? UserPersistentData
     {
         get
         {
             IntPtr valuePtr = btManifoldPoint_getUserPersistentData(Native);
             return (valuePtr != IntPtr.Zero) ? GCHandle.FromIntPtr(valuePtr).Target : null;
         }
+
         set
         {
             IntPtr prevPtr = btManifoldPoint_getUserPersistentData(Native);
@@ -294,8 +291,10 @@ public class ManifoldPoint : BulletDisposableObject
                 {
                     return;
                 }
+
                 prevHandle.Free();
             }
+
             if (value != null)
             {
                 GCHandle handle = GCHandle.Alloc(value);
@@ -314,5 +313,11 @@ public class ManifoldPoint : BulletDisposableObject
         {
             btManifoldPoint_delete(Native);
         }
+    }
+
+    private static bool ContactAddedUnmanaged(IntPtr cp, IntPtr colObj0Wrap, int partId0, int index0, IntPtr colObj1Wrap, int partId1, int index1)
+    {
+        _contactAdded?.Invoke(new ManifoldPoint(cp), new CollisionObjectWrapper(colObj0Wrap), partId0, index0, new CollisionObjectWrapper(colObj1Wrap), partId1, index1);
+        return false;
     }
 }

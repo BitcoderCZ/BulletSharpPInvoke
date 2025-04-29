@@ -11,7 +11,7 @@ public class SphereShape : ConvexInternalShape
         InitializeCollisionShape(native);
     }
 
-    public void SetUnscaledRadius(float radius) => btSphereShape_setUnscaledRadius(Native, radius);
-
     public float Radius => btSphereShape_getRadius(Native);
+
+    public void SetUnscaledRadius(float radius) => btSphereShape_setUnscaledRadius(Native, radius);
 }

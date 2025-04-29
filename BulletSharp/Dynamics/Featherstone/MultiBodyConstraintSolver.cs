@@ -5,17 +5,18 @@ namespace BulletSharp;
 
 public class MultiBodyConstraintSolver : SequentialImpulseConstraintSolver
 {
-    internal MultiBodyConstraintSolver(ConstructionInfo info)
-        : base(info)
-    {
-    }
-
     public MultiBodyConstraintSolver()
         : base(ConstructionInfo.Null)
     {
         IntPtr native = btMultiBodyConstraintSolver_new();
         InitializeUserOwned(native);
     }
+
+    internal MultiBodyConstraintSolver(ConstructionInfo info)
+        : base(info)
+    {
+    }
+
     /*
 		public float SolveGroupCacheFriendlyFinish(CollisionObject bodies, int numBodies,
 			ContactSolverInfo infoGlobal)

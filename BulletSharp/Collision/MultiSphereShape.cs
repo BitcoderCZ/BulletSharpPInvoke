@@ -5,6 +5,28 @@ using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct MultiSphereShapeData
+{
+    public ConvexInternalShapeData ConvexInternalShapeData;
+    public PositionAndRadius LocalPositionArrayPtr;
+    public int LocalPositionArraySize;
+    public int Padding;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(MultiSphereShapeData), fieldName).ToInt32();
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct PositionAndRadius
+{
+    public Vector3FloatData Position;
+    public float Radius;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(PositionAndRadius), fieldName).ToInt32();
+}
+
 public class MultiSphereShape : ConvexInternalAabbCachingShape
 {
     public MultiSphereShape(Vector3[] positions, float[] radi)
@@ -19,6 +41,8 @@ public class MultiSphereShape : ConvexInternalAabbCachingShape
         InitializeCollisionShape(native);
     }
 
+    public int SphereCount => btMultiSphereShape_getSphereCount(Native);
+
     public Vector3 GetSpherePosition(int index)
     {
         Vector3 value;
@@ -26,7 +50,9 @@ public class MultiSphereShape : ConvexInternalAabbCachingShape
         return value;
     }
 
-    public float GetSphereRadius(int index) => btMultiSphereShape_getSphereRadius(Native, index);
+    public float GetSphereRadius(int index)
+        => btMultiSphereShape_getSphereRadius(Native, index);
+
     /*
 		public unsafe override string Serialize(IntPtr dataBuffer, Serializer serializer)
 		{
@@ -59,25 +85,4 @@ public class MultiSphereShape : ConvexInternalAabbCachingShape
 			return "btMultiSphereShapeData";
 		}
 		*/
-    public int SphereCount => btMultiSphereShape_getSphereCount(Native);
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct MultiSphereShapeData
-{
-    public ConvexInternalShapeData ConvexInternalShapeData;
-    public PositionAndRadius LocalPositionArrayPtr;
-    public int LocalPositionArraySize;
-    public int Padding;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(MultiSphereShapeData), fieldName).ToInt32();
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct PositionAndRadius
-{
-    public Vector3FloatData Position;
-    public float Radius;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(PositionAndRadius), fieldName).ToInt32();
 }

@@ -28,7 +28,7 @@ public enum FileVerboseMode
     DumpFileInfo = 8,
 }
 
-class PointerFixup
+internal class PointerFixup
 {
     public byte[] StructAlloc { get; set; }
     public long[] Offsets { get; set; }
