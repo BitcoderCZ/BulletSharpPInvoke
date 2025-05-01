@@ -60,7 +60,7 @@ public class BulletWorldImporter : WorldImporter
 
         foreach (byte[] shapeData in file.CollisionShapes)
         {
-            CollisionShape shape = ConvertCollisionShape(shapeData, file.LibPointers);
+            CollisionShape? shape = ConvertCollisionShape(shapeData, file.LibPointers);
             if (shape != null)
             {
                 foreach (KeyValuePair<long, byte[]> lib in file.LibPointers)
@@ -84,6 +84,7 @@ public class BulletWorldImporter : WorldImporter
             }
         }
 
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
         foreach (byte[] solverInfoData in file.DynamicsWorldInfo)
         {
             if ((file.Flags & FileFlags.DoublePrecision) != 0)
@@ -95,6 +96,7 @@ public class BulletWorldImporter : WorldImporter
                 //throw new NotImplementedException();
             }
         }
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
 
         foreach (byte[] bodyData in file.RigidBodies)
         {
@@ -110,9 +112,9 @@ public class BulletWorldImporter : WorldImporter
 
         foreach (byte[] colObjData in file.CollisionObjects)
         {
-            using (var colObjStream = new MemoryStream(colObjData, false))
+            using (MemoryStream colObjStream = new MemoryStream(colObjData, false))
             {
-                using (var colObjReader = new BulletReader(colObjStream))
+                using (BulletReader colObjReader = new BulletReader(colObjStream))
                 {
                     if ((file.Flags & FileFlags.DoublePrecision) != 0)
                     {
@@ -120,13 +122,14 @@ public class BulletWorldImporter : WorldImporter
                         CollisionShape shape = _shapeMap[shapePtr];
                         Matrix4x4 startTransform = colObjReader.ReadMatrixDouble(CollisionObjectDoubleData.Offset("WorldTransform"));
                         long namePtr = colObjReader.ReadPtr(CollisionObjectDoubleData.Offset("Name"));
-                        string name = null;
+                        string? name = null;
                         if (namePtr != 0)
                         {
-                            byte[] nameData = file.FindLibPointer(namePtr);
+                            byte[]? nameData = file.FindLibPointer(namePtr);
                             int length = Array.IndexOf(nameData, (byte)0);
                             name = System.Text.Encoding.ASCII.GetString(nameData, 0, length);
                         }
+
                         CollisionObject colObj = CreateCollisionObject(ref startTransform, shape, name);
                         _bodyMap.Add(colObjData, colObj);
                     }
@@ -136,13 +139,14 @@ public class BulletWorldImporter : WorldImporter
                         CollisionShape shape = _shapeMap[shapePtr];
                         Matrix4x4 startTransform = colObjReader.ReadMatrix(CollisionObjectFloatData.Offset("WorldTransform"));
                         long namePtr = colObjReader.ReadPtr(CollisionObjectFloatData.Offset("Name"));
-                        string name = null;
+                        string? name = null;
                         if (namePtr != 0)
                         {
-                            byte[] nameData = file.FindLibPointer(namePtr);
+                            byte[]? nameData = file.FindLibPointer(namePtr);
                             int length = Array.IndexOf(nameData, (byte)0);
                             name = System.Text.Encoding.ASCII.GetString(nameData, 0, length);
                         }
+
                         CollisionObject colObj = CreateCollisionObject(ref startTransform, shape, name);
                         _bodyMap.Add(colObjData, colObj);
                     }
@@ -152,7 +156,7 @@ public class BulletWorldImporter : WorldImporter
 
         foreach (byte[] constraintData in file.Constraints)
         {
-            RigidBody a = null, b = null;
+            RigidBody? a = null, b = null;
 
             long collisionObjectAPtr = BulletReader.ToPtr(constraintData, TypedConstraintFloatData.Offset("RigidBodyA"));
             if (collisionObjectAPtr != 0)
@@ -208,32 +212,9 @@ public class BulletWorldImporter : WorldImporter
         return true;
     }
 
-    // Replaces an identifier in serialized data with an actual pointer to something.
-    // The handle should be used to free the pointer once it is no longer used.
-    private static GCHandle? PinDataAtPointer(byte[] data, int pointerPosition, BulletFile file)
+    public bool LoadFile(string fileName, string? preSwapFilenameOut)
     {
-        long pointer = BulletReader.ToPtr(data, pointerPosition);
-        if (pointer != 0)
-        {
-            byte[] referencedData = file.LibPointers[pointer];
-            GCHandle dataHandle = GCHandle.Alloc(referencedData, GCHandleType.Pinned);
-            WritePointer(data, pointerPosition, dataHandle.AddrOfPinnedObject());
-            return dataHandle;
-        }
-        return null;
-    }
-
-    private static void WritePointer(byte[] destinationArray, int destinationIndex, IntPtr pointer)
-    {
-        byte[] sourceArray = IntPtr.Size == 8
-            ? BitConverter.GetBytes(pointer.ToInt64())
-            : BitConverter.GetBytes(pointer.ToInt32());
-        Array.Copy(sourceArray, 0, destinationArray, destinationIndex, IntPtr.Size);
-    }
-
-    public bool LoadFile(string fileName, string preSwapFilenameOut)
-    {
-        var bulletFile = new BulletFile(fileName);
+        BulletFile bulletFile = new BulletFile(fileName);
         bool result = LoadFileFromMemory(bulletFile);
 
         //now you could save the file in 'native' format using
@@ -245,17 +226,17 @@ public class BulletWorldImporter : WorldImporter
                 bulletFile.PreSwap();
                 //bulletFile.WriteFile(preSwapFilenameOut);
             }
-
         }
 
         return result;
     }
 
-    public bool LoadFile(string fileName) => LoadFile(fileName, null);
+    public bool LoadFile(string fileName)
+        => LoadFile(fileName, null);
 
     public bool LoadFileFromMemory(byte[] memoryBuffer, int len)
     {
-        var bulletFile = new BulletFile(memoryBuffer, len);
+        BulletFile bulletFile = new BulletFile(memoryBuffer, len);
         return LoadFileFromMemory(bulletFile);
     }
 
@@ -274,5 +255,29 @@ public class BulletWorldImporter : WorldImporter
         }
 
         return ConvertAllObjects(bulletFile);
+    }
+
+    // Replaces an identifier in serialized data with an actual pointer to something.
+    // The handle should be used to free the pointer once it is no longer used.
+    private static GCHandle? PinDataAtPointer(byte[] data, int pointerPosition, BulletFile file)
+    {
+        long pointer = BulletReader.ToPtr(data, pointerPosition);
+        if (pointer != 0)
+        {
+            byte[] referencedData = file.LibPointers[pointer];
+            GCHandle dataHandle = GCHandle.Alloc(referencedData, GCHandleType.Pinned);
+            WritePointer(data, pointerPosition, dataHandle.AddrOfPinnedObject());
+            return dataHandle;
+        }
+
+        return null;
+    }
+
+    private static void WritePointer(byte[] destinationArray, int destinationIndex, IntPtr pointer)
+    {
+        byte[] sourceArray = IntPtr.Size == 8
+            ? BitConverter.GetBytes(pointer.ToInt64())
+            : BitConverter.GetBytes(pointer.ToInt32());
+        Array.Copy(sourceArray, 0, destinationArray, destinationIndex, IntPtr.Size);
     }
 }

@@ -6,18 +6,12 @@ namespace BulletSharp;
 
 public class UniversalConstraint : Generic6DofConstraint
 {
-    public UniversalConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 anchor,
-        Vector3 axis1, Vector3 axis2)
+    public UniversalConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 anchor, Vector3 axis1, Vector3 axis2)
     {
-        IntPtr native = btUniversalConstraint_new(rigidBodyA.Native, rigidBodyB.Native,
-            ref anchor, ref axis1, ref axis2);
+        IntPtr native = btUniversalConstraint_new(rigidBodyA.Native, rigidBodyB.Native, ref anchor, ref axis1, ref axis2);
         InitializeUserOwned(native);
         InitializeMembers(rigidBodyA, rigidBodyB);
     }
-
-    public void SetLowerLimit(float ang1min, float ang2min) => btUniversalConstraint_setLowerLimit(Native, ang1min, ang2min);
-
-    public void SetUpperLimit(float ang1max, float ang2max) => btUniversalConstraint_setUpperLimit(Native, ang1max, ang2max);
 
     public Vector3 Anchor
     {
@@ -62,4 +56,10 @@ public class UniversalConstraint : Generic6DofConstraint
             return value;
         }
     }
+
+    public void SetLowerLimit(float ang1min, float ang2min)
+        => btUniversalConstraint_setLowerLimit(Native, ang1min, ang2min);
+
+    public void SetUpperLimit(float ang1max, float ang2max)
+        => btUniversalConstraint_setUpperLimit(Native, ang1max, ang2max);
 }

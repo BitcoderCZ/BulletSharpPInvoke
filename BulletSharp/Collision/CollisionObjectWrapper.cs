@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
 
@@ -12,17 +12,31 @@ public class CollisionObjectWrapper : BulletObject
         Initialize(native);
     }
 
-    [DisallowNull]
-    public CollisionObject? CollisionObject
+    public CollisionObject CollisionObject
     {
-        get => CollisionObject.GetManaged(btCollisionObjectWrapper_getCollisionObject(Native));
+        get
+        {
+            CollisionObject? managed = CollisionObject.GetManaged(btCollisionObjectWrapper_getCollisionObject(Native));
+
+            Debug.Assert(managed is not null, $"{nameof(managed)} should not be null.");
+
+            return managed;
+        }
+
         set => btCollisionObjectWrapper_setCollisionObject(Native, value.Native);
     }
 
-    [DisallowNull]
-    public CollisionShape? CollisionShape
+    public CollisionShape CollisionShape
     {
-        get => CollisionShape.GetManaged(btCollisionObjectWrapper_getCollisionShape(Native));
+        get
+        {
+            CollisionShape? managed = CollisionShape.GetManaged(btCollisionObjectWrapper_getCollisionShape(Native));
+
+            Debug.Assert(managed is not null, $"{nameof(managed)} should not be null.");
+
+            return managed;
+        }
+
         set => btCollisionObjectWrapper_setShape(Native, value.Native);
     }
 

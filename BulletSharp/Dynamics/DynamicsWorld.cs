@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -103,7 +102,7 @@ public abstract class DynamicsWorld : CollisionWorld
             return;
         }
 
-        var wrapper = new ActionInterfaceWrapper(action, this);
+        ActionInterfaceWrapper wrapper = new ActionInterfaceWrapper(action, this);
         _actions.Add(action, wrapper);
         btDynamicsWorld_addAction(Native, wrapper.Native);
     }
@@ -200,7 +199,7 @@ public abstract class DynamicsWorld : CollisionWorld
             return false;
         }
 
-        var constraint = _constraints[index];
+        TypedConstraint constraint = _constraints[index];
 
         RigidBody rigidBody = constraint.RigidBodyA;
         rigidBody._constraintRefs?.Remove(constraint);
@@ -242,8 +241,7 @@ public abstract class DynamicsWorld : CollisionWorld
     public void SynchronizeMotionStates()
         => btDynamicsWorld_synchronizeMotionStates(Native);
 
-    [MemberNotNull(nameof(_constraintSolver))]
-    protected internal void InitializeMembers(Dispatcher dispatcher, BroadphaseInterface pairCache, ConstraintSolver constraintSolver)
+    protected internal void InitializeMembers(Dispatcher dispatcher, BroadphaseInterface pairCache, ConstraintSolver? constraintSolver)
     {
         InitializeMembers(dispatcher, pairCache);
         _constraintSolver = constraintSolver;

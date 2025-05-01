@@ -22,14 +22,16 @@ public enum SolverModes
 
 public class ContactSolverInfoData : BulletDisposableObject
 {
-    internal ContactSolverInfoData(ConstructionInfo info)
-    {
-    }
-
     public ContactSolverInfoData()
     {
         IntPtr native = btContactSolverInfoData_new();
         InitializeUserOwned(native);
+    }
+
+#pragma warning disable IDE0060 // Remove unused parameter
+    internal ContactSolverInfoData(ConstructionInfo? info)
+#pragma warning restore IDE0060 // Remove unused parameter
+    {
     }
 
     public float Damping
@@ -199,16 +201,16 @@ public class ContactSolverInfoData : BulletDisposableObject
 
 public class ContactSolverInfo : ContactSolverInfoData
 {
-    internal ContactSolverInfo(IntPtr native, BulletObject owner)
-        : base(ConstructionInfo.Null)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public ContactSolverInfo()
         : base(ConstructionInfo.Null)
     {
         IntPtr native = btContactSolverInfo_new();
         InitializeUserOwned(native);
+    }
+
+    internal ContactSolverInfo(IntPtr native, BulletObject owner)
+        : base(ConstructionInfo.Null)
+    {
+        InitializeSubObject(native, owner);
     }
 }

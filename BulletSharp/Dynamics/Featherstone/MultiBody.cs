@@ -27,6 +27,7 @@ public class MultiBody : BulletDisposableObject
         set => btMultiBody_setAngularDamping(Native, value);
     }
 
+    // TODO: not nullable?
     [DisallowNull]
     public MultiBodyLinkCollider? BaseCollider
     {

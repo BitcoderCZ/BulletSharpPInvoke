@@ -134,7 +134,7 @@ internal class Vector3ListDebugView
     {
         get
         {
-            var arr = new Vector3[_list.Count];
+            Vector3[] arr = new Vector3[_list.Count];
             _list.CopyTo(arr, 0);
             return arr;
         }

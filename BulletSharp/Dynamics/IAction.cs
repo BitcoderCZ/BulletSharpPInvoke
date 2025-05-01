@@ -8,20 +8,14 @@ namespace BulletSharp;
 public interface IAction
 {
     void DebugDraw(DebugDraw debugDrawer);
+
     void UpdateAction(CollisionWorld collisionWorld, float deltaTimeStep);
 }
 
 internal class ActionInterfaceWrapper : BulletDisposableObject
 {
-    private IAction _actionInterface;
+    private readonly IAction _actionInterface;
     private readonly DynamicsWorld _world;
-
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DebugDrawUnmanagedDelegate(IntPtr debugDrawer);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void UpdateActionUnmanagedDelegate(IntPtr collisionWorld, float deltaTimeStep);
 
     private readonly DebugDrawUnmanagedDelegate _debugDraw;
     private readonly UpdateActionUnmanagedDelegate _updateAction;
@@ -40,9 +34,26 @@ internal class ActionInterfaceWrapper : BulletDisposableObject
         _world = world;
     }
 
-    private void DebugDrawUnmanaged(IntPtr debugDrawer) => _actionInterface.DebugDraw(DebugDraw.GetManaged(debugDrawer));
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DebugDrawUnmanagedDelegate(IntPtr debugDrawer);
 
-    private void UpdateActionUnmanaged(IntPtr collisionWorld, float deltaTimeStep) => _actionInterface.UpdateAction(_world, deltaTimeStep);
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void UpdateActionUnmanagedDelegate(IntPtr collisionWorld, float deltaTimeStep);
 
-    protected override void Dispose(bool disposing) => btActionInterface_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btActionInterface_delete(Native);
+
+    private void DebugDrawUnmanaged(IntPtr debugDrawer)
+    {
+        DebugDraw? managed = DebugDraw.GetManaged(debugDrawer);
+
+        System.Diagnostics.Debug.Assert(managed is not null, $"{nameof(managed)} shoudn't be null.");
+
+        _actionInterface.DebugDraw(managed);
+    }
+
+    private void UpdateActionUnmanaged(IntPtr collisionWorld, float deltaTimeStep)
+        => _actionInterface.UpdateAction(_world, deltaTimeStep);
 }

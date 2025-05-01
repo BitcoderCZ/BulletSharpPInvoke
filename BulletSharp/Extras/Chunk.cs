@@ -7,6 +7,12 @@ namespace BulletSharp;
 [StructLayout(LayoutKind.Sequential)]
 public class Chunk4
 {
+    public int Code;
+    public int Length;
+    public int UniqueInt1;
+    public int StructIndex;
+    public int NumBlocks;
+
     public Chunk4()
     {
     }
@@ -19,17 +25,18 @@ public class Chunk4
         StructIndex = reader.ReadInt32();
         NumBlocks = reader.ReadInt32();
     }
-
-    public int Code;
-    public int Length;
-    public int UniqueInt1;
-    public int StructIndex;
-    public int NumBlocks;
-};
+}
 
 [StructLayout(LayoutKind.Sequential)]
 public class Chunk8
 {
+    public int Code;
+    public int Length;
+    public int UniqueInt1;
+    public int UniqueInt2;
+    public int StructIndex;
+    public int NumBlocks;
+
     public Chunk8()
     {
     }
@@ -43,17 +50,16 @@ public class Chunk8
         StructIndex = reader.ReadInt32();
         NumBlocks = reader.ReadInt32();
     }
-
-    public int Code;
-    public int Length;
-    public int UniqueInt1;
-    public int UniqueInt2;
-    public int StructIndex;
-    public int NumBlocks;
-};
+}
 
 public class ChunkInd
 {
+    public DnaID Code;
+    public int Length;
+    public long OldPtr;
+    public int StructIndex;
+    public int NumBlocks;
+
     public ChunkInd(Chunk4 c)
     {
         Code = (DnaID)c.Code;
@@ -72,30 +78,22 @@ public class ChunkInd
         NumBlocks = c.NumBlocks;
     }
 
-    public DnaID Code;
-    public int Length;
-    public long OldPtr;
-    public int StructIndex;
-    public int NumBlocks;
+    public static int Size => Marshal.SizeOf((IntPtr.Size == 8) ? typeof(Chunk8) : typeof(Chunk4));
 
-    public static int Size
-    {
-        get { return Marshal.SizeOf((IntPtr.Size == 8) ? typeof(Chunk8) : typeof(Chunk4)); }
-    }
-
-    public override string ToString() => "Chunk: " + Code.ToString();
+    public override string ToString()
+        => "Chunk: " + Code.ToString();
 }
 
+#pragma warning disable SA1204 // Static elements should appear before instance elements
 public static class ChunkUtils
+#pragma warning restore SA1204 // Static elements should appear before instance elements
 {
     // Get the file's chunk size
     public static int GetChunkSize(FileFlags flags)
     {
         bool bitsVaries = (flags & FileFlags.BitsVaries) != 0;
-        if (bitsVaries)
-        {
-            return Marshal.SizeOf(IntPtr.Size == 8 ? typeof(Chunk4) : typeof(Chunk8));
-        }
-        return Marshal.SizeOf(IntPtr.Size == 8 ? typeof(Chunk8) : typeof(Chunk4));
+        return bitsVaries
+            ? Marshal.SizeOf(IntPtr.Size == 8 ? typeof(Chunk4) : typeof(Chunk8))
+            : Marshal.SizeOf(IntPtr.Size == 8 ? typeof(Chunk8) : typeof(Chunk4));
     }
 }

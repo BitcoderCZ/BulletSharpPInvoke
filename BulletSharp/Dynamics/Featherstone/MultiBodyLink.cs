@@ -157,6 +157,7 @@ public class MultiBodyLink
         set => btMultibodyLink_setCfgOffset(Native, value);
     }
 
+    // TODO: not nullable?
     [DisallowNull]
     public MultiBodyLinkCollider? Collider
     {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace BulletSharp;
@@ -22,6 +23,7 @@ public enum DnaID : int
     SoftBody = 0x59444253,
     TriangleInfoMap = 0x50414d54,
 }
+
 /*
 class DnaID
 {
@@ -52,6 +54,7 @@ class DnaID
     }
 }
 */
+
 public class BulletFile : bFile
 {
     public List<byte[]> Bvhs = [];
@@ -85,6 +88,7 @@ public class BulletFile : bFile
 			btBulletFile_addStruct(_native, structType._native, data, len, oldPtr, code);
 		}
     */
+
     public override void Parse(FileVerboseMode verboseMode)
     {
         ParseInternal(verboseMode);
@@ -97,6 +101,8 @@ public class BulletFile : bFile
 
     protected override void ReadChunks()
     {
+        Debug.Assert(ChunkReader is not null, $"{nameof(ChunkReader)} should not be null.");
+
         bool brokenDna = (Flags & FileFlags.BrokenDna) != 0;
 
         _dataStart = SizeOfBlenderHeader;
@@ -159,6 +165,7 @@ public class BulletFile : bFile
                     chunkData = new byte[chunk.Length];
                     ChunkReader.Read(chunkData, 0, chunk.Length);
                 }
+
                 LibPointers.Add(chunk.OldPtr, chunkData);
             }
             else
@@ -173,7 +180,9 @@ public class BulletFile : bFile
 
             chunk = GetNextBlock(ChunkReader);
             if (chunk.Length < 0)
+            {
                 break;
+            }
         }
     }
 

@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
@@ -25,7 +24,7 @@ public class ConvexConvexAlgorithm : ActivatingCollisionAlgorithm
 
     public class CreateFunc : CollisionAlgorithmCreateFunc
     {
-        private ConvexPenetrationDepthSolver? _pdSolver;
+        private ConvexPenetrationDepthSolver _pdSolver;
 
         public CreateFunc(ConvexPenetrationDepthSolver pdSolver)
             : base(ConstructionInfo.Null)
@@ -39,6 +38,8 @@ public class ConvexConvexAlgorithm : ActivatingCollisionAlgorithm
             : base(ConstructionInfo.Null)
         {
             InitializeSubObject(native, owner);
+
+            _pdSolver = null!;
         }
 
         public int MinimumPointsPerturbationThreshold
@@ -53,8 +54,7 @@ public class ConvexConvexAlgorithm : ActivatingCollisionAlgorithm
             set => btConvexConvexAlgorithm_CreateFunc_setNumPerturbationIterations(Native, value);
         }
 
-        [DisallowNull]
-        public ConvexPenetrationDepthSolver? PdSolver
+        public ConvexPenetrationDepthSolver PdSolver
         {
             get => _pdSolver;
             set

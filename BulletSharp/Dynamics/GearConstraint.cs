@@ -5,13 +5,37 @@ using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct GearConstraintFloatData
+{
+    public TypedConstraintFloatData TypedConstraintData;
+    public Vector3FloatData AxisInA;
+    public Vector3FloatData AxisInB;
+    public float Ratio;
+    public int Padding;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(GearConstraintFloatData), fieldName).ToInt32();
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct GearConstraintDoubleData
+{
+    public TypedConstraintDoubleData TypedConstraintData;
+    public Vector3DoubleData AxisInA;
+    public Vector3DoubleData AxisInB;
+    public double Ratio;
+    public int Padding;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(GearConstraintDoubleData), fieldName).ToInt32();
+}
+
 public class GearConstraint : TypedConstraint
 {
-    public GearConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 axisInA,
-        Vector3 axisInB, float ratio = 1.0f)
+    public GearConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 axisInA, Vector3 axisInB, float ratio = 1.0f)
     {
-        IntPtr native = btGearConstraint_new(rigidBodyA.Native, rigidBodyB.Native,
-            ref axisInA, ref axisInB, ratio);
+        IntPtr native = btGearConstraint_new(rigidBodyA.Native, rigidBodyB.Native, ref axisInA, ref axisInB, ratio);
         InitializeUserOwned(native);
         InitializeMembers(rigidBodyA, rigidBodyB);
     }
@@ -43,28 +67,4 @@ public class GearConstraint : TypedConstraint
         get => btGearConstraint_getRatio(Native);
         set => btGearConstraint_setRatio(Native, value);
     }
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct GearConstraintFloatData
-{
-    public TypedConstraintFloatData TypedConstraintData;
-    public Vector3FloatData AxisInA;
-    public Vector3FloatData AxisInB;
-    public float Ratio;
-    public int Padding;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(GearConstraintFloatData), fieldName).ToInt32();
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct GearConstraintDoubleData
-{
-    public TypedConstraintDoubleData TypedConstraintData;
-    public Vector3DoubleData AxisInA;
-    public Vector3DoubleData AxisInB;
-    public double Ratio;
-    public int Padding;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(GearConstraintDoubleData), fieldName).ToInt32();
 }

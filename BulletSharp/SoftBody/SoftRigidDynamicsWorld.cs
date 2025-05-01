@@ -5,13 +5,11 @@ namespace BulletSharp.SoftBody;
 
 public class SoftRigidDynamicsWorld : DiscreteDynamicsWorld
 {
-    private AlignedSoftBodyArray _softBodyArray;
-    private SoftBodySolver _softBodySolver; // private ref passed to bodies during AddSoftBody
-    private bool _ownsSolver;
+    private readonly SoftBodySolver _softBodySolver; // private ref passed to bodies during AddSoftBody
+    private readonly bool _ownsSolver;
+    private AlignedSoftBodyArray? _softBodyArray;
 
-    public SoftRigidDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache,
-        ConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration,
-        SoftBodySolver softBodySolver = null)
+    public SoftRigidDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache, ConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration, SoftBodySolver? softBodySolver = null)
     {
         if (softBodySolver != null)
         {
@@ -24,9 +22,7 @@ public class SoftRigidDynamicsWorld : DiscreteDynamicsWorld
             _ownsSolver = true;
         }
 
-        IntPtr native = btSoftRigidDynamicsWorld_new(dispatcher.Native, pairCache.Native,
-            (constraintSolver != null) ? constraintSolver.Native : IntPtr.Zero,
-            collisionConfiguration.Native, _softBodySolver.Native);
+        IntPtr native = btSoftRigidDynamicsWorld_new(dispatcher.Native, pairCache.Native, (constraintSolver != null) ? constraintSolver.Native : IntPtr.Zero, collisionConfiguration.Native, _softBodySolver.Native);
         InitializeUserOwned(native);
         InitializeMembers(dispatcher, pairCache, constraintSolver);
 
@@ -36,6 +32,27 @@ public class SoftRigidDynamicsWorld : DiscreteDynamicsWorld
             Broadphase = pairCache,
         };
     }
+
+    public int DrawFlags
+    {
+        get => btSoftRigidDynamicsWorld_getDrawFlags(Native);
+        set => btSoftRigidDynamicsWorld_setDrawFlags(Native, value);
+    }
+
+    public AlignedSoftBodyArray SoftBodyArray
+    {
+        get
+        {
+            if (_softBodyArray == null)
+            {
+                _softBodyArray = new AlignedSoftBodyArray(btSoftRigidDynamicsWorld_getSoftBodyArray(Native));
+            }
+
+            return _softBodyArray;
+        }
+    }
+
+    public SoftBodyWorldInfo WorldInfo { get; }
 
     public void AddSoftBody(SoftBody body)
     {
@@ -55,27 +72,8 @@ public class SoftRigidDynamicsWorld : DiscreteDynamicsWorld
         CollisionObjectArray.Add(body, collisionFilterGroup, collisionFilterMask);
     }
 
-    public void RemoveSoftBody(SoftBody body) => CollisionObjectArray.Remove(body);
-
-    public int DrawFlags
-    {
-        get => btSoftRigidDynamicsWorld_getDrawFlags(Native);
-        set => btSoftRigidDynamicsWorld_setDrawFlags(Native, value);
-    }
-
-    public AlignedSoftBodyArray SoftBodyArray
-    {
-        get
-        {
-            if (_softBodyArray == null)
-            {
-                _softBodyArray = new AlignedSoftBodyArray(btSoftRigidDynamicsWorld_getSoftBodyArray(Native));
-            }
-            return _softBodyArray;
-        }
-    }
-
-    public SoftBodyWorldInfo WorldInfo { get; }
+    public void RemoveSoftBody(SoftBody body)
+        => CollisionObjectArray.Remove(body);
 
     protected override void Dispose(bool disposing)
     {
@@ -86,6 +84,7 @@ public class SoftRigidDynamicsWorld : DiscreteDynamicsWorld
                 _softBodySolver.Dispose();
             }
         }
+
         base.Dispose(disposing);
     }
 }

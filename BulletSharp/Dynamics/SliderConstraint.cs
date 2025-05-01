@@ -23,13 +23,45 @@ public enum SliderFlags
     ErpLimitAngular = 4096,
 }
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct SliderConstraintFloatData
+{
+    public TypedConstraintFloatData TypedConstraintData;
+    public TransformFloatData RigidBodyAFrame;
+    public TransformFloatData RigidBodyBFrame;
+    public float LinearUpperLimit;
+    public float LinearLowerLimit;
+    public float AngularUpperLimit;
+    public float AngularLowerLimit;
+    public int UseLinearReferenceFrameA;
+    public int UseOffsetForConstraintFrame;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(SliderConstraintFloatData), fieldName).ToInt32();
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct SliderConstraintDoubleData
+{
+    public TypedConstraintDoubleData TypedConstraintData;
+    public TransformDoubleData RigidBodyAFrame;
+    public TransformDoubleData RigidBodyBFrame;
+    public double LinearUpperLimit;
+    public double LinearLowerLimit;
+    public double AngularUpperLimit;
+    public double AngularLowerLimit;
+    public int UseLinearReferenceFrameA;
+    public int UseOffsetForConstraintFrame;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(SliderConstraintDoubleData), fieldName).ToInt32();
+}
+
 public class SliderConstraint : TypedConstraint
 {
-    public SliderConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Matrix4x4 frameInA,
-        Matrix4x4 frameInB, bool useLinearReferenceFrameA)
+    public SliderConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Matrix4x4 frameInA, Matrix4x4 frameInB, bool useLinearReferenceFrameA)
     {
-        IntPtr native = btSliderConstraint_new(rigidBodyA.Native, rigidBodyB.Native,
-            ref frameInA, ref frameInB, useLinearReferenceFrameA);
+        IntPtr native = btSliderConstraint_new(rigidBodyA.Native, rigidBodyB.Native, ref frameInA, ref frameInB, useLinearReferenceFrameA);
         InitializeUserOwned(native);
         InitializeMembers(rigidBodyA, rigidBodyB);
     }
@@ -40,24 +72,6 @@ public class SliderConstraint : TypedConstraint
         InitializeUserOwned(native);
         InitializeMembers(GetFixedBody(), rigidBodyB);
     }
-
-    public void CalculateTransformsRef(ref Matrix4x4 transA, ref Matrix4x4 transB) => btSliderConstraint_calculateTransforms(Native, ref transA, ref transB);
-
-    public void CalculateTransforms(Matrix4x4 transA, Matrix4x4 transB) => btSliderConstraint_calculateTransforms(Native, ref transA, ref transB);
-
-    public void GetInfo1NonVirtual(ConstraintInfo1 info) => btSliderConstraint_getInfo1NonVirtual(Native, info.Native);
-
-    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 transA, Matrix4x4 transB,
-        Vector3 linVelA, Vector3 linVelB, float rbAinvMass, float rbBinvMass) => btSliderConstraint_getInfo2NonVirtual(Native, info.Native, ref transA,
-            ref transB, ref linVelA, ref linVelB, rbAinvMass, rbBinvMass);
-
-    public void SetFramesRef(ref Matrix4x4 frameA, ref Matrix4x4 frameB) => btSliderConstraint_setFrames(Native, ref frameA, ref frameB);
-
-    public void SetFrames(Matrix4x4 frameA, Matrix4x4 frameB) => btSliderConstraint_setFrames(Native, ref frameA, ref frameB);
-
-    public void TestAngularLimits() => btSliderConstraint_testAngLimits(Native);
-
-    public void TestLinearLimits() => btSliderConstraint_testLinLimits(Native);
 
     public Vector3 AncorInA
     {
@@ -140,6 +154,7 @@ public class SliderConstraint : TypedConstraint
     }
 
     public SliderFlags Flags => btSliderConstraint_getFlags(Native);
+
     public Matrix4x4 FrameOffsetA
     {
         get
@@ -307,36 +322,28 @@ public class SliderConstraint : TypedConstraint
     }
 
     public bool UseLinearReferenceFrameA => btSliderConstraint_getUseLinearReferenceFrameA(Native);
-}
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct SliderConstraintFloatData
-{
-    public TypedConstraintFloatData TypedConstraintData;
-    public TransformFloatData RigidBodyAFrame;
-    public TransformFloatData RigidBodyBFrame;
-    public float LinearUpperLimit;
-    public float LinearLowerLimit;
-    public float AngularUpperLimit;
-    public float AngularLowerLimit;
-    public int UseLinearReferenceFrameA;
-    public int UseOffsetForConstraintFrame;
+    public void CalculateTransformsRef(ref Matrix4x4 transA, ref Matrix4x4 transB)
+        => btSliderConstraint_calculateTransforms(Native, ref transA, ref transB);
 
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(SliderConstraintFloatData), fieldName).ToInt32();
-}
+    public void CalculateTransforms(Matrix4x4 transA, Matrix4x4 transB)
+        => btSliderConstraint_calculateTransforms(Native, ref transA, ref transB);
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct SliderConstraintDoubleData
-{
-    public TypedConstraintDoubleData TypedConstraintData;
-    public TransformDoubleData RigidBodyAFrame;
-    public TransformDoubleData RigidBodyBFrame;
-    public double LinearUpperLimit;
-    public double LinearLowerLimit;
-    public double AngularUpperLimit;
-    public double AngularLowerLimit;
-    public int UseLinearReferenceFrameA;
-    public int UseOffsetForConstraintFrame;
+    public void GetInfo1NonVirtual(ConstraintInfo1 info)
+        => btSliderConstraint_getInfo1NonVirtual(Native, info.Native);
 
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(SliderConstraintDoubleData), fieldName).ToInt32();
+    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 transA, Matrix4x4 transB, Vector3 linVelA, Vector3 linVelB, float rbAinvMass, float rbBinvMass)
+        => btSliderConstraint_getInfo2NonVirtual(Native, info.Native, ref transA, ref transB, ref linVelA, ref linVelB, rbAinvMass, rbBinvMass);
+
+    public void SetFramesRef(ref Matrix4x4 frameA, ref Matrix4x4 frameB)
+        => btSliderConstraint_setFrames(Native, ref frameA, ref frameB);
+
+    public void SetFrames(Matrix4x4 frameA, Matrix4x4 frameB)
+        => btSliderConstraint_setFrames(Native, ref frameA, ref frameB);
+
+    public void TestAngularLimits()
+        => btSliderConstraint_testAngLimits(Native);
+
+    public void TestLinearLimits()
+        => btSliderConstraint_testLinLimits(Native);
 }

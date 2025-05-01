@@ -12,5 +12,6 @@ public class DeformableMultiBodyConstraintSolver : MultiBodyConstraintSolver
         InitializeUserOwned(native);
     }
 
-    public void SetDeformableSolver(DeformableBodySolver deformableSolver) => btDeformableMultiBodyConstraintSolver_setDeformableSolver(Native, deformableSolver.Native);
+    public void SetDeformableSolver(DeformableBodySolver deformableSolver)
+        => btDeformableMultiBodyConstraintSolver_setDeformableSolver(Native, deformableSolver.Native);
 }

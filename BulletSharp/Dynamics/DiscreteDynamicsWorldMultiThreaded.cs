@@ -14,13 +14,11 @@ public class ConstraintSolverPoolMultiThreaded : ConstraintSolver
 
 public class DiscreteDynamicsWorldMultiThreaded : DiscreteDynamicsWorld
 {
-    public DiscreteDynamicsWorldMultiThreaded(Dispatcher dispatcher, BroadphaseInterface pairCache,
-        ConstraintSolverPoolMultiThreaded constraintSolver, ConstraintSolver constraintSolverMultiThreaded,
-        CollisionConfiguration collisionConfiguration)
+    public DiscreteDynamicsWorldMultiThreaded(Dispatcher? dispatcher, BroadphaseInterface pairCache, ConstraintSolverPoolMultiThreaded? constraintSolver, ConstraintSolver? constraintSolverMultiThreaded, CollisionConfiguration? collisionConfiguration)
     {
         IntPtr native = btDiscreteDynamicsWorldMt_new(
             dispatcher != null ? dispatcher.Native : IntPtr.Zero,
-            pairCache != null ? pairCache.Native : IntPtr.Zero,
+            /*pairCache != null ? */pairCache.Native/* : IntPtr.Zero*/,
             constraintSolver != null ? constraintSolver.Native : IntPtr.Zero,
             constraintSolverMultiThreaded != null ? constraintSolverMultiThreaded.Native : IntPtr.Zero,
             collisionConfiguration != null ? collisionConfiguration.Native : IntPtr.Zero);

@@ -15,15 +15,15 @@ public class MlcpSolver : SequentialImpulseConstraintSolver
         _mlcpSolver = solver;
     }
 
-    public void SetMLCPSolver(MlcpSolverInterface solver)
-    {
-        btMLCPSolver_setMLCPSolver(Native, solver.Native);
-        _mlcpSolver = solver;
-    }
-
     public int NumFallbacks
     {
         get => btMLCPSolver_getNumFallbacks(Native);
         set => btMLCPSolver_setNumFallbacks(Native, value);
+    }
+
+    public void SetMLCPSolver(MlcpSolverInterface solver)
+    {
+        btMLCPSolver_setMLCPSolver(Native, solver.Native);
+        _mlcpSolver = solver;
     }
 }

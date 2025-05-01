@@ -14,13 +14,42 @@ public enum SixDofFlags
     ErpStop = 4,
 }
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct Generic6DofConstraintFloatData
+{
+    public TypedConstraintFloatData TypedConstraintData;
+    public TransformFloatData RigidBodyAFrame;
+    public TransformFloatData RigidBodyBFrame;
+    public Vector3FloatData LinearUpperLimit;
+    public Vector3FloatData LinearLowerLimit;
+    public Vector3FloatData AngularUpperLimit;
+    public Vector3FloatData AngularLowerLimit;
+    public int UseLinearReferenceFrameA;
+    public int UseOffsetForConstraintFrame;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(Generic6DofConstraintFloatData), fieldName).ToInt32();
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct Generic6DofConstraintDoubleData
+{
+    public TypedConstraintDoubleData TypedConstraintData;
+    public TransformDoubleData RigidBodyAFrame;
+    public TransformDoubleData RigidBodyBFrame;
+    public Vector3DoubleData LinearUpperLimit;
+    public Vector3DoubleData LinearLowerLimit;
+    public Vector3DoubleData AngularUpperLimit;
+    public Vector3DoubleData AngularLowerLimit;
+    public int UseLinearReferenceFrameA;
+    public int UseOffsetForConstraintFrame;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(Generic6DofConstraintDoubleData), fieldName).ToInt32();
+}
+
 public class RotationalLimitMotor : BulletDisposableObject
 {
-    internal RotationalLimitMotor(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public RotationalLimitMotor()
     {
         IntPtr native = btRotationalLimitMotor_new();
@@ -33,17 +62,10 @@ public class RotationalLimitMotor : BulletDisposableObject
         InitializeUserOwned(native);
     }
 
-    public bool NeedApplyTorques() => btRotationalLimitMotor_needApplyTorques(Native);
-
-    public float SolveAngularLimitsRef(float timeStep, ref Vector3 axis, float jacDiagABInv,
-        RigidBody body0, RigidBody body1) => btRotationalLimitMotor_solveAngularLimits(Native, timeStep, ref axis,
-            jacDiagABInv, body0.Native, body1.Native);
-
-    public float SolveAngularLimits(float timeStep, Vector3 axis, float jacDiagABInv,
-        RigidBody body0, RigidBody body1) => btRotationalLimitMotor_solveAngularLimits(Native, timeStep, ref axis,
-            jacDiagABInv, body0.Native, body1.Native);
-
-    public int TestLimitValue(float testValue) => btRotationalLimitMotor_testLimitValue(Native, testValue);
+    internal RotationalLimitMotor(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
+    }
 
     public float AccumulatedImpulse
     {
@@ -94,6 +116,7 @@ public class RotationalLimitMotor : BulletDisposableObject
     }
 
     public bool IsLimited => btRotationalLimitMotor_isLimited(Native);
+
     public float LimitSoftness
     {
         get => btRotationalLimitMotor_getLimitSoftness(Native);
@@ -142,6 +165,18 @@ public class RotationalLimitMotor : BulletDisposableObject
         set => btRotationalLimitMotor_setTargetVelocity(Native, value);
     }
 
+    public bool NeedApplyTorques()
+        => btRotationalLimitMotor_needApplyTorques(Native);
+
+    public float SolveAngularLimitsRef(float timeStep, ref Vector3 axis, float jacDiagABInv, RigidBody body0, RigidBody body1)
+        => btRotationalLimitMotor_solveAngularLimits(Native, timeStep, ref axis, jacDiagABInv, body0.Native, body1.Native);
+
+    public float SolveAngularLimits(float timeStep, Vector3 axis, float jacDiagABInv, RigidBody body0, RigidBody body1)
+        => btRotationalLimitMotor_solveAngularLimits(Native, timeStep, ref axis, jacDiagABInv, body0.Native, body1.Native);
+
+    public int TestLimitValue(float testValue)
+        => btRotationalLimitMotor_testLimitValue(Native, testValue);
+
     protected override void Dispose(bool disposing)
     {
         if (IsUserOwned)
@@ -153,11 +188,6 @@ public class RotationalLimitMotor : BulletDisposableObject
 
 public class TranslationalLimitMotor : BulletDisposableObject
 {
-    internal TranslationalLimitMotor(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
     public TranslationalLimitMotor()
     {
         IntPtr native = btTranslationalLimitMotor_new();
@@ -170,24 +200,10 @@ public class TranslationalLimitMotor : BulletDisposableObject
         InitializeUserOwned(native);
     }
 
-    public bool IsLimited(int limitIndex) => btTranslationalLimitMotor_isLimited(Native, limitIndex);
-
-    public bool NeedApplyForce(int limitIndex) => btTranslationalLimitMotor_needApplyForce(Native, limitIndex);
-
-    public float SolveLinearAxisRef(float timeStep, float jacDiagABInv, RigidBody body1,
-        ref Vector3 pointInA, RigidBody body2, ref Vector3 pointInB, int limitIndex, ref Vector3 axisNormalOnA,
-        ref Vector3 anchorPos) => btTranslationalLimitMotor_solveLinearAxis(Native, timeStep, jacDiagABInv,
-            body1.Native, ref pointInA, body2.Native, ref pointInB, limitIndex,
-            ref axisNormalOnA, ref anchorPos);
-
-    public float SolveLinearAxis(float timeStep, float jacDiagABInv, RigidBody body1,
-        Vector3 pointInA, RigidBody body2, Vector3 pointInB, int limitIndex, Vector3 axisNormalOnA,
-        Vector3 anchorPos) => btTranslationalLimitMotor_solveLinearAxis(Native, timeStep, jacDiagABInv,
-            body1.Native, ref pointInA, body2.Native, ref pointInB, limitIndex,
-            ref axisNormalOnA, ref anchorPos);
-
-    public int TestLimitValue(int limitIndex, float testValue) => btTranslationalLimitMotor_testLimitValue(Native, limitIndex,
-            testValue);
+    internal TranslationalLimitMotor(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
+    }
 
     public Vector3 AccumulatedImpulse
     {
@@ -199,12 +215,14 @@ public class TranslationalLimitMotor : BulletDisposableObject
         }
         set => btTranslationalLimitMotor_setAccumulatedImpulse(Native, ref value);
     }
+
     /*
 		public IntArray CurrentLimit
 		{
 			get { return new IntArray(btTranslationalLimitMotor_getCurrentLimit(Native), 3); }
 		}
 		*/
+
     public Vector3 CurrentLimitError
     {
         get
@@ -232,12 +250,14 @@ public class TranslationalLimitMotor : BulletDisposableObject
         get => btTranslationalLimitMotor_getDamping(Native);
         set => btTranslationalLimitMotor_setDamping(Native, value);
     }
+
     /*
 		public bool EnableMotor
 		{
 			get { return btTranslationalLimitMotor_getEnableMotor(_native); }
 		}
 		*/
+
     public float LimitSoftness
     {
         get => btTranslationalLimitMotor_getLimitSoftness(Native);
@@ -327,6 +347,21 @@ public class TranslationalLimitMotor : BulletDisposableObject
         set => btTranslationalLimitMotor_setUpperLimit(Native, ref value);
     }
 
+    public bool IsLimited(int limitIndex)
+        => btTranslationalLimitMotor_isLimited(Native, limitIndex);
+
+    public bool NeedApplyForce(int limitIndex)
+        => btTranslationalLimitMotor_needApplyForce(Native, limitIndex);
+
+    public float SolveLinearAxisRef(float timeStep, float jacDiagABInv, RigidBody body1, ref Vector3 pointInA, RigidBody body2, ref Vector3 pointInB, int limitIndex, ref Vector3 axisNormalOnA, ref Vector3 anchorPos)
+        => btTranslationalLimitMotor_solveLinearAxis(Native, timeStep, jacDiagABInv, body1.Native, ref pointInA, body2.Native, ref pointInB, limitIndex, ref axisNormalOnA, ref anchorPos);
+
+    public float SolveLinearAxis(float timeStep, float jacDiagABInv, RigidBody body1, Vector3 pointInA, RigidBody body2, Vector3 pointInB, int limitIndex, Vector3 axisNormalOnA, Vector3 anchorPos)
+        => btTranslationalLimitMotor_solveLinearAxis(Native, timeStep, jacDiagABInv, body1.Native, ref pointInA, body2.Native, ref pointInB, limitIndex, ref axisNormalOnA, ref anchorPos);
+
+    public int TestLimitValue(int limitIndex, float testValue)
+        => btTranslationalLimitMotor_testLimitValue(Native, limitIndex, testValue);
+
     protected override void Dispose(bool disposing)
     {
         if (IsUserOwned)
@@ -338,85 +373,26 @@ public class TranslationalLimitMotor : BulletDisposableObject
 
 public class Generic6DofConstraint : TypedConstraint
 {
-    private RotationalLimitMotor[] _angularLimits = new RotationalLimitMotor[3];
-    private TranslationalLimitMotor _linearLimits;
+    private readonly RotationalLimitMotor[] _angularLimits = new RotationalLimitMotor[3];
+    private TranslationalLimitMotor? _linearLimits;
 
-    protected internal Generic6DofConstraint()
+    public Generic6DofConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Matrix4x4 frameInA, Matrix4x4 frameInB, bool useLinearReferenceFrameA)
     {
-    }
-
-    public Generic6DofConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB,
-        Matrix4x4 frameInA, Matrix4x4 frameInB, bool useLinearReferenceFrameA)
-    {
-        IntPtr native = btGeneric6DofConstraint_new(rigidBodyA.Native, rigidBodyB.Native,
-            ref frameInA, ref frameInB, useLinearReferenceFrameA);
+        IntPtr native = btGeneric6DofConstraint_new(rigidBodyA.Native, rigidBodyB.Native, ref frameInA, ref frameInB, useLinearReferenceFrameA);
         InitializeUserOwned(native);
         InitializeMembers(rigidBodyA, rigidBodyB);
     }
 
     public Generic6DofConstraint(RigidBody rigidBodyB, Matrix4x4 frameInB, bool useLinearReferenceFrameB)
     {
-        IntPtr native = btGeneric6DofConstraint_new2(rigidBodyB.Native, ref frameInB,
-            useLinearReferenceFrameB);
+        IntPtr native = btGeneric6DofConstraint_new2(rigidBodyB.Native, ref frameInB, useLinearReferenceFrameB);
         InitializeUserOwned(native);
         InitializeMembers(GetFixedBody(), rigidBodyB);
     }
 
-    public void CalcAnchorPos() => btGeneric6DofConstraint_calcAnchorPos(Native);
-
-    public void CalculateTransformsRef(ref Matrix4x4 transA, ref Matrix4x4 transB) => btGeneric6DofConstraint_calculateTransforms(Native, ref transA, ref transB);
-
-    public void CalculateTransforms(Matrix4x4 transA, Matrix4x4 transB) => btGeneric6DofConstraint_calculateTransforms(Native, ref transA, ref transB);
-
-    public void CalculateTransforms() => btGeneric6DofConstraint_calculateTransforms2(Native);
-
-    public int GetLimitMotorInfo2(RotationalLimitMotor limitMotor, Matrix4x4 transA,
-        Matrix4x4 transB, Vector3 linVelA, Vector3 linVelB, Vector3 angVelA, Vector3 angVelB,
-        ConstraintInfo2 info, int row, ref Vector3 ax1, int rotational, int rotAllowed = 0) => btGeneric6DofConstraint_get_limit_motor_info2(Native, limitMotor.Native,
-            ref transA, ref transB, ref linVelA, ref linVelB, ref angVelA, ref angVelB,
-            info.Native, row, ref ax1, rotational, rotAllowed);
-
-    public float GetAngle(int axisIndex) => btGeneric6DofConstraint_getAngle(Native, axisIndex);
-
-    public Vector3 GetAxis(int axisIndex)
+    protected internal Generic6DofConstraint()
     {
-        Vector3 value;
-        btGeneric6DofConstraint_getAxis(Native, axisIndex, out value);
-        return value;
     }
-
-    public void GetInfo1NonVirtual(ConstraintInfo1 info) => btGeneric6DofConstraint_getInfo1NonVirtual(Native, info.Native);
-
-    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 transA, Matrix4x4 transB,
-        Vector3 linVelA, Vector3 linVelB, Vector3 angVelA, Vector3 angVelB) => btGeneric6DofConstraint_getInfo2NonVirtual(Native, info.Native, ref transA,
-            ref transB, ref linVelA, ref linVelB, ref angVelA, ref angVelB);
-
-    public float GetRelativePivotPosition(int axisIndex) => btGeneric6DofConstraint_getRelativePivotPosition(Native, axisIndex);
-
-    public RotationalLimitMotor GetRotationalLimitMotor(int index)
-    {
-        if (_angularLimits[index] == null)
-        {
-            _angularLimits[index] = new RotationalLimitMotor(btGeneric6DofConstraint_getRotationalLimitMotor(Native, index), this);
-        }
-        return _angularLimits[index];
-    }
-
-    public bool IsLimited(int limitIndex) => btGeneric6DofConstraint_isLimited(Native, limitIndex);
-
-    public void SetAxisRef(ref Vector3 axis1, ref Vector3 axis2) => btGeneric6DofConstraint_setAxis(Native, ref axis1, ref axis2);
-
-    public void SetAxis(Vector3 axis1, Vector3 axis2) => btGeneric6DofConstraint_setAxis(Native, ref axis1, ref axis2);
-
-    public void SetFramesRef(ref Matrix4x4 frameA, ref Matrix4x4 frameB) => btGeneric6DofConstraint_setFrames(Native, ref frameA, ref frameB);
-
-    public void SetFrames(Matrix4x4 frameA, Matrix4x4 frameB) => btGeneric6DofConstraint_setFrames(Native, ref frameA, ref frameB);
-
-    public void SetLimit(int axis, float lo, float hi) => btGeneric6DofConstraint_setLimit(Native, axis, lo, hi);
-
-    public bool TestAngularLimitMotor(int axisIndex) => btGeneric6DofConstraint_testAngularLimitMotor(Native, axisIndex);
-
-    public void UpdateRhs(float timeStep) => btGeneric6DofConstraint_updateRHS(Native, timeStep);
 
     public Vector3 AngularLowerLimit
     {
@@ -512,6 +488,7 @@ public class Generic6DofConstraint : TypedConstraint
             {
                 _linearLimits = new TranslationalLimitMotor(btGeneric6DofConstraint_getTranslationalLimitMotor(Native), this);
             }
+
             return _linearLimits;
         }
     }
@@ -533,36 +510,72 @@ public class Generic6DofConstraint : TypedConstraint
         get => btGeneric6DofConstraint_getUseSolveConstraintObsolete(Native);
         set => btGeneric6DofConstraint_setUseSolveConstraintObsolete(Native, value);
     }
-}
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct Generic6DofConstraintFloatData
-{
-    public TypedConstraintFloatData TypedConstraintData;
-    public TransformFloatData RigidBodyAFrame;
-    public TransformFloatData RigidBodyBFrame;
-    public Vector3FloatData LinearUpperLimit;
-    public Vector3FloatData LinearLowerLimit;
-    public Vector3FloatData AngularUpperLimit;
-    public Vector3FloatData AngularLowerLimit;
-    public int UseLinearReferenceFrameA;
-    public int UseOffsetForConstraintFrame;
+    public void CalcAnchorPos()
+        => btGeneric6DofConstraint_calcAnchorPos(Native);
 
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(Generic6DofConstraintFloatData), fieldName).ToInt32();
-}
+    public void CalculateTransformsRef(ref Matrix4x4 transA, ref Matrix4x4 transB)
+        => btGeneric6DofConstraint_calculateTransforms(Native, ref transA, ref transB);
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct Generic6DofConstraintDoubleData
-{
-    public TypedConstraintDoubleData TypedConstraintData;
-    public TransformDoubleData RigidBodyAFrame;
-    public TransformDoubleData RigidBodyBFrame;
-    public Vector3DoubleData LinearUpperLimit;
-    public Vector3DoubleData LinearLowerLimit;
-    public Vector3DoubleData AngularUpperLimit;
-    public Vector3DoubleData AngularLowerLimit;
-    public int UseLinearReferenceFrameA;
-    public int UseOffsetForConstraintFrame;
+    public void CalculateTransforms(Matrix4x4 transA, Matrix4x4 transB)
+        => btGeneric6DofConstraint_calculateTransforms(Native, ref transA, ref transB);
 
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(Generic6DofConstraintDoubleData), fieldName).ToInt32();
+    public void CalculateTransforms()
+        => btGeneric6DofConstraint_calculateTransforms2(Native);
+
+    public int GetLimitMotorInfo2(RotationalLimitMotor limitMotor, Matrix4x4 transA, Matrix4x4 transB, Vector3 linVelA, Vector3 linVelB, Vector3 angVelA, Vector3 angVelB, ConstraintInfo2 info, int row, ref Vector3 ax1, int rotational, int rotAllowed = 0)
+        => btGeneric6DofConstraint_get_limit_motor_info2(Native, limitMotor.Native, ref transA, ref transB, ref linVelA, ref linVelB, ref angVelA, ref angVelB, info.Native, row, ref ax1, rotational, rotAllowed);
+
+    public float GetAngle(int axisIndex)
+        => btGeneric6DofConstraint_getAngle(Native, axisIndex);
+
+    public Vector3 GetAxis(int axisIndex)
+    {
+        Vector3 value;
+        btGeneric6DofConstraint_getAxis(Native, axisIndex, out value);
+        return value;
+    }
+
+    public void GetInfo1NonVirtual(ConstraintInfo1 info)
+        => btGeneric6DofConstraint_getInfo1NonVirtual(Native, info.Native);
+
+    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 transA, Matrix4x4 transB, Vector3 linVelA, Vector3 linVelB, Vector3 angVelA, Vector3 angVelB)
+        => btGeneric6DofConstraint_getInfo2NonVirtual(Native, info.Native, ref transA, ref transB, ref linVelA, ref linVelB, ref angVelA, ref angVelB);
+
+    public float GetRelativePivotPosition(int axisIndex)
+        => btGeneric6DofConstraint_getRelativePivotPosition(Native, axisIndex);
+
+    public RotationalLimitMotor GetRotationalLimitMotor(int index)
+    {
+        if (_angularLimits[index] == null)
+        {
+            _angularLimits[index] = new RotationalLimitMotor(btGeneric6DofConstraint_getRotationalLimitMotor(Native, index), this);
+        }
+
+        return _angularLimits[index];
+    }
+
+    public bool IsLimited(int limitIndex)
+        => btGeneric6DofConstraint_isLimited(Native, limitIndex);
+
+    public void SetAxisRef(ref Vector3 axis1, ref Vector3 axis2)
+        => btGeneric6DofConstraint_setAxis(Native, ref axis1, ref axis2);
+
+    public void SetAxis(Vector3 axis1, Vector3 axis2)
+        => btGeneric6DofConstraint_setAxis(Native, ref axis1, ref axis2);
+
+    public void SetFramesRef(ref Matrix4x4 frameA, ref Matrix4x4 frameB)
+        => btGeneric6DofConstraint_setFrames(Native, ref frameA, ref frameB);
+
+    public void SetFrames(Matrix4x4 frameA, Matrix4x4 frameB)
+        => btGeneric6DofConstraint_setFrames(Native, ref frameA, ref frameB);
+
+    public void SetLimit(int axis, float lo, float hi)
+        => btGeneric6DofConstraint_setLimit(Native, axis, lo, hi);
+
+    public bool TestAngularLimitMotor(int axisIndex)
+        => btGeneric6DofConstraint_testAngularLimitMotor(Native, axisIndex);
+
+    public void UpdateRhs(float timeStep)
+        => btGeneric6DofConstraint_updateRHS(Native, timeStep);
 }

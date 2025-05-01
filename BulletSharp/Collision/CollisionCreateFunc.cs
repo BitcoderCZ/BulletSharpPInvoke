@@ -23,6 +23,11 @@ public class CollisionAlgorithmCreateFunc : BulletDisposableObject
         set => btCollisionAlgorithmCreateFunc_setSwapped(Native, value);
     }
 
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public virtual CollisionAlgorithm? CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+        => null;
+
     protected override void Dispose(bool disposing)
     {
         if (IsUserOwned)
@@ -30,9 +35,4 @@ public class CollisionAlgorithmCreateFunc : BulletDisposableObject
             btCollisionAlgorithmCreateFunc_delete(Native);
         }
     }
-
-#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-    public virtual CollisionAlgorithm? CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo __unnamed0, CollisionObjectWrapper body0Wrap, CollisionObjectWrapper body1Wrap)
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
-        => null;
 }

@@ -16,11 +16,15 @@ public class SparseSdf : BulletObject
         set => btSparseSdf3_setDefaultVoxelsz(Native, value);
     }
 
-    public void GarbageCollect(int lifetime = 256) => btSparseSdf3_GarbageCollect(Native, lifetime);
+    public void GarbageCollect(int lifetime = 256)
+        => btSparseSdf3_GarbageCollect(Native, lifetime);
 
-    public void Initialize(int hashSize = 2383, int clampCells = 256 * 1024) => btSparseSdf3_Initialize(Native, hashSize, clampCells);
+    public void Initialize(int hashSize = 2383, int clampCells = 256 * 1024)
+        => btSparseSdf3_Initialize(Native, hashSize, clampCells);
 
-    public int RemoveReferences(CollisionShape pcs) => btSparseSdf3_RemoveReferences(Native, (pcs != null) ? pcs.Native : IntPtr.Zero);
+    public int RemoveReferences(CollisionShape pcs)
+        => btSparseSdf3_RemoveReferences(Native, (pcs != null) ? pcs.Native : IntPtr.Zero);
 
-    public void Reset() => btSparseSdf3_Reset(Native);
+    public void Reset()
+        => btSparseSdf3_Reset(Native);
 }

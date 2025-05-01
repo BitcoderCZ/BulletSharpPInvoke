@@ -1,10 +1,14 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace BulletSharp;
 
+#pragma warning disable SA1202 // Elements should be ordered by access
 public class KinematicCharacterController : ICharacterController, IDisposable
 {
+#pragma warning disable SA1308 // Variable names should not be prefixed
+#pragma warning disable SA1310 // Field names should not contain underscore
     protected float m_halfHeight;
 
     protected PairCachingGhostObject m_ghostObject;
@@ -28,7 +32,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
     protected float m_addedMargin; //@to do: remove this and fix the code
 
-    ///this is the desired walk direction, set by the user
+    //this is the desired walk direction, set by the user
     protected Vector3 m_walkDirection;
     protected Vector3 m_normalizedDirection;
     protected Vector3 m_AngVel;
@@ -43,7 +47,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
     protected Quaternion m_currentOrientation;
     protected Quaternion m_targetOrientation;
 
-    ///keep track of the contact manifolds
+    //keep track of the contact manifolds
     protected AlignedManifoldArray m_manifoldArray = [];
 
     protected bool m_touchingContact;
@@ -61,22 +65,222 @@ public class KinematicCharacterController : ICharacterController, IDisposable
     protected Vector3 m_jumpAxis;
 
     protected bool m_interpolateUp;
-    protected bool full_drop;
     protected bool bounce_fix;
+    protected bool full_drop;
+#pragma warning restore SA1310 // Field names should not contain underscore
+#pragma warning restore SA1308 // Variable names should not be prefixed
+
+    public KinematicCharacterController(PairCachingGhostObject ghostObject, ConvexShape convexShape, float stepHeight, ref Vector3 up)
+    {
+        m_ghostObject = ghostObject;
+        m_jumpAxis = new Vector3(0.0f, 0.0f, 1.0f);
+        m_addedMargin = 0.02f;
+        m_useGhostObjectSweepTest = true;
+        m_convexShape = convexShape;
+        m_useWalkDirection = true; // use walk direction by default, legacy behavior
+        m_gravity = 9.8f * 3.0f; // 3G acceleration.
+        m_fallSpeed = 55.0f;       // Terminal velocity of a sky diver in m/s.
+        m_jumpSpeed = 10.0f;       // ?
+        m_SetjumpSpeed = m_jumpSpeed;
+        m_interpolateUp = true;
+        m_maxPenetrationDepth = 0.2f;
+
+        Up = up;
+        StepHeight = stepHeight;
+        MaxSlope = MathUtil.DegToRadians(45.0f);
+    }
+
+    ~KinematicCharacterController()
+    {
+        Dispose(false);
+    }
+
+    public Vector3 Up
+    {
+        get => m_up;
+        set
+        {
+            if (value.LengthSquared() > 0 && m_gravity > 0.0f)
+            {
+                Gravity = -m_gravity * Vector3.Normalize(value);
+                return;
+            }
+
+            SetUpVector(ref value);
+        }
+    }
+
+    public virtual Vector3 AngularVelocity
+    {
+        get => m_AngVel;
+        set => m_AngVel = value;
+    }
+
+    public virtual Vector3 LinearVelocity
+    {
+        get => m_walkDirection + (m_verticalVelocity * m_up);
+        set
+        {
+            Vector3 velocity = value;
+            m_walkDirection = velocity;
+
+            // HACK: if we are moving in the direction of the up, treat it as a jump :(
+            if (m_walkDirection.LengthSquared() > 0)
+            {
+                Vector3 w = Vector3.Normalize(velocity);
+                float c = Vector3.Dot(w, m_up);
+                if (c != 0)
+                {
+                    //there is a component in walkdirection for vertical velocity
+                    Vector3 upComponent = m_up * (MathF.Sin(MathUtil.SIMD_HALF_PI - MathF.Acos(c)) * m_walkDirection.Length());
+                    m_walkDirection -= upComponent;
+                    m_verticalVelocity = (c < 0.0f ? -1 : 1) * upComponent.Length();
+
+                    if (c > 0.0f)
+                    {
+                        m_wasJumping = true;
+                        m_jumpPosition = m_ghostObject.WorldTransform.Translation;
+                    }
+                }
+            }
+            else
+            {
+                m_verticalVelocity = 0.0f;
+            }
+        }
+    }
+
+    public float LinearDamping
+    {
+        get => m_linearDamping;
+        set => m_linearDamping = value > 1f ? 1f : value < 0f ? 0f : value;
+    }
+
+    public float AngularDamping
+    {
+        get => m_angularDamping;
+        set => m_angularDamping = value > 1f ? 1f : value < 0f ? 0f : value;
+    }
+
+    public float StepHeight
+    {
+        get => m_stepHeight;
+        set => m_stepHeight = value;
+    }
+
+    public float FallSpeed
+    {
+        get => m_fallSpeed;
+        set => m_fallSpeed = value;
+    }
+
+    public float JumpSpeed
+    {
+        get => m_jumpSpeed;
+        set => m_SetjumpSpeed = m_jumpSpeed = value;
+    }
+
+    public bool CanJump => OnGround;
+
+    public bool OnGround => MathF.Abs(m_verticalVelocity) < MathUtil.SIMD_EPSILON && MathF.Abs(m_verticalOffset) < MathUtil.SIMD_EPSILON;
+
+    public Vector3 Gravity
+    {
+        get => -m_gravity * m_up;
+        set
+        {
+            Vector3 gravity = value;
+            m_gravity = gravity.Length();
+            if (gravity.LengthSquared() > 0)
+            {
+                gravity = -gravity;
+                SetUpVector(ref gravity);
+            }
+        }
+    }
+
+    /// <remarks>
+    /// The max slope determines the maximum angle that the controller can walk up.
+    /// The slope angle is measured in radians.
+    /// </remarks>
+    public float MaxSlope
+    {
+        get => m_maxSlopeRadians;
+        set
+        {
+            m_maxSlopeRadians = value;
+            m_maxSlopeCosine = MathF.Cos(value);
+        }
+    }
+
+    public float MaxPenetrationDepth
+    {
+        get => m_maxPenetrationDepth;
+        set => m_maxPenetrationDepth = value;
+    }
+
+    public PairCachingGhostObject GhostObject => m_ghostObject;
+
+    // IAction interface
+    public virtual void UpdateAction(CollisionWorld collisionWorld, float deltaTime)
+    {
+        PreStep(collisionWorld);
+        PlayerStep(collisionWorld, deltaTime);
+    }
+
+    // IAction interface
+    public void DebugDraw(DebugDraw debugDrawer)
+    {
+    }
+
+    /// <summary>
+    /// This should probably be called setPositionIncrementPerSimulatorStep.
+    /// This is neither a direction nor a velocity, but the amount to
+    /// increment the position each simulation iteration, regardless
+    /// of dt.
+    /// This call will reset any velocity set by setVelocityForTimeInterval().
+    /// </summary>
+    public virtual void SetWalkDirection(Vector3 walkDirection)
+        => SetWalkDirection(ref walkDirection);
+
+    public virtual void SetWalkDirection(ref Vector3 walkDirection)
+    {
+        m_useWalkDirection = true;
+        m_walkDirection = walkDirection;
+        m_normalizedDirection = GetNormalizedVector(ref m_walkDirection);
+    }
+
+    /// <summary>
+    /// Caller provides a velocity with which the character should move for
+    /// the given time period.  After the time period, velocity is reset
+    /// to zero.
+    /// This call will reset any walk direction set by setWalkDirection().
+    /// Negative time intervals will result in no motion.
+    /// </summary>
+    public void SetVelocityForTimeInterval(Vector3 velocity, float timeInterval)
+        => SetVelocityForTimeInterval(ref velocity, timeInterval);
+
+    public virtual void SetVelocityForTimeInterval(ref Vector3 velocity, float timeInterval)
+    {
+        //System.Console.WriteLine("SetVelocity!");
+        //System.Console.WriteLine("  interval: " + timeInterval);
+        //System.Console.WriteLine("  velocity: " + velocity);
+
+        m_useWalkDirection = false;
+        m_walkDirection = velocity;
+        m_normalizedDirection = GetNormalizedVector(ref m_walkDirection);
+        m_velocityTimeInterval = timeInterval;
+    }
 
     protected static Vector3 GetNormalizedVector(ref Vector3 v)
-    {
-        if (v.Length() < MathUtil.SIMD_EPSILON)
-        {
-            return Vector3.Zero;
-        }
-        return Vector3.Normalize(v);
-    }
+        => v.Length() < MathUtil.SIMD_EPSILON
+        ? Vector3.Zero
+        : Vector3.Normalize(v);
 
     protected Vector3 ComputeReflectionDirection(ref Vector3 direction, ref Vector3 normal)
     {
         float dot = Vector3.Dot(direction, normal);
-        return direction - (2.0f * dot) * normal;
+        return direction - (2.0f * dot * normal);
     }
 
     protected Vector3 ParallelComponent(ref Vector3 direction, ref Vector3 normal)
@@ -85,7 +289,8 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         return normal * magnitude;
     }
 
-    protected Vector3 PerpindicularComponent(ref Vector3 direction, ref Vector3 normal) => direction - ParallelComponent(ref direction, ref normal);
+    protected Vector3 PerpindicularComponent(ref Vector3 direction, ref Vector3 normal)
+        => direction - ParallelComponent(ref direction, ref normal);
 
     protected bool RecoverFromPenetration(CollisionWorld collisionWorld)
     {
@@ -99,10 +304,11 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
         Vector3 minAabb, maxAabb;
         m_convexShape.GetAabb(m_ghostObject.WorldTransform, out minAabb, out maxAabb);
-        collisionWorld.Broadphase.SetAabbRef(m_ghostObject.BroadphaseHandle,
-                     ref minAabb,
-                     ref maxAabb,
-                     collisionWorld.Dispatcher);
+        collisionWorld.Broadphase.SetAabbRef(
+            m_ghostObject.BroadphaseHandle!,
+            ref minAabb,
+            ref maxAabb,
+            collisionWorld.Dispatcher);
 
         bool penetration = false;
 
@@ -117,18 +323,21 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
             BroadphasePair collisionPair = m_ghostObject.OverlappingPairCache.OverlappingPairArray[i];
 
-            CollisionObject obj0 = collisionPair.Proxy0.ClientObject as CollisionObject;
-            CollisionObject obj1 = collisionPair.Proxy1.ClientObject as CollisionObject;
+            CollisionObject? obj0 = collisionPair.Proxy0?.ClientObject as CollisionObject;
+            CollisionObject? obj1 = collisionPair.Proxy1?.ClientObject as CollisionObject;
 
             if ((obj0 != null && !obj0.HasContactResponse) || (obj1 != null && !obj1.HasContactResponse))
+            {
                 continue;
+            }
 
             if (!NeedsCollision(obj0, obj1))
+            {
                 continue;
+            }
 
-            var collisionAlgorithm = collisionPair.Algorithm;
-            if (collisionAlgorithm != null)
-                collisionAlgorithm.GetAllContactManifolds(m_manifoldArray);
+            CollisionAlgorithm? collisionAlgorithm = collisionPair.Algorithm;
+            collisionAlgorithm?.GetAllContactManifolds(m_manifoldArray);
 
             for (int j = 0; j < m_manifoldArray.Count; j++)
             {
@@ -161,6 +370,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                 //manifold.ClearManifold();
             }
         }
+
         Matrix4x4 newTrans = m_ghostObject.WorldTransform;
         newTrans.Translation = m_currentPosition;
         m_ghostObject.WorldTransform = newTrans;
@@ -172,7 +382,9 @@ public class KinematicCharacterController : ICharacterController, IDisposable
     {
         float stepHeight = 0.0f;
         if (m_verticalVelocity < 0.0f)
+        {
             stepHeight = m_stepHeight;
+        }
 
         // phase 1: up
         Matrix4x4 start, end;
@@ -183,7 +395,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         /* FIX ME: Handle penetration properly */
         start.Translation = m_currentPosition;
 
-        m_targetPosition = m_currentPosition + m_up * (stepHeight) + m_jumpAxis * ((m_verticalOffset > 0f ? m_verticalOffset : 0f));
+        m_targetPosition = m_currentPosition + (m_up * stepHeight) + (m_jumpAxis * (m_verticalOffset > 0f ? m_verticalOffset : 0f));
         m_currentPosition = m_targetPosition;
 
         end.Translation = m_targetPosition;
@@ -193,6 +405,8 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
         using (KinematicClosestNotMeConvexResultCallback callback = new KinematicClosestNotMeConvexResultCallback(m_ghostObject, -m_up, m_maxSlopeCosine))
         {
+            Debug.Assert(GhostObject.BroadphaseHandle is not null);
+
             callback.CollisionFilterGroup = GhostObject.BroadphaseHandle.CollisionFilterGroup;
             callback.CollisionFilterMask = GhostObject.BroadphaseHandle.CollisionFilterMask;
 
@@ -212,10 +426,9 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                 {
                     // we moved up only a fraction of the step height
                     m_currentStepOffset = stepHeight * callback.ClosestHitFraction;
-                    if (m_interpolateUp == true)
-                        m_currentPosition = Vector3.Lerp(m_currentPosition, m_targetPosition, callback.ClosestHitFraction);
-                    else
-                        m_currentPosition = m_targetPosition;
+                    m_currentPosition = m_interpolateUp
+                        ? Vector3.Lerp(m_currentPosition, m_targetPosition, callback.ClosestHitFraction)
+                        : m_targetPosition;
                 }
 
                 Matrix4x4 xform = m_ghostObject.WorldTransform;
@@ -235,6 +448,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                         break;
                     }
                 }
+
                 m_targetPosition = m_ghostObject.WorldTransform.Translation;
                 m_currentPosition = m_targetPosition;
 
@@ -252,7 +466,10 @@ public class KinematicCharacterController : ICharacterController, IDisposable
             }
         }
     }
+
+#pragma warning disable IDE0060 // Remove unused parameter
     protected void UpdateTargetPositionBasedOnCollision(ref Vector3 hitNormal, float tangentMag = 0f, float normalMag = 1f)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         Vector3 movementDirection = m_targetPosition - m_currentPosition;
         float movementLength = movementDirection.Length();
@@ -265,7 +482,9 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
             Vector3 parallelDir, perpindicularDir;
 
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
             parallelDir = ParallelComponent(ref reflectDir, ref hitNormal);
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
             perpindicularDir = PerpindicularComponent(ref reflectDir, ref hitNormal);
 
             m_targetPosition = m_currentPosition;
@@ -299,7 +518,9 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         m_targetPosition = m_currentPosition + walkMove;
 
         float fraction = 1.0f;
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
         float distance2 = (m_currentPosition - m_targetPosition).LengthSquared();
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
         //System.Console.WriteLine("distance2=" + distance2);
 
         int maxIter = 10;
@@ -315,6 +536,8 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
             using (KinematicClosestNotMeConvexResultCallback callback = new KinematicClosestNotMeConvexResultCallback(m_ghostObject, sweepDirNegative, 0.0f))
             {
+                Debug.Assert(GhostObject.BroadphaseHandle is not null);
+
                 callback.CollisionFilterGroup = GhostObject.BroadphaseHandle.CollisionFilterGroup;
                 callback.CollisionFilterMask = GhostObject.BroadphaseHandle.CollisionFilterMask;
 
@@ -332,6 +555,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                         collisionWorld.ConvexSweepTest(m_convexShape, start, end, callback, collisionWorld.DispatchInfo.AllowedCcdPenetration);
                     }
                 }
+
                 m_convexShape.Margin = margin;
 
                 fraction -= callback.ClosestHitFraction;
@@ -346,7 +570,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                     UpdateTargetPositionBasedOnCollision(ref hitNormalWorld);
                     Vector3 currentDir = m_targetPosition - m_currentPosition;
                     distance2 = currentDir.LengthSquared();
-                    if (distance2 > MathUtil.SIMD_EPSILON)
+                    if ((float)(m_currentPosition - m_targetPosition).LengthSquared() > MathUtil.SIMD_EPSILON)
                     {
                         currentDir = Vector3.Normalize(currentDir);
                         /* See Quake2: "If velocity is against original velocity, stop ead to avoid tiny oscilations in sloping corners." */
@@ -368,6 +592,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
             }
         }
     }
+
     protected void StepDown(CollisionWorld collisionWorld, float dt)
     {
         Matrix4x4 start, end, end_double;
@@ -385,10 +610,14 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         float downVelocity = (m_verticalVelocity < 0f ? -m_verticalVelocity : 0f) * dt;
 
         if (m_verticalVelocity > 0.0)
+        {
             return;
+        }
 
         if (downVelocity > 0.0 && downVelocity > m_fallSpeed && (m_wasOnGround || !m_wasJumping))
+        {
             downVelocity = m_fallSpeed;
+        }
 
         Vector3 step_drop = m_up * (m_currentStepOffset + downVelocity);
         m_targetPosition -= step_drop;
@@ -396,6 +625,8 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         using (KinematicClosestNotMeConvexResultCallback callback = new KinematicClosestNotMeConvexResultCallback(m_ghostObject, m_up, m_maxSlopeCosine))
         using (KinematicClosestNotMeConvexResultCallback callback2 = new KinematicClosestNotMeConvexResultCallback(m_ghostObject, m_up, m_maxSlopeCosine))
         {
+            Debug.Assert(GhostObject.BroadphaseHandle is not null);
+
             callback.CollisionFilterGroup = GhostObject.BroadphaseHandle.CollisionFilterGroup;
             callback.CollisionFilterMask = GhostObject.BroadphaseHandle.CollisionFilterMask;
 
@@ -435,15 +666,14 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                 }
 
                 float downVelocity2 = (m_verticalVelocity < 0f ? -m_verticalVelocity : 0f) * dt;
-                bool has_hit;
-                if (bounce_fix == true)
-                    has_hit = (callback.HasHit || callback2.HasHit) && m_ghostObject.HasContactResponse && NeedsCollision(m_ghostObject, callback.HitCollisionObject);
-                else
-                    has_hit = callback2.HasHit && m_ghostObject.HasContactResponse && NeedsCollision(m_ghostObject, callback2.HitCollisionObject);
-
+                bool has_hit = bounce_fix
+                    ? (callback.HasHit || callback2.HasHit) && m_ghostObject.HasContactResponse && NeedsCollision(m_ghostObject, callback.HitCollisionObject)
+                    : callback2.HasHit && m_ghostObject.HasContactResponse && NeedsCollision(m_ghostObject, callback2.HitCollisionObject);
                 float stepHeight = 0.0f;
                 if (m_verticalVelocity < 0.0)
+                {
                     stepHeight = m_stepHeight;
+                }
 
                 if (downVelocity2 > 0.0 && downVelocity2 < stepHeight && has_hit == true && runonce == false && (m_wasOnGround || !m_wasJumping))
                 {
@@ -458,6 +688,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                     runonce = true;
                     continue;  //re-run previous tests
                 }
+
                 break;
             }
 
@@ -470,14 +701,19 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
                 if (bounce_fix == true)
                 {
-                    if (full_drop == true)
+                    if (full_drop)
+                    {
                         m_currentPosition = Vector3.Lerp(m_currentPosition, m_targetPosition, callback.ClosestHitFraction);
+                    }
                     else
-                        //due to errors in the closestHitFraction variable when used with large polygons, calculate the hit fraction manually
-                        m_currentPosition = Vector3.Lerp(m_currentPosition, m_targetPosition, fraction);
+                    {
+                        m_currentPosition = Vector3.Lerp(m_currentPosition, m_targetPosition, fraction); //due to errors in the closestHitFraction variable when used with large polygons, calculate the hit fraction manually
+                    }
                 }
                 else
+                {
                     m_currentPosition = Vector3.Lerp(m_currentPosition, m_targetPosition, callback.ClosestHitFraction);
+                }
 
                 full_drop = false;
 
@@ -502,6 +738,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
                         m_targetPosition -= step_drop;
                     }
                 }
+
                 //System.Console.WriteLine("full drop - {0}, {1}", m_currentPosition.Y, m_targetPosition.Y);
 
                 m_currentPosition = m_targetPosition;
@@ -509,9 +746,14 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         }
     }
 
-    protected virtual bool NeedsCollision(CollisionObject body0, CollisionObject body1)
+    protected virtual bool NeedsCollision(CollisionObject? body0, CollisionObject? body1)
     {
-        bool collides = (body0.BroadphaseHandle.CollisionFilterGroup & body1.BroadphaseHandle.CollisionFilterMask) != 0;
+        if (body0 is null || body1 is null)
+        {
+            return false;
+        }
+
+        bool collides = (body0.BroadphaseHandle!.CollisionFilterGroup & body1.BroadphaseHandle!.CollisionFilterMask) != 0;
         collides = collides && (body1.BroadphaseHandle.CollisionFilterGroup & body0.BroadphaseHandle.CollisionFilterMask) != 0;
         return collides;
     }
@@ -519,16 +761,26 @@ public class KinematicCharacterController : ICharacterController, IDisposable
     protected void SetUpVector(ref Vector3 up)
     {
         if (m_up == up)
+        {
             return;
+        }
 
         Vector3 u = m_up;
 
         if (up.LengthSquared() > 0)
+        {
             m_up = Vector3.Normalize(up);
+        }
         else
+        {
             m_up = Vector3.Zero;
+        }
 
-        if (m_ghostObject == null) return;
+        if (m_ghostObject == null)
+        {
+            return;
+        }
+
         Quaternion rot = GetRotation(ref m_up, ref u);
 
         //set orientation with new up
@@ -540,148 +792,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
     }
 
     protected Quaternion GetRotation(ref Vector3 v0, ref Vector3 v1)
-    {
-        if (v0.LengthSquared() == 0.0f || v1.LengthSquared() == 0.0f)
-        {
-            return Quaternion.Identity;
-        }
-
-        return MathUtil.ShortestArcQuat(ref v0, ref v1);
-    }
-
-    public KinematicCharacterController(PairCachingGhostObject ghostObject, ConvexShape convexShape, float stepHeight, ref Vector3 up)
-    {
-        m_ghostObject = ghostObject;
-        m_jumpAxis = new Vector3(0.0f, 0.0f, 1.0f);
-        m_addedMargin = 0.02f;
-        m_useGhostObjectSweepTest = true;
-        m_convexShape = convexShape;
-        m_useWalkDirection = true; // use walk direction by default, legacy behavior
-        m_gravity = 9.8f * 3.0f; // 3G acceleration.
-        m_fallSpeed = 55.0f;       // Terminal velocity of a sky diver in m/s.
-        m_jumpSpeed = 10.0f;       // ?
-        m_SetjumpSpeed = m_jumpSpeed;
-        m_interpolateUp = true;
-        m_maxPenetrationDepth = 0.2f;
-
-        Up = up;
-        StepHeight = stepHeight;
-        MaxSlope = MathUtil.DegToRadians(45.0f);
-    }
-
-    // IAction interface
-    public virtual void UpdateAction(CollisionWorld collisionWorld, float deltaTime)
-    {
-        PreStep(collisionWorld);
-        PlayerStep(collisionWorld, deltaTime);
-    }
-
-    // IAction interface
-    public void DebugDraw(DebugDraw debugDrawer)
-    {
-    }
-
-    public Vector3 Up
-    {
-        get => m_up;
-        set
-        {
-            if (value.LengthSquared() > 0 && m_gravity > 0.0f)
-            {
-                Gravity = -m_gravity * Vector3.Normalize(value);
-                return;
-            }
-
-            SetUpVector(ref value);
-        }
-    }
-
-    /// <summary>
-    /// This should probably be called setPositionIncrementPerSimulatorStep.
-    /// This is neither a direction nor a velocity, but the amount to
-    /// increment the position each simulation iteration, regardless
-    /// of dt.
-    /// This call will reset any velocity set by setVelocityForTimeInterval().
-    /// </summary>
-    public virtual void SetWalkDirection(Vector3 walkDirection) => SetWalkDirection(ref walkDirection);
-
-    public virtual void SetWalkDirection(ref Vector3 walkDirection)
-    {
-        m_useWalkDirection = true;
-        m_walkDirection = walkDirection;
-        m_normalizedDirection = GetNormalizedVector(ref m_walkDirection);
-    }
-
-    /// <summary>
-    /// Caller provides a velocity with which the character should move for
-    /// the given time period.  After the time period, velocity is reset
-    /// to zero.
-    /// This call will reset any walk direction set by setWalkDirection().
-    /// Negative time intervals will result in no motion.
-    /// </summary>
-    public void SetVelocityForTimeInterval(Vector3 velocity, float timeInterval) => SetVelocityForTimeInterval(ref velocity, timeInterval);
-
-    public virtual void SetVelocityForTimeInterval(ref Vector3 velocity, float timeInterval)
-    {
-        //System.Console.WriteLine("SetVelocity!");
-        //System.Console.WriteLine("  interval: " + timeInterval);
-        //System.Console.WriteLine("  velocity: " + velocity);
-
-        m_useWalkDirection = false;
-        m_walkDirection = velocity;
-        m_normalizedDirection = GetNormalizedVector(ref m_walkDirection);
-        m_velocityTimeInterval = timeInterval;
-    }
-
-    public virtual Vector3 AngularVelocity
-    {
-        get => m_AngVel;
-        set => m_AngVel = value;
-    }
-
-    public virtual Vector3 LinearVelocity
-    {
-        get => m_walkDirection + (m_verticalVelocity * m_up);
-        set
-        {
-            Vector3 velocity = value;
-            m_walkDirection = velocity;
-
-            // HACK: if we are moving in the direction of the up, treat it as a jump :(
-            if (m_walkDirection.LengthSquared() > 0)
-            {
-                Vector3 w = Vector3.Normalize(velocity);
-                float c = Vector3.Dot(w, m_up);
-                if (c != 0)
-                {
-                    //there is a component in walkdirection for vertical velocity
-                    Vector3 upComponent = m_up * ((float)System.Math.Sin(MathUtil.SIMD_HALF_PI - System.Math.Acos(c)) * m_walkDirection.Length());
-                    m_walkDirection -= upComponent;
-                    m_verticalVelocity = (c < 0.0f ? -1 : 1) * upComponent.Length();
-
-                    if (c > 0.0f)
-                    {
-                        m_wasJumping = true;
-                        m_jumpPosition = m_ghostObject.WorldTransform.Translation;
-                    }
-                }
-            }
-            else
-                m_verticalVelocity = 0.0f;
-        }
-    }
-
-    public float LinearDamping
-    {
-        get => m_linearDamping;
-        set => m_linearDamping = value > 1f ? 1f : value < 0f ? 0f : value;
-    }
-
-    public float AngularDamping
-    {
-        get => m_angularDamping;
-        set => m_angularDamping = value > 1f ? 1f : value < 0f ? 0f : value;
-    }
+        => v0.LengthSquared() == 0.0f || v1.LengthSquared() == 0.0f ? Quaternion.Identity : MathUtil.ShortestArcQuat(ref v0, ref v1);
 
     public void Reset(CollisionWorld collisionWorld)
     {
@@ -726,7 +837,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
 
         if (m_AngVel.LengthSquared() > 0.0f)
         {
-            m_AngVel *= (float)System.Math.Pow(1f - m_angularDamping, dt);
+            m_AngVel *= MathF.Pow(1f - m_angularDamping, dt);
         }
 
         Matrix4x4 xform;
@@ -763,10 +874,10 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         if (m_walkDirection.LengthSquared() > 0)
         {
             // apply damping
-            m_walkDirection *= (float)System.Math.Pow(1f - m_linearDamping, dt);
+            m_walkDirection *= MathF.Pow(1f - m_linearDamping, dt);
         }
 
-        m_verticalVelocity *= (float)System.Math.Pow(1f - m_linearDamping, dt);
+        m_verticalVelocity *= MathF.Pow(1f - m_linearDamping, dt);
 
         // Update fall velocity.
         m_verticalVelocity -= m_gravity * dt;
@@ -774,10 +885,12 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         {
             m_verticalVelocity = m_jumpSpeed;
         }
+
         if (m_verticalVelocity < 0.0 && (m_verticalVelocity < 0 ? -m_verticalVelocity : m_verticalVelocity) > (m_fallSpeed < 0 ? -m_fallSpeed : m_fallSpeed))
         {
             m_verticalVelocity = -(m_fallSpeed < 0 ? -m_fallSpeed : m_fallSpeed);
         }
+
         m_verticalOffset = m_verticalVelocity * dt;
 
         xform = m_ghostObject.WorldTransform;
@@ -824,6 +937,7 @@ public class KinematicCharacterController : ICharacterController, IDisposable
             // okay, step
             StepForwardAndStrafe(collisionWorld, ref move);
         }
+
         StepDown(collisionWorld, dt);
 
         //to do: Experimenting with max jump height
@@ -860,26 +974,8 @@ public class KinematicCharacterController : ICharacterController, IDisposable
         }
     }
 
-    public float StepHeight
-    {
-        get => m_stepHeight;
-        set => m_stepHeight = value;
-    }
-
-    public float FallSpeed
-    {
-        get => m_fallSpeed;
-        set => m_fallSpeed = value;
-    }
-
-    public float JumpSpeed
-    {
-        get => m_jumpSpeed;
-        set => m_SetjumpSpeed = m_jumpSpeed = value;
-    }
-
-    public void SetMaxJumpHeight(float maxJumpHeight) => m_maxJumpHeight = maxJumpHeight;
-    public bool CanJump => OnGround;
+    public void SetMaxJumpHeight(float maxJumpHeight)
+        => m_maxJumpHeight = maxJumpHeight;
 
     public void Jump()
     {
@@ -914,52 +1010,22 @@ public class KinematicCharacterController : ICharacterController, IDisposable
     }
 
     /// <summary>
-    /// Calls Jump()
+    /// Calls Jump().
     /// </summary>
-    public void ApplyImpulse(ref Vector3 dir) => Jump(ref dir);
+    public void ApplyImpulse(ref Vector3 dir)
+        => Jump(ref dir);
 
-    public Vector3 Gravity
+    public void SetUseGhostSweepTest(bool useGhostObjectSweepTest)
+        => m_useGhostObjectSweepTest = useGhostObjectSweepTest;
+
+    public void SetUpInterpolate(bool v)
+        => m_interpolateUp = v;
+
+    public void Dispose()
     {
-        get => -m_gravity * m_up;
-        set
-        {
-            Vector3 gravity = value;
-            m_gravity = gravity.Length();
-            if (gravity.LengthSquared() > 0)
-            {
-                gravity = -gravity;
-                SetUpVector(ref gravity);
-            }
-        }
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
-
-    /// <summary>
-    /// The max slope determines the maximum angle that the controller can walk up.
-    /// The slope angle is measured in radians.
-    /// </summary>
-    public float MaxSlope
-    {
-        get => m_maxSlopeRadians;
-        set
-        {
-            m_maxSlopeRadians = value;
-            m_maxSlopeCosine = (float)System.Math.Cos(value);
-        }
-    }
-
-    public float MaxPenetrationDepth
-    {
-        get => m_maxPenetrationDepth;
-        set => m_maxPenetrationDepth = value;
-    }
-
-    public PairCachingGhostObject GhostObject => m_ghostObject;
-
-    public void SetUseGhostSweepTest(bool useGhostObjectSweepTest) => m_useGhostObjectSweepTest = useGhostObjectSweepTest;
-
-    public bool OnGround => System.Math.Abs(m_verticalVelocity) < MathUtil.SIMD_EPSILON && System.Math.Abs(m_verticalOffset) < MathUtil.SIMD_EPSILON;
-
-    public void SetUpInterpolate(bool v) => m_interpolateUp = v;
 
     protected virtual void Dispose(bool disposing)
     {
@@ -968,28 +1034,19 @@ public class KinematicCharacterController : ICharacterController, IDisposable
             m_manifoldArray.Dispose();
         }
     }
-
-    ~KinematicCharacterController()
-    {
-        Dispose(false);
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
 }
 
-///@todo Interact with dynamic objects,
-///Ride kinematicly animated platforms properly
-///More realistic (or maybe just a config option) falling
-/// -> Should integrate falling velocity manually and use that in stepDown()
-///Support jumping
-///Support ducking
+// @todo Interact with dynamic objects,
+// Ride kinematicly animated platforms properly
+// More realistic (or maybe just a config option) falling
+//  -> Should integrate falling velocity manually and use that in stepDown()
+// Support jumping
+// Support ducking
 public class KinematicClosestNotMeRayResultCallback : ClosestRayResultCallback
 {
-    private static Vector3 zero = new Vector3();
+    protected CollisionObject _me;
+
+    private static Vector3 zero = Vector3.Zero;
 
     public KinematicClosestNotMeRayResultCallback(CollisionObject me)
         : base(ref zero, ref zero)
@@ -998,23 +1055,16 @@ public class KinematicClosestNotMeRayResultCallback : ClosestRayResultCallback
     }
 
     public override float AddSingleResult(ref LocalRayResult rayResult, bool normalInWorldSpace)
-    {
-        if (rayResult.CollisionObject == _me)
-            return 1.0f;
-
-        return base.AddSingleResult(ref rayResult, normalInWorldSpace);
-    }
-
-    protected CollisionObject _me;
+        => rayResult.CollisionObject == _me ? 1.0f : base.AddSingleResult(ref rayResult, normalInWorldSpace);
 }
 
 public class KinematicClosestNotMeConvexResultCallback : ClosestConvexResultCallback
 {
-    private static Vector3 zero = new Vector3();
-
     protected CollisionObject _me;
     protected Vector3 _up;
     protected float _minSlopeDot;
+
+    private static Vector3 zero = Vector3.Zero;
 
     public KinematicClosestNotMeConvexResultCallback(CollisionObject me, Vector3 up, float minSlopeDot)
         : base(ref zero, ref zero)
@@ -1049,11 +1099,9 @@ public class KinematicClosestNotMeConvexResultCallback : ClosestConvexResultCall
         }
 
         float dotUp = Vector3.Dot(_up, hitNormalWorld);
-        if (dotUp < _minSlopeDot)
-        {
-            return 1.0f;
-        }
-
-        return base.AddSingleResult(ref convexResult, normalInWorldSpace);
+        return dotUp < _minSlopeDot
+            ? 1.0f
+            : base.AddSingleResult(ref convexResult, normalInWorldSpace);
     }
 }
+#pragma warning restore SA1202 // Elements should be ordered by access

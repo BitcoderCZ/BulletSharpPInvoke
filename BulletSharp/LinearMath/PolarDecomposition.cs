@@ -12,9 +12,12 @@ public class PolarDecomposition : BulletDisposableObject
         InitializeUserOwned(native);
     }
 
-    public uint Decompose(ref Matrix4x4 a, out Matrix4x4 u, out Matrix4x4 h) => btPolarDecomposition_decompose(Native, ref a, out u, out h);
+    public uint Decompose(ref Matrix4x4 a, out Matrix4x4 u, out Matrix4x4 h)
+        => btPolarDecomposition_decompose(Native, ref a, out u, out h);
 
-    public uint MaxIterations() => btPolarDecomposition_maxIterations(Native);
+    public uint MaxIterations()
+        => btPolarDecomposition_maxIterations(Native);
 
-    protected override void Dispose(bool disposing) => btPolarDecomposition_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btPolarDecomposition_delete(Native);
 }

@@ -1,19 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security;
 using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp.SoftBody;
-
-public class SoftBodyCollisionShape : ConvexShape
-{
-    internal SoftBodyCollisionShape(IntPtr native, SoftBody owner)
-    {
-        InitializeCollisionShape(native, owner);
-    }
-}
 
 public enum AeroModel
 {
@@ -89,21 +83,29 @@ public enum VelocitySolver
     Linear,
 }
 
+public class SoftBodyCollisionShape : ConvexShape
+{
+    internal SoftBodyCollisionShape(IntPtr native, SoftBody owner)
+    {
+        InitializeCollisionShape(native, owner);
+    }
+}
+
 public class SoftBodyWorldInfo : BulletDisposableObject
 {
-    private BroadphaseInterface _broadphase;
-    private Dispatcher _dispatcher;
-    private SparseSdf _sparseSdf;
-
-    internal SoftBodyWorldInfo(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
+    private BroadphaseInterface? _broadphase;
+    private Dispatcher? _dispatcher;
+    private SparseSdf? _sparseSdf;
 
     public SoftBodyWorldInfo()
     {
         IntPtr native = btSoftBodyWorldInfo_new();
         InitializeUserOwned(native);
+    }
+
+    internal SoftBodyWorldInfo(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
     }
 
     public float AirDensity
@@ -112,7 +114,7 @@ public class SoftBodyWorldInfo : BulletDisposableObject
         set => btSoftBodyWorldInfo_setAir_density(Native, value);
     }
 
-    public BroadphaseInterface Broadphase
+    public BroadphaseInterface? Broadphase
     {
         get => _broadphase;
         set
@@ -122,7 +124,7 @@ public class SoftBodyWorldInfo : BulletDisposableObject
         }
     }
 
-    public Dispatcher Dispatcher
+    public Dispatcher? Dispatcher
     {
         get => _dispatcher;
         set
@@ -157,6 +159,7 @@ public class SoftBodyWorldInfo : BulletDisposableObject
             {
                 _sparseSdf = new SparseSdf(btSoftBodyWorldInfo_getSparsesdf(Native));
             }
+
             return _sparseSdf;
         }
     }
@@ -195,38 +198,54 @@ public class SoftBodyWorldInfo : BulletDisposableObject
 
 public class AngularJoint : Joint
 {
+    private IControl? _iControl;
+    private Vector3Array? _axis;
+
+    internal AngularJoint(IntPtr native)
+    {
+        Initialize(native);
+    }
+
+    public Vector3Array Axis
+    {
+        get
+        {
+            if (_axis == null)
+            {
+                _axis = new Vector3Array(btSoftBody_AJoint_getAxis(Native), 2);
+            }
+
+            return _axis;
+        }
+    }
+
+    public IControl Control
+    {
+        get
+        {
+            if (_iControl == null)
+            {
+                _iControl = IControl.GetManaged(btSoftBody_AJoint_getIcontrol(Native));
+            }
+
+            Debug.Assert(_iControl is not null, $"{nameof(_iControl)} should not be null.");
+
+            return _iControl;
+        }
+
+        set
+        {
+            _iControl = value;
+            btSoftBody_AJoint_setIcontrol(Native, value.Native);
+        }
+    }
+
     public class IControl : BulletDisposableObject
     {
-        [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-        [SuppressUnmanagedCodeSecurity]
-        private delegate void PrepareUnmanagedDelegate(IntPtr angularJoint);
-        [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-        [SuppressUnmanagedCodeSecurity]
-        private delegate float SpeedUnmanagedDelegate(IntPtr angularJoint, float current);
+        private static IControl? _default;
 
-        private readonly PrepareUnmanagedDelegate _prepare;
-        private readonly SpeedUnmanagedDelegate _speed;
-
-        internal static IControl GetManaged(IntPtr native)
-        {
-            if (native == IntPtr.Zero)
-            {
-                return null;
-            }
-
-            if (native == Default.Native)
-            {
-                return Default;
-            }
-
-            IntPtr handle = btSoftBody_AJoint_IControlWrapper_getWrapperData(native);
-            return GCHandle.FromIntPtr(handle).Target as IControl;
-        }
-
-        internal IControl(IntPtr native)
-        {
-            InitializeSubObject(native, this);
-        }
+        private readonly PrepareUnmanagedDelegate? _prepare;
+        private readonly SpeedUnmanagedDelegate? _speed;
 
         public IControl()
         {
@@ -242,19 +261,46 @@ public class AngularJoint : Joint
             btSoftBody_AJoint_IControlWrapper_setWrapperData(Native, GCHandle.ToIntPtr(handle));
         }
 
-        private static IControl _default;
-        public static IControl Default =>
-            _default ?? (_default = new IControl(btSoftBody_AJoint_IControl_Default()));
+        internal IControl(IntPtr native)
+        {
+            InitializeSubObject(native, this);
+        }
 
-        private void PrepareUnmanaged(IntPtr angularJoint) => Prepare(new AngularJoint(angularJoint));
+        [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+        [SuppressUnmanagedCodeSecurity]
+        private delegate void PrepareUnmanagedDelegate(IntPtr angularJoint);
 
-        public float SpeedUnmanaged(IntPtr angularJoint, float current) => Speed(new AngularJoint(angularJoint), current);
+        [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+        [SuppressUnmanagedCodeSecurity]
+        private delegate float SpeedUnmanagedDelegate(IntPtr angularJoint, float current);
+
+        public static IControl Default => _default ??= new IControl(btSoftBody_AJoint_IControl_Default());
+
+        public float SpeedUnmanaged(IntPtr angularJoint, float current)
+            => Speed(new AngularJoint(angularJoint), current);
 
         public virtual void Prepare(AngularJoint angularJoint)
         {
         }
 
-        public virtual float Speed(AngularJoint angularJoint, float current) => current;
+        public virtual float Speed(AngularJoint angularJoint, float current)
+            => current;
+
+        internal static IControl? GetManaged(IntPtr native)
+        {
+            if (native == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            if (native == Default.Native)
+            {
+                return Default;
+            }
+
+            IntPtr handle = btSoftBody_AJoint_IControlWrapper_getWrapperData(native);
+            return GCHandle.FromIntPtr(handle).Target as IControl;
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -265,11 +311,14 @@ public class AngularJoint : Joint
                 btSoftBody_AJoint_IControl_delete(Native);
             }
         }
+
+        private void PrepareUnmanaged(IntPtr angularJoint)
+            => Prepare(new AngularJoint(angularJoint));
     }
 
     public new class Specs : Joint.Specs
     {
-        private IControl _iControl;
+        private IControl? _iControl;
 
         public Specs()
         {
@@ -296,8 +345,12 @@ public class AngularJoint : Joint
                 {
                     _iControl = IControl.GetManaged(btSoftBody_AJoint_Specs_getIcontrol(Native));
                 }
+
+                Debug.Assert(_iControl is not null, $"{nameof(_iControl)} should not be null.");
+
                 return _iControl;
             }
+
             set
             {
                 _iControl = value;
@@ -305,55 +358,18 @@ public class AngularJoint : Joint
             }
         }
     }
-
-    private IControl _iControl;
-    private Vector3Array _axis;
-
-    internal AngularJoint(IntPtr native)
-    {
-        Initialize(native);
-    }
-
-    public Vector3Array Axis
-    {
-        get
-        {
-            if (_axis == null)
-            {
-                _axis = new Vector3Array(btSoftBody_AJoint_getAxis(Native), 2);
-            }
-            return _axis;
-        }
-    }
-
-    public IControl Control
-    {
-        get
-        {
-            if (_iControl == null)
-            {
-                _iControl = IControl.GetManaged(btSoftBody_AJoint_getIcontrol(Native));
-            }
-            return _iControl;
-        }
-        set
-        {
-            _iControl = value;
-            btSoftBody_AJoint_setIcontrol(Native, value.Native);
-        }
-    }
 }
 
 public class Anchor : BulletObject
 {
-    private Node _node;
+    private Node? _node;
 
     internal Anchor(IntPtr native)
     {
         Initialize(native);
     }
 
-    public RigidBody Body
+    public RigidBody? Body
     {
         get => CollisionObject.GetManaged(btSoftBody_Anchor_getBody(Native)) as RigidBody;
         set => btSoftBody_Anchor_setBody(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -404,16 +420,25 @@ public class Anchor : BulletObject
         set => btSoftBody_Anchor_setLocal(Native, ref value);
     }
 
-    public Node Node
+    public Node? Node
     {
         get
         {
             IntPtr nodePtr = btSoftBody_Anchor_getNode(Native);
-            if (_node != null && _node.Native == nodePtr) return _node;
-            if (nodePtr == IntPtr.Zero) return null;
+            if (_node != null && _node.Native == nodePtr)
+            {
+                return _node;
+            }
+
+            if (nodePtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _node = new Node(nodePtr);
             return _node;
         }
+
         set
         {
             btSoftBody_Anchor_setNode(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -424,12 +449,7 @@ public class Anchor : BulletObject
 
 public class Body : BulletDisposableObject
 {
-    private Cluster _soft;
-
-    internal Body(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
+    private Cluster? _soft;
 
     public Body()
     {
@@ -450,34 +470,9 @@ public class Body : BulletDisposableObject
         _soft = p;
     }
 
-    public void Activate() => btSoftBody_Body_activate(Native);
-
-    public void ApplyAImpulse(Impulse impulse) => btSoftBody_Body_applyAImpulse(Native, impulse.Native);
-
-    public void ApplyDAImpulse(Vector3 impulse) => btSoftBody_Body_applyDAImpulse(Native, ref impulse);
-
-    public void ApplyDCImpulse(Vector3 impulse) => btSoftBody_Body_applyDCImpulse(Native, ref impulse);
-
-    public void ApplyDImpulse(Vector3 impulse, Vector3 rpos) => btSoftBody_Body_applyDImpulse(Native, ref impulse, ref rpos);
-
-    public void ApplyImpulse(Impulse impulse, Vector3 rpos) => btSoftBody_Body_applyImpulse(Native, impulse.Native, ref rpos);
-
-    public void ApplyVAImpulse(Vector3 impulse) => btSoftBody_Body_applyVAImpulse(Native, ref impulse);
-
-    public void ApplyVImpulse(Vector3 impulse, Vector3 rpos) => btSoftBody_Body_applyVImpulse(Native, ref impulse, ref rpos);
-
-    public Vector3 GetAngularVelocity(Vector3 rpos)
+    internal Body(IntPtr native, BulletObject owner)
     {
-        Vector3 value;
-        btSoftBody_Body_angularVelocity(Native, ref rpos, out value);
-        return value;
-    }
-
-    public Vector3 Velocity(Vector3 rpos)
-    {
-        Vector3 value;
-        btSoftBody_Body_velocity(Native, ref rpos, out value);
-        return value;
+        InitializeSubObject(native, owner);
     }
 
     public Vector3 AngularVelocity
@@ -492,7 +487,15 @@ public class Body : BulletDisposableObject
 
     public CollisionObject CollisionObject
     {
-        get => CollisionObject.GetManaged(btSoftBody_Body_getCollisionObject(Native));
+        get
+        {
+            CollisionObject? managed = CollisionObject.GetManaged(btSoftBody_Body_getCollisionObject(Native));
+
+            Debug.Assert(managed is not null, $"{nameof(managed)} should not be null.");
+
+            return managed;
+        }
+
         set => btSoftBody_Body_setCollisionObject(Native, value.Native);
     }
 
@@ -518,22 +521,32 @@ public class Body : BulletDisposableObject
         }
     }
 
-    public RigidBody Rigid
+    [DisallowNull]
+    public RigidBody? Rigid
     {
         get => CollisionObject.GetManaged(btSoftBody_Body_getRigid(Native)) as RigidBody;
         set => btSoftBody_Body_setRigid(Native, value.Native);
     }
 
-    public Cluster Soft
+    public Cluster? Soft
     {
         get
         {
             IntPtr softPtr = btSoftBody_Body_getSoft(Native);
-            if (_soft != null && _soft.Native == softPtr) return _soft;
-            if (softPtr == IntPtr.Zero) return null;
+            if (_soft != null && _soft.Native == softPtr)
+            {
+                return _soft;
+            }
+
+            if (softPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _soft = new Cluster(softPtr);
             return _soft;
         }
+
         set
         {
             btSoftBody_Body_setSoft(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -551,12 +564,51 @@ public class Body : BulletDisposableObject
         }
     }
 
-    protected override void Dispose(bool disposing) => btSoftBody_Body_delete(Native);
+    public void Activate()
+        => btSoftBody_Body_activate(Native);
+
+    public void ApplyAImpulse(Impulse impulse)
+        => btSoftBody_Body_applyAImpulse(Native, impulse.Native);
+
+    public void ApplyDAImpulse(Vector3 impulse)
+        => btSoftBody_Body_applyDAImpulse(Native, ref impulse);
+
+    public void ApplyDCImpulse(Vector3 impulse)
+        => btSoftBody_Body_applyDCImpulse(Native, ref impulse);
+
+    public void ApplyDImpulse(Vector3 impulse, Vector3 rpos)
+        => btSoftBody_Body_applyDImpulse(Native, ref impulse, ref rpos);
+
+    public void ApplyImpulse(Impulse impulse, Vector3 rpos)
+        => btSoftBody_Body_applyImpulse(Native, impulse.Native, ref rpos);
+
+    public void ApplyVAImpulse(Vector3 impulse)
+        => btSoftBody_Body_applyVAImpulse(Native, ref impulse);
+
+    public void ApplyVImpulse(Vector3 impulse, Vector3 rpos)
+        => btSoftBody_Body_applyVImpulse(Native, ref impulse, ref rpos);
+
+    public Vector3 GetAngularVelocity(Vector3 rpos)
+    {
+        Vector3 value;
+        btSoftBody_Body_angularVelocity(Native, ref rpos, out value);
+        return value;
+    }
+
+    public Vector3 Velocity(Vector3 rpos)
+    {
+        Vector3 value;
+        btSoftBody_Body_velocity(Native, ref rpos, out value);
+        return value;
+    }
+
+    protected override void Dispose(bool disposing)
+        => btSoftBody_Body_delete(Native);
 }
 
 public class ContactJoint : Joint
 {
-    private Vector3Array _rPos;
+    private Vector3Array? _rPos;
 
     internal ContactJoint(IntPtr native)
     {
@@ -600,6 +652,7 @@ public class ContactJoint : Joint
             {
                 _rPos = new Vector3Array(btSoftBody_CJoint_getRpos(Native), 2);
             }
+
             return _rPos;
         }
     }
@@ -609,12 +662,12 @@ public class Cluster
 {
     internal IntPtr Native;
 
-    private AlignedVector3Array _framerefs;
-    private Vector3Array _dImpulses;
-    private DbvtNode _leaf;
+    private AlignedVector3Array? _framerefs;
+    private Vector3Array? _dImpulses;
+    private DbvtNode? _leaf;
     //private AlignedScalarArray _masses;
-    private AlignedNodeArray _nodes;
-    private Vector3Array _vImpulses;
+    private AlignedNodeArray? _nodes;
+    private Vector3Array? _vImpulses;
 
     internal Cluster(IntPtr native)
     {
@@ -675,6 +728,7 @@ public class Cluster
             {
                 _dImpulses = new Vector3Array(btSoftBody_Cluster_getDimpulses(Native), 2);
             }
+
             return _dImpulses;
         }
     }
@@ -687,6 +741,7 @@ public class Cluster
             {
                 _framerefs = new AlignedVector3Array(btSoftBody_Cluster_getFramerefs(Native));
             }
+
             return _framerefs;
         }
     }
@@ -731,16 +786,25 @@ public class Cluster
         set => btSoftBody_Cluster_setLdamping(Native, value);
     }
 
-    public DbvtNode Leaf
+    public DbvtNode? Leaf
     {
         get
         {
             IntPtr leafPtr = btSoftBody_Cluster_getLeaf(Native);
-            if (_leaf != null && _leaf.Native == leafPtr) return _leaf;
-            if (leafPtr == IntPtr.Zero) return null;
+            if (_leaf != null && _leaf.Native == leafPtr)
+            {
+                return _leaf;
+            }
+
+            if (leafPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _leaf = new DbvtNode(leafPtr);
             return _leaf;
         }
+
         set
         {
             btSoftBody_Cluster_setLeaf(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -783,6 +847,7 @@ public class Cluster
 			}
 		}
 		*/
+
     public float Matching
     {
         get => btSoftBody_Cluster_getMatching(Native);
@@ -809,6 +874,7 @@ public class Cluster
             {
                 _nodes = new AlignedNodeArray(btSoftBody_Cluster_getNodes(Native));
             }
+
             return _nodes;
         }
     }
@@ -839,6 +905,7 @@ public class Cluster
             {
                 _vImpulses = new Vector3Array(btSoftBody_Cluster_getVimpulses(Native), 2);
             }
+
             return _vImpulses;
         }
     }
@@ -904,6 +971,7 @@ public class Config
         get => btSoftBody_Config_getDiterations(Native);
         set => btSoftBody_Config_setDiterations(Native, value);
     }
+
     /*
 		public AlignedPSolverArray DriftSequence
 		{
@@ -917,6 +985,7 @@ public class Config
 			}
 		}
 		*/
+
     public float KineticContactHardness
     {
         get => btSoftBody_Config_getKKHR(Native);
@@ -946,6 +1015,7 @@ public class Config
         get => btSoftBody_Config_getPiterations(Native);
         set => btSoftBody_Config_setPiterations(Native, value);
     }
+
     /*
 		public AlignedPSolverArray PositionSequence
 		{
@@ -959,6 +1029,7 @@ public class Config
 			}
 		}
 		*/
+
     public float Pressure
     {
         get => btSoftBody_Config_getKPR(Native);
@@ -1036,6 +1107,7 @@ public class Config
         get => btSoftBody_Config_getViterations(Native);
         set => btSoftBody_Config_setViterations(Native, value);
     }
+
     /*
 		public AlignedVSolverArray VelocitySequence
 		{
@@ -1067,38 +1139,41 @@ public class Element
     }
 
     public override bool Equals(object obj)
-    {
-        Element element = obj as Element;
-        if (element == null)
-        {
-            return false;
-        }
-        return Native == element.Native;
-    }
+        => obj is Element other && Native == other.Native;
 
-    public override int GetHashCode() => Native.GetHashCode();
+    public override int GetHashCode()
+        => Native.GetHashCode();
 }
 
 public class Face : Feature
 {
-    private DbvtNode _leaf;
-    private NodePtrArray _n;
+    private DbvtNode? _leaf;
+    private NodePtrArray? _n;
 
     internal Face(IntPtr native)
         : base(native)
     {
     }
 
-    public DbvtNode Leaf
+    public DbvtNode? Leaf
     {
         get
         {
             IntPtr leafPtr = btSoftBody_Face_getLeaf(Native);
-            if (_leaf != null && _leaf.Native == leafPtr) return _leaf;
-            if (leafPtr == IntPtr.Zero) return null;
+            if (_leaf != null && _leaf.Native == leafPtr)
+            {
+                return _leaf;
+            }
+
+            if (leafPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _leaf = new DbvtNode(leafPtr);
             return _leaf;
         }
+
         set
         {
             btSoftBody_Face_setLeaf(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -1114,6 +1189,7 @@ public class Face : Feature
             {
                 _n = new NodePtrArray(btSoftBody_Face_getN(Native), 3);
             }
+
             return _n;
         }
     }
@@ -1138,23 +1214,32 @@ public class Face : Feature
 
 public class Feature : Element
 {
-    private Material _material;
+    private Material? _material;
 
     internal Feature(IntPtr native)
         : base(native)
     {
     }
 
-    public Material Material
+    public Material? Material
     {
         get
         {
             IntPtr materialPtr = btSoftBody_Feature_getMaterial(Native);
-            if (_material != null && _material.Native == materialPtr) return _material;
-            if (materialPtr == IntPtr.Zero) return null;
+            if (_material != null && _material.Native == materialPtr)
+            {
+                return _material;
+            }
+
+            if (materialPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _material = new Material(materialPtr);
             return _material;
         }
+
         set
         {
             btSoftBody_Feature_setMaterial(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -1167,11 +1252,7 @@ public abstract class ImplicitFn : IDisposable
 {
     internal IntPtr Native;
 
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate float EvalUnmanagedDelegate([In] ref Vector3 x);
-
-    private EvalUnmanagedDelegate _eval;
+    private readonly EvalUnmanagedDelegate _eval;
 
     protected ImplicitFn()
     {
@@ -1179,6 +1260,15 @@ public abstract class ImplicitFn : IDisposable
 
         Native = btSoftBody_ImplicitFnWrapper_new(Marshal.GetFunctionPointerForDelegate(_eval));
     }
+
+    ~ImplicitFn()
+    {
+        Dispose(false);
+    }
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate float EvalUnmanagedDelegate([In] ref Vector3 x);
 
     public abstract float Eval(ref Vector3 x);
 
@@ -1196,26 +1286,27 @@ public abstract class ImplicitFn : IDisposable
             Native = IntPtr.Zero;
         }
     }
-
-    ~ImplicitFn()
-    {
-        Dispose(false);
-    }
 }
 
 public class Impulse : IDisposable
 {
     internal IntPtr Native;
 
+    public Impulse()
+    {
+        Native = btSoftBody_Impulse_new();
+    }
+
     internal Impulse(IntPtr native)
     {
         Native = native;
     }
 
-    public Impulse()
+    ~Impulse()
     {
-        Native = btSoftBody_Impulse_new();
+        Dispose(false);
     }
+
     /*
 		public Impulse operator-()
 		{
@@ -1227,6 +1318,7 @@ public class Impulse : IDisposable
 			return btSoftBody_Impulse_operator_m(Native, x);
 		}
 		*/
+
     public int AsDrift
     {
         get => btSoftBody_Impulse_getAsDrift(Native);
@@ -1275,74 +1367,16 @@ public class Impulse : IDisposable
             Native = IntPtr.Zero;
         }
     }
-
-    ~Impulse()
-    {
-        Dispose(false);
-    }
 }
 
 public abstract class Joint : BulletObject
 {
-    public class Specs : BulletDisposableObject
-    {
-        protected internal Specs()
-        {
-        }
-
-        public float ConstraintForceMixing
-        {
-            get => btSoftBody_Joint_Specs_getCfm(Native);
-            set => btSoftBody_Joint_Specs_setCfm(Native, value);
-        }
-
-        public float ErrorReductionParameter
-        {
-            get => btSoftBody_Joint_Specs_getErp(Native);
-            set => btSoftBody_Joint_Specs_setErp(Native, value);
-        }
-
-        public float Split
-        {
-            get => btSoftBody_Joint_Specs_getSplit(Native);
-            set => btSoftBody_Joint_Specs_setSplit(Native, value);
-        }
-
-        protected override void Dispose(bool disposing) => btSoftBody_Joint_Specs_delete(Native);
-    }
-
-    private BodyArray _bodies;
-    private Vector3Array _refs;
-
-    internal static Joint GetManaged(IntPtr native)
-    {
-        if (native == IntPtr.Zero)
-        {
-            return null;
-        }
-
-        switch (btSoftBody_Joint_Type(native))
-        {
-            case JointType.Angular:
-                return new AngularJoint(native);
-            case JointType.Contact:
-                return new ContactJoint(native);
-            case JointType.Linear:
-                return new LinearJoint(native);
-            default:
-                throw new NotImplementedException();
-        }
-    }
+    private BodyArray? _bodies;
+    private Vector3Array? _refs;
 
     protected internal Joint()
     {
     }
-
-    public void Prepare(float deltaTime, int iterations) => btSoftBody_Joint_Prepare(Native, deltaTime, iterations);
-
-    public void Solve(float deltaTime, float sor) => btSoftBody_Joint_Solve(Native, deltaTime, sor);
-
-    public void Terminate(float deltaTime) => btSoftBody_Joint_Terminate(Native, deltaTime);
 
     public BodyArray Bodies => _bodies ?? (_bodies = new BodyArray(btSoftBody_Joint_getBodies(Native), 2));
 
@@ -1394,6 +1428,7 @@ public abstract class Joint : BulletObject
             {
                 _refs = new Vector3Array(btSoftBody_Joint_getRefs(Native), 2);
             }
+
             return _refs;
         }
     }
@@ -1416,11 +1451,59 @@ public abstract class Joint : BulletObject
     }
 
     public JointType Type => btSoftBody_Joint_Type(Native);
+
+    public void Prepare(float deltaTime, int iterations)
+        => btSoftBody_Joint_Prepare(Native, deltaTime, iterations);
+
+    public void Solve(float deltaTime, float sor)
+        => btSoftBody_Joint_Solve(Native, deltaTime, sor);
+
+    public void Terminate(float deltaTime)
+        => btSoftBody_Joint_Terminate(Native, deltaTime);
+
+    internal static Joint? GetManaged(IntPtr native)
+        => native == IntPtr.Zero
+            ? null
+            : btSoftBody_Joint_Type(native) switch
+            {
+                JointType.Angular => new AngularJoint(native),
+                JointType.Contact => new ContactJoint(native),
+                JointType.Linear => new LinearJoint(native),
+                _ => throw new NotImplementedException(),
+            };
+
+    public class Specs : BulletDisposableObject
+    {
+        protected internal Specs()
+        {
+        }
+
+        public float ConstraintForceMixing
+        {
+            get => btSoftBody_Joint_Specs_getCfm(Native);
+            set => btSoftBody_Joint_Specs_setCfm(Native, value);
+        }
+
+        public float ErrorReductionParameter
+        {
+            get => btSoftBody_Joint_Specs_getErp(Native);
+            set => btSoftBody_Joint_Specs_setErp(Native, value);
+        }
+
+        public float Split
+        {
+            get => btSoftBody_Joint_Specs_getSplit(Native);
+            set => btSoftBody_Joint_Specs_setSplit(Native, value);
+        }
+
+        protected override void Dispose(bool disposing)
+            => btSoftBody_Joint_Specs_delete(Native);
+    }
 }
 
 public class Link : Feature
 {
-    private NodePtrArray _n;
+    private NodePtrArray? _n;
 
     internal Link(IntPtr native)
         : base(native)
@@ -1470,6 +1553,7 @@ public class Link : Feature
             {
                 _n = new NodePtrArray(btSoftBody_Link_getN(Native), 2);
             }
+
             return _n;
         }
     }
@@ -1483,6 +1567,26 @@ public class Link : Feature
 
 public class LinearJoint : Joint
 {
+    private Vector3Array? _rPos;
+
+    internal LinearJoint(IntPtr native)
+    {
+        Initialize(native);
+    }
+
+    public Vector3Array RPos
+    {
+        get
+        {
+            if (_rPos == null)
+            {
+                _rPos = new Vector3Array(btSoftBody_LJoint_getRpos(Native), 2);
+            }
+
+            return _rPos;
+        }
+    }
+
     public new class Specs : Joint.Specs
     {
         public Specs()
@@ -1500,25 +1604,6 @@ public class LinearJoint : Joint
                 return value;
             }
             set => btSoftBody_LJoint_Specs_setPosition(Native, ref value);
-        }
-    }
-
-    private Vector3Array _rPos;
-
-    internal LinearJoint(IntPtr native)
-    {
-        Initialize(native);
-    }
-
-    public Vector3Array RPos
-    {
-        get
-        {
-            if (_rPos == null)
-            {
-                _rPos = new Vector3Array(btSoftBody_LJoint_getRpos(Native), 2);
-            }
-            return _rPos;
         }
     }
 }
@@ -1557,7 +1642,7 @@ public class Material : Element
 
 public class Node : Feature
 {
-    private DbvtNode _leaf;
+    private DbvtNode? _leaf;
 
     internal Node(IntPtr native)
         : base(native)
@@ -1599,16 +1684,25 @@ public class Node : Feature
         set => btSoftBody_Node_setBattach(Native, value);
     }
 
-    public DbvtNode Leaf
+    public DbvtNode? Leaf
     {
         get
         {
             IntPtr leafPtr = btSoftBody_Node_getLeaf(Native);
-            if (_leaf != null && _leaf.Native == leafPtr) return _leaf;
-            if (leafPtr == IntPtr.Zero) return null;
+            if (_leaf != null && _leaf.Native == leafPtr)
+            {
+                return _leaf;
+            }
+
+            if (leafPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _leaf = new DbvtNode(leafPtr);
             return _leaf;
         }
+
         set
         {
             btSoftBody_Node_setLeaf(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -1674,18 +1768,20 @@ public class Node : Feature
 
 public class Note : Element
 {
-    private NodePtrArray _nodes;
+    private NodePtrArray? _nodes;
 
     internal Note(IntPtr native)
         : base(native)
     {
     }
+
     /*
 		public FloatArray Coords
 		{
 			get { return btSoftBody_Note_getCoords(Native); }
 		}
 		*/
+
     public NodePtrArray Nodes
     {
         get
@@ -1694,6 +1790,7 @@ public class Note : Element
             {
                 _nodes = new NodePtrArray(btSoftBody_Note_getNodes(Native), 4);
             }
+
             return _nodes;
         }
     }
@@ -1727,7 +1824,7 @@ public class Pose
 {
     internal IntPtr Native;
 
-    private AlignedVector3Array _pos;
+    private AlignedVector3Array? _pos;
     //private AlignedScalarArray _wgh;
 
     internal Pose(IntPtr native)
@@ -1777,6 +1874,7 @@ public class Pose
             {
                 _pos = new AlignedVector3Array(btSoftBody_Pose_getPos(Native));
             }
+
             return _pos;
         }
     }
@@ -1802,6 +1900,7 @@ public class Pose
         }
         set => btSoftBody_Pose_setScl(Native, ref value);
     }
+
     /*
 		public AlignedScalarArray Weights
 		{
@@ -1815,6 +1914,7 @@ public class Pose
 			}
 		}
 		*/
+
     public float Volume
     {
         get => btSoftBody_Pose_getVolume(Native);
@@ -1824,7 +1924,7 @@ public class Pose
 
 public class RayFromToCaster : Dbvt.ICollide
 {
-    private Face _face;
+    private Face? _face;
 
     public RayFromToCaster(Vector3 rayFrom, Vector3 rayTo, float mxt)
         : base(ConstructionInfo.Null)
@@ -1833,11 +1933,8 @@ public class RayFromToCaster : Dbvt.ICollide
         InitializeUserOwned(native);
     }
 
-    public static float RayFromToTriangle(Vector3 rayFrom, Vector3 rayTo,
-        Vector3 rayNormalizedDirection, Vector3 a, Vector3 b, Vector3 c, float maxt = float.MaxValue) => btSoftBody_RayFromToCaster_rayFromToTriangle(ref rayFrom,
-            ref rayTo, ref rayNormalizedDirection, ref a, ref b, ref c, maxt);
-
-    public Face Face
+    [DisallowNull]
+    public Face? Face
     {
         get
         {
@@ -1849,8 +1946,10 @@ public class RayFromToCaster : Dbvt.ICollide
                     _face = new Face(facePtr);
                 }
             }
+
             return _face;
         }
+
         set
         {
             btSoftBody_RayFromToCaster_setFace(Native, value.Native);
@@ -1902,23 +2001,31 @@ public class RayFromToCaster : Dbvt.ICollide
         get => btSoftBody_RayFromToCaster_getTests(Native);
         set => btSoftBody_RayFromToCaster_setTests(Native, value);
     }
+
+    public static float RayFromToTriangle(Vector3 rayFrom, Vector3 rayTo, Vector3 rayNormalizedDirection, Vector3 a, Vector3 b, Vector3 c, float maxt = float.MaxValue)
+        => btSoftBody_RayFromToCaster_rayFromToTriangle(ref rayFrom, ref rayTo, ref rayNormalizedDirection, ref a, ref b, ref c, maxt);
 }
 
 public class RigidContact : IDisposable
 {
     internal IntPtr Native;
 
-    private Node _node;
-    private ContactInfo _cti;
+    private Node? _node;
+    private ContactInfo? _cti;
+
+    public RigidContact()
+    {
+        Native = btSoftBody_RContact_new();
+    }
 
     internal RigidContact(IntPtr native)
     {
         Native = native;
     }
 
-    public RigidContact()
+    ~RigidContact()
     {
-        Native = btSoftBody_RContact_new();
+        Dispose(false);
     }
 
     public Matrix4x4 C0
@@ -1969,20 +2076,30 @@ public class RigidContact : IDisposable
             {
                 _cti = new ContactInfo(btSoftBody_RContact_getCti(Native));
             }
+
             return _cti;
         }
     }
 
-    public Node Node
+    public Node? Node
     {
         get
         {
             IntPtr nodePtr = btSoftBody_RContact_getNode(Native);
-            if (_node != null && _node.Native == nodePtr) return _node;
-            if (nodePtr == IntPtr.Zero) return null;
+            if (_node != null && _node.Native == nodePtr)
+            {
+                return _node;
+            }
+
+            if (nodePtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _node = new Node(nodePtr);
             return _node;
         }
+
         set
         {
             btSoftBody_RContact_setNode(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -2026,28 +2143,28 @@ public class RigidContact : IDisposable
             Native = IntPtr.Zero;
         }
     }
-
-    ~RigidContact()
-    {
-        Dispose(false);
-    }
 }
 
 public class ContactInfo : IDisposable
 {
     internal IntPtr Native;
 
-    internal ContactInfo(IntPtr native)
-    {
-        Native = native;
-    }
-
     public ContactInfo()
     {
         Native = btSoftBody_sCti_new();
     }
 
-    public CollisionObject CollisionObject
+    internal ContactInfo(IntPtr native)
+    {
+        Native = native;
+    }
+
+    ~ContactInfo()
+    {
+        Dispose(false);
+    }
+
+    public CollisionObject? CollisionObject
     {
         get => CollisionObject.GetManaged(btSoftBody_sCti_getColObj(Native));
         set => btSoftBody_sCti_setColObj(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -2084,11 +2201,6 @@ public class ContactInfo : IDisposable
             Native = IntPtr.Zero;
         }
     }
-
-    ~ContactInfo()
-    {
-        Dispose(false);
-    }
 }
 
 public class SoftContact : IDisposable
@@ -2096,18 +2208,24 @@ public class SoftContact : IDisposable
     internal IntPtr Native;
 
     //private ScalarArray _cfm;
-    private Face _face;
-    private Node _node;
+    private Face? _face;
+    private Node? _node;
+
+    public SoftContact()
+    {
+        Native = btSoftBody_SContact_new();
+    }
 
     internal SoftContact(IntPtr native)
     {
         Native = native;
     }
 
-    public SoftContact()
+    ~SoftContact()
     {
-        Native = btSoftBody_SContact_new();
+        Dispose(false);
     }
+
     /*
 		public ScalarArray ConstraintForceMixing
 		{
@@ -2121,7 +2239,8 @@ public class SoftContact : IDisposable
 			}
 		}
 		*/
-    public Face Face
+
+    public Face? Face
     {
         get
         {
@@ -2133,8 +2252,10 @@ public class SoftContact : IDisposable
                     _face = new Face(facePtr);
                 }
             }
+
             return _face;
         }
+
         set
         {
             btSoftBody_SContact_setFace(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -2154,16 +2275,26 @@ public class SoftContact : IDisposable
         set => btSoftBody_SContact_setMargin(Native, value);
     }
 
-    public Node Node
+    [DisallowNull]
+    public Node? Node
     {
         get
         {
             IntPtr nodePtr = btSoftBody_SContact_getNode(Native);
-            if (_node != null && _node.Native == nodePtr) return _node;
-            if (nodePtr == IntPtr.Zero) return null;
+            if (_node != null && _node.Native == nodePtr)
+            {
+                return _node;
+            }
+
+            if (nodePtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _node = new Node(nodePtr);
             return _node;
         }
+
         set
         {
             btSoftBody_SContact_setNode(Native, value.Native);
@@ -2206,11 +2337,6 @@ public class SoftContact : IDisposable
             btSoftBody_SContact_delete(Native);
             Native = IntPtr.Zero;
         }
-    }
-
-    ~SoftContact()
-    {
-        Dispose(false);
     }
 }
 
@@ -2256,17 +2382,20 @@ public class SolverState
 
 public class SoftBodyRayCast
 {
-    public SoftBody Body { get; set; }
+    public SoftBody? Body { get; set; }
+
     public FeatureType Feature { get; set; }
+
     public float Fraction { get; set; }
+
     public int Index { get; set; }
 }
 
 public class Tetra : Feature
 {
-    private Vector3Array _c0;
-    private DbvtNode _leaf;
-    private NodePtrArray _nodes;
+    private Vector3Array? _c0;
+    private DbvtNode? _leaf;
+    private NodePtrArray? _nodes;
 
     internal Tetra(IntPtr native)
         : base(native)
@@ -2281,6 +2410,7 @@ public class Tetra : Feature
             {
                 _c0 = new Vector3Array(btSoftBody_Tetra_getC0(Native), 4);
             }
+
             return _c0;
         }
     }
@@ -2297,16 +2427,25 @@ public class Tetra : Feature
         set => btSoftBody_Tetra_setC2(Native, value);
     }
 
-    public DbvtNode Leaf
+    public DbvtNode? Leaf
     {
         get
         {
             IntPtr leafPtr = btSoftBody_Tetra_getLeaf(Native);
-            if (_leaf != null && _leaf.Native == leafPtr) return _leaf;
-            if (leafPtr == IntPtr.Zero) return null;
+            if (_leaf != null && _leaf.Native == leafPtr)
+            {
+                return _leaf;
+            }
+
+            if (leafPtr == IntPtr.Zero)
+            {
+                return null;
+            }
+
             _leaf = new DbvtNode(leafPtr);
             return _leaf;
         }
+
         set
         {
             btSoftBody_Tetra_setLeaf(Native, (value != null) ? value.Native : IntPtr.Zero);
@@ -2322,6 +2461,7 @@ public class Tetra : Feature
             {
                 _nodes = new NodePtrArray(btSoftBody_Tetra_getN(Native), 4);
             }
+
             return _nodes;
         }
     }
@@ -2356,45 +2496,35 @@ public class TetraScratch
 
 public class SoftBody : CollisionObject
 {
-    private AlignedAnchorArray _anchors;
-    private Vector3Array _bounds;
-    private Dbvt _clusterDbvt;
-    private Config _config;
+    private readonly List<AngularJoint.IControl> _aJointControls = [];
+
+    private AlignedAnchorArray? _anchors;
+    private Vector3Array? _bounds;
+    private Dbvt? _clusterDbvt;
+    private Config? _config;
     //private AlignedBoolArray _clusterConnectivity;
-    private AlignedClusterArray _clusters;
+    private AlignedClusterArray? _clusters;
     //private AlignedCollisionObjectArray _collisionDisabledObjects;
-    private Dbvt _faceDbvt;
-    private AlignedFaceArray _faces;
-    private AlignedJointArray _joints;
-    private AlignedLinkArray _links;
-    private AlignedMaterialArray _materials;
-    private Dbvt _nodeDbvt;
-    private AlignedNodeArray _nodes;
-    private AlignedNoteArray _notes;
-    private Pose _pose;
+    private Dbvt? _faceDbvt;
+    private AlignedFaceArray? _faces;
+    private AlignedJointArray? _joints;
+    private AlignedLinkArray? _links;
+    private AlignedMaterialArray? _materials;
+    private Dbvt? _nodeDbvt;
+    private AlignedNodeArray? _nodes;
+    private AlignedNoteArray? _notes;
+    private Pose? _pose;
     //private AlignedRigidContactArray _rigidContacts;
     //private AlignedSoftContactArray _softContacts;
-    private SoftBodySolver _softBodySolver;
-    private SolverState _solverState;
-    private AlignedTetraArray _tetras;
-    private AlignedTetraScratchArray _tetraScratches;
-    private AlignedTetraScratchArray _tetraScratchesTn;
+    private SoftBodySolver? _softBodySolver;
+    private SolverState? _solverState;
+    private AlignedTetraArray? _tetras;
+    private AlignedTetraScratchArray? _tetraScratches;
+    private AlignedTetraScratchArray? _tetraScratchesTn;
     //private AlignedIntArray _userIndexMapping;
     private SoftBodyWorldInfo _worldInfo;
 
-    private List<AngularJoint.IControl> _aJointControls = [];
-
-    internal SoftBody(IntPtr native)
-        : base(ConstructionInfo.Null)
-    {
-        InitializeCollisionObject(native);
-
-        _collisionShape = new SoftBodyCollisionShape(btCollisionObject_getCollisionShape(Native), this);
-        _collisionShape.AllocateUnmanagedHandle();
-
-    }
-
-    public SoftBody(SoftBodyWorldInfo worldInfo, int nodeCount, Vector3[] positions, float[] masses)
+    public SoftBody(SoftBodyWorldInfo worldInfo, int nodeCount, Vector3[] positions, float[]? masses)
         : base(ConstructionInfo.Null)
     {
         IntPtr native = btSoftBody_new(worldInfo.Native, nodeCount, positions, masses);
@@ -2416,33 +2546,435 @@ public class SoftBody : CollisionObject
         _worldInfo = worldInfo;
     }
 
-    public void AddAeroForceToFace(Vector3 windVelocity, int faceIndex) => btSoftBody_addAeroForceToFace(Native, ref windVelocity, faceIndex);
-
-    public void AddAeroForceToNode(Vector3 windVelocity, int nodeIndex) => btSoftBody_addAeroForceToNode(Native, ref windVelocity, nodeIndex);
-
-    public void AddForce(Vector3 force) => btSoftBody_addForce(Native, ref force);
-
-    public void AddForce(Vector3 force, int node) => btSoftBody_addForce2(Native, ref force, node);
-
-    public void AddVelocity(Vector3 velocity) => btSoftBody_addVelocity(Native, ref velocity);
-
-    public void AddVelocity(Vector3 velocity, int node) => btSoftBody_addVelocity2(Native, ref velocity, node);
-
-    public void AppendAnchor(int node, RigidBody body, Vector3 localPivot, bool disableCollisionBetweenLinkedBodies = false,
-        float influence = 1.0f) => btSoftBody_appendAnchor(Native, node, body.Native, ref localPivot,
-            disableCollisionBetweenLinkedBodies, influence);
-
-    public void AppendAnchor(int node, RigidBody body, bool disableCollisionBetweenLinkedBodies = false,
-        float influence = 1.0f) => btSoftBody_appendAnchor2(Native, node, body.Native, disableCollisionBetweenLinkedBodies,
-            influence);
-
-    private void StoreAngularJointControlRef(AngularJoint.Specs specs)
+    internal SoftBody(IntPtr native, SoftBodyWorldInfo worldInfo)
+        : base(ConstructionInfo.Null)
     {
-        if (specs.Control != null && specs.Control != AngularJoint.IControl.Default)
+        InitializeCollisionObject(native);
+
+        _collisionShape = new SoftBodyCollisionShape(btCollisionObject_getCollisionShape(Native), this);
+        _collisionShape.AllocateUnmanagedHandle();
+        _worldInfo = worldInfo;
+    }
+
+    public AlignedAnchorArray Anchors
+    {
+        get
         {
-            _aJointControls.Add(specs.Control);
+            if (_anchors == null)
+            {
+                _anchors = new AlignedAnchorArray(btSoftBody_getAnchors(Native));
+            }
+
+            return _anchors;
         }
     }
+
+    public Vector3Array Bounds
+    {
+        get
+        {
+            if (_bounds == null)
+            {
+                _bounds = new Vector3Array(btSoftBody_getBounds(Native), 2);
+            }
+
+            return _bounds;
+        }
+    }
+
+    public Dbvt ClusterDbvt
+    {
+        get
+        {
+            if (_clusterDbvt == null)
+            {
+                _clusterDbvt = new Dbvt(btSoftBody_getCdbvt(Native));
+            }
+
+            return _clusterDbvt;
+        }
+    }
+
+    public Config Cfg
+    {
+        get
+        {
+            if (_config == null)
+            {
+                _config = new Config(btSoftBody_getCfg(Native));
+            }
+
+            return _config;
+        }
+    }
+
+    /*
+		public AlignedObjectArray ClusterConnectivity
+		{
+			get { return btSoftBody_getClusterConnectivity(_native); }
+			set { btSoftBody_setClusterConnectivity(_native, value._native); }
+		}
+		*/
+
+    public AlignedClusterArray Clusters
+    {
+        get
+        {
+            if (_clusters == null)
+            {
+                _clusters = new AlignedClusterArray(btSoftBody_getClusters(Native));
+            }
+
+            return _clusters;
+        }
+    }
+
+    /*
+		public AlignedObjectArray<CollisionObject> CollisionDisabledObjects
+		{
+			get { return btSoftBody_getCollisionDisabledObjects(_native); }
+			set { btSoftBody_setCollisionDisabledObjects(_native, value._native); }
+		}
+		*/
+
+    public AlignedFaceArray Faces
+    {
+        get
+        {
+            if (_faces == null)
+            {
+                _faces = new AlignedFaceArray(btSoftBody_getFaces(Native));
+            }
+
+            return _faces;
+        }
+    }
+
+    public Dbvt FaceDbvt
+    {
+        get
+        {
+            if (_faceDbvt == null)
+            {
+                _faceDbvt = new Dbvt(btSoftBody_getFdbvt(Native));
+            }
+
+            return _faceDbvt;
+        }
+    }
+
+    public AlignedJointArray Joints
+    {
+        get
+        {
+            if (_joints == null)
+            {
+                _joints = new AlignedJointArray(btSoftBody_getJoints(Native));
+            }
+
+            return _joints;
+        }
+    }
+
+    public AlignedLinkArray Links
+    {
+        get
+        {
+            if (_links == null)
+            {
+                _links = new AlignedLinkArray(btSoftBody_getLinks(Native));
+            }
+
+            return _links;
+        }
+    }
+
+    public AlignedMaterialArray Materials
+    {
+        get
+        {
+            if (_materials == null)
+            {
+                _materials = new AlignedMaterialArray(btSoftBody_getMaterials(Native));
+            }
+
+            return _materials;
+        }
+    }
+
+    public Dbvt NodeDbvt
+    {
+        get
+        {
+            if (_nodeDbvt == null)
+            {
+                _nodeDbvt = new Dbvt(btSoftBody_getNdbvt(Native));
+            }
+
+            return _nodeDbvt;
+        }
+    }
+
+    public AlignedNodeArray Nodes
+    {
+        get
+        {
+            if (_nodes == null)
+            {
+                _nodes = new AlignedNodeArray(btSoftBody_getNodes(Native));
+            }
+
+            return _nodes;
+        }
+    }
+
+    public AlignedNoteArray Notes
+    {
+        get
+        {
+            if (_notes == null)
+            {
+                _notes = new AlignedNoteArray(btSoftBody_getNotes(Native));
+            }
+
+            return _notes;
+        }
+    }
+
+    public Pose Pose
+    {
+        get
+        {
+            if (_pose == null)
+            {
+                _pose = new Pose(btSoftBody_getPose(Native));
+            }
+
+            return _pose;
+        }
+    }
+
+    /*
+		public tRContactArray Rcontacts
+		{
+			get { return btSoftBody_getRcontacts(_native); }
+			set { btSoftBody_setRcontacts(_native, value._native); }
+		}
+		*/
+
+    public float RestLengthScale
+    {
+        get => btSoftBody_getRestLengthScale(Native);
+        set => btSoftBody_setRestLengthScale(Native, value);
+    }
+
+    /*
+		public tSContactArray Scontacts
+		{
+			get { return btSoftBody_getScontacts(_native); }
+			set { btSoftBody_setScontacts(_native, value._native); }
+		}
+		*/
+
+    public SoftBodySolver? SoftBodySolver
+    {
+        get => _softBodySolver;
+        set
+        {
+            btSoftBody_setSoftBodySolver(Native, (value != null) ? value.Native : IntPtr.Zero);
+            _softBodySolver = value;
+        }
+    }
+
+    public SolverState SolverState
+    {
+        get
+        {
+            if (_solverState == null)
+            {
+                _solverState = new SolverState(btSoftBody_getSst(Native));
+            }
+
+            return _solverState;
+        }
+    }
+
+    public object? Tag { get; set; }
+
+    public AlignedTetraArray Tetras
+    {
+        get
+        {
+            if (_tetras == null)
+            {
+                _tetras = new AlignedTetraArray(btSoftBody_getTetras(Native));
+            }
+
+            return _tetras;
+        }
+    }
+
+    public AlignedTetraScratchArray TetraScratches
+    {
+        get
+        {
+            if (_tetraScratches == null)
+            {
+                _tetraScratches = new AlignedTetraScratchArray(btSoftBody_getTetraScratches(Native));
+            }
+
+            return _tetraScratches;
+        }
+    }
+
+    public AlignedTetraScratchArray TetraScratchesTn
+    {
+        get
+        {
+            if (_tetraScratchesTn == null)
+            {
+                _tetraScratchesTn = new AlignedTetraScratchArray(btSoftBody_getTetraScratchesTn(Native));
+            }
+
+            return _tetraScratchesTn;
+        }
+    }
+
+    public float Timeacc
+    {
+        get => btSoftBody_getTimeacc(Native);
+        set => btSoftBody_setTimeacc(Native, value);
+    }
+
+    public float TotalMass
+    {
+        get => btSoftBody_getTotalMass(Native);
+        set => SetTotalMass(value);
+    }
+
+    public bool UpdateRuntimeConstants
+    {
+        get => btSoftBody_getBUpdateRtCst(Native);
+        set => btSoftBody_setBUpdateRtCst(Native, value);
+    }
+
+    /*
+		public AlignedObjectArray UserIndexMapping
+		{
+			get { return btSoftBody_getUserIndexMapping(_native); }
+			set { btSoftBody_setUserIndexMapping(_native, value._native); }
+		}
+		*/
+
+    public bool UseSelfCollision
+    {
+        get => btSoftBody_useSelfCollision(Native);
+        set => btSoftBody_setSelfCollision(Native, value);
+    }
+
+    public Vector3 WindVelocity
+    {
+        get
+        {
+            Vector3 value;
+            btSoftBody_getWindVelocity(Native, out value);
+            return value;
+        }
+        set => btSoftBody_setWindVelocity(Native, ref value);
+    }
+
+    public float Volume => btSoftBody_getVolume(Native);
+
+    public SoftBodyWorldInfo WorldInfo
+    {
+        get => _worldInfo; set
+        {
+            btSoftBody_setWorldInfo(Native, value.Native);
+            _worldInfo = value;
+        }
+    }
+
+    public static void ClusterAImpulse(Cluster cluster, Impulse impulse)
+        => btSoftBody_clusterAImpulse(cluster.Native, impulse.Native);
+
+    public static void ClusterDAImpulse(Cluster cluster, Vector3 impulse)
+        => btSoftBody_clusterDAImpulse(cluster.Native, ref impulse);
+
+    public static void ClusterDCImpulse(Cluster cluster, Vector3 impulse)
+        => btSoftBody_clusterDCImpulse(cluster.Native, ref impulse);
+
+    public static void ClusterDImpulse(Cluster cluster, Vector3 rpos, Vector3 impulse)
+        => btSoftBody_clusterDImpulse(cluster.Native, ref rpos, ref impulse);
+
+    public static void ClusterImpulse(Cluster cluster, Vector3 rpos, Impulse impulse)
+        => btSoftBody_clusterImpulse(cluster.Native, ref rpos, impulse.Native);
+
+    public static void ClusterVAImpulse(Cluster cluster, Vector3 impulse)
+        => btSoftBody_clusterVAImpulse(cluster.Native, ref impulse);
+
+    public static Vector3 ClusterVelocity(Cluster cluster, Vector3 rpos)
+    {
+        Vector3 value;
+        btSoftBody_clusterVelocity(cluster.Native, ref rpos, out value);
+        return value;
+    }
+
+    public static void ClusterVImpulse(Cluster cluster, Vector3 rpos, Vector3 impulse)
+        => btSoftBody_clusterVImpulse(cluster.Native, ref rpos, ref impulse);
+
+    public static Vector3 ClusterCom(Cluster cluster)
+    {
+        Vector3 value;
+        btSoftBody_clusterCom2(cluster.Native, out value);
+        return value;
+    }
+
+    public static void PSolveAnchors(SoftBody psb, float kst, float ti)
+        => btSoftBody_PSolve_Anchors(psb.Native, kst, ti);
+
+    public static void PSolveLinks(SoftBody psb, float kst, float ti)
+        => btSoftBody_PSolve_Links(psb.Native, kst, ti);
+
+    public static void PSolveRContacts(SoftBody psb, float kst, float ti)
+        => btSoftBody_PSolve_RContacts(psb.Native, kst, ti);
+
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public static void PSolveSContacts(SoftBody psb, float __unnamed1, float ti)
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+        => btSoftBody_PSolve_SContacts(psb.Native, __unnamed1, ti);
+
+    public static void SolveClusters(AlignedSoftBodyArray bodies)
+        => btSoftBody_solveClusters(bodies.Native);
+
+    public static void SolveCommonConstraints(SoftBody bodies, int count, int iterations)
+        => btSoftBody_solveCommonConstraints(bodies.Native, count, iterations);
+
+    public static void VSolveLinks(SoftBody psb, float kst)
+        => btSoftBody_VSolve_Links(psb.Native, kst);
+
+    public void AddAeroForceToFace(Vector3 windVelocity, int faceIndex)
+        => btSoftBody_addAeroForceToFace(Native, ref windVelocity, faceIndex);
+
+    public void AddAeroForceToNode(Vector3 windVelocity, int nodeIndex)
+        => btSoftBody_addAeroForceToNode(Native, ref windVelocity, nodeIndex);
+
+    public void AddForce(Vector3 force)
+        => btSoftBody_addForce(Native, ref force);
+
+    public void AddForce(Vector3 force, int node)
+        => btSoftBody_addForce2(Native, ref force, node);
+
+    public void AddVelocity(Vector3 velocity)
+        => btSoftBody_addVelocity(Native, ref velocity);
+
+    public void AddVelocity(Vector3 velocity, int node)
+        => btSoftBody_addVelocity2(Native, ref velocity, node);
+
+    public void AppendAnchor(int node, RigidBody body, Vector3 localPivot, bool disableCollisionBetweenLinkedBodies = false, float influence = 1.0f)
+        => btSoftBody_appendAnchor(Native, node, body.Native, ref localPivot, disableCollisionBetweenLinkedBodies, influence);
+
+    public void AppendAnchor(int node, RigidBody body, bool disableCollisionBetweenLinkedBodies = false, float influence = 1.0f)
+        => btSoftBody_appendAnchor2(Native, node, body.Native, disableCollisionBetweenLinkedBodies, influence);
 
     public void AppendAngularJoint(AngularJoint.Specs specs)
     {
@@ -2468,72 +3000,86 @@ public class SoftBody : CollisionObject
         btSoftBody_appendAngularJoint4(Native, specs.Native, body0.Native, body1.Native);
     }
 
-    public void AppendFace(int model = -1, Material mat = null) => btSoftBody_appendFace(Native, model, mat != null ? mat.Native : IntPtr.Zero);
+    public void AppendFace(int model = -1, Material? mat = null)
+        => btSoftBody_appendFace(Native, model, mat != null ? mat.Native : IntPtr.Zero);
 
-    public void AppendFace(int node0, int node1, int node2, Material mat = null) => btSoftBody_appendFace2(Native, node0, node1, node2, mat != null ? mat.Native : IntPtr.Zero);
+    public void AppendFace(int node0, int node1, int node2, Material? mat = null)
+        => btSoftBody_appendFace2(Native, node0, node1, node2, mat != null ? mat.Native : IntPtr.Zero);
 
-    public void AppendLinearJoint(LinearJoint.Specs specs, SoftBody body) => btSoftBody_appendLinearJoint(Native, specs.Native, body.Native);
+    public void AppendLinearJoint(LinearJoint.Specs specs, SoftBody body)
+        => btSoftBody_appendLinearJoint(Native, specs.Native, body.Native);
 
-    public void AppendLinearJoint(LinearJoint.Specs specs) => btSoftBody_appendLinearJoint2(Native, specs.Native);
+    public void AppendLinearJoint(LinearJoint.Specs specs)
+        => btSoftBody_appendLinearJoint2(Native, specs.Native);
 
-    public void AppendLinearJoint(LinearJoint.Specs specs, Body body) => btSoftBody_appendLinearJoint3(Native, specs.Native, body.Native);
+    public void AppendLinearJoint(LinearJoint.Specs specs, Body body)
+        => btSoftBody_appendLinearJoint3(Native, specs.Native, body.Native);
 
-    public void AppendLinearJoint(LinearJoint.Specs specs, Cluster body0, Body body1) => btSoftBody_appendLinearJoint4(Native, specs.Native, body0.Native, body1.Native);
+    public void AppendLinearJoint(LinearJoint.Specs specs, Cluster body0, Body body1)
+        => btSoftBody_appendLinearJoint4(Native, specs.Native, body0.Native, body1.Native);
 
-    public void AppendLink(int node0, int node1, Material mat = null, bool checkExist = false) => btSoftBody_appendLink(Native, node0, node1, (mat != null) ? mat.Native : IntPtr.Zero, checkExist);
+    public void AppendLink(int node0, int node1, Material? mat = null, bool checkExist = false)
+        => btSoftBody_appendLink(Native, node0, node1, (mat != null) ? mat.Native : IntPtr.Zero, checkExist);
 
-    public void AppendLink(int model = -1, Material mat = null) => btSoftBody_appendLink2(Native, model, (mat != null) ? mat.Native : IntPtr.Zero);
+    public void AppendLink(int model = -1, Material? mat = null)
+        => btSoftBody_appendLink2(Native, model, (mat != null) ? mat.Native : IntPtr.Zero);
 
-    public void AppendLink(Node node0, Node node1, Material mat = null, bool checkExist = false) => btSoftBody_appendLink3(Native, node0.Native, node1.Native, (mat != null) ? mat.Native : IntPtr.Zero, checkExist);
+    public void AppendLink(Node node0, Node node1, Material? mat = null, bool checkExist = false)
+        => btSoftBody_appendLink3(Native, node0.Native, node1.Native, (mat != null) ? mat.Native : IntPtr.Zero, checkExist);
 
-    public Material AppendMaterial() => new Material(btSoftBody_appendMaterial(Native));
+    public Material AppendMaterial()
+        => new Material(btSoftBody_appendMaterial(Native));
 
-    public void AppendNode(Vector3 x, float m) => btSoftBody_appendNode(Native, ref x, m);
+    public void AppendNode(Vector3 x, float m)
+        => btSoftBody_appendNode(Native, ref x, m);
 
-    public void AppendNote(string text, Vector3 o, Face feature) => btSoftBody_appendNote(Native, Marshal.StringToHGlobalAnsi(text), ref o, feature.Native);
+    public void AppendNote(string text, Vector3 o, Face feature)
+        => btSoftBody_appendNote(Native, Marshal.StringToHGlobalAnsi(text), ref o, feature.Native);
 
-    public void AppendNote(string text, Vector3 o, Link feature) => btSoftBody_appendNote2(Native, Marshal.StringToHGlobalAnsi(text), ref o, feature.Native);
+    public void AppendNote(string text, Vector3 o, Link feature)
+        => btSoftBody_appendNote2(Native, Marshal.StringToHGlobalAnsi(text), ref o, feature.Native);
 
-    public void AppendNote(string text, Vector3 o, Node feature) => btSoftBody_appendNote3(Native, Marshal.StringToHGlobalAnsi(text), ref o, feature.Native);
+    public void AppendNote(string text, Vector3 o, Node feature)
+        => btSoftBody_appendNote3(Native, Marshal.StringToHGlobalAnsi(text), ref o, feature.Native);
 
-    public void AppendNote(string text, Vector3 o) => btSoftBody_appendNote4(Native, Marshal.StringToHGlobalAnsi(text), ref o);
+    public void AppendNote(string text, Vector3 o)
+        => btSoftBody_appendNote4(Native, Marshal.StringToHGlobalAnsi(text), ref o);
 
-    public void AppendNote(string text, Vector3 o, Vector4 c,
-        Node n0 = null, Node n1 = null, Node n2 = null, Node n3 = null) => btSoftBody_appendNote5(Native, Marshal.StringToHGlobalAnsi(text), ref o, ref c,
+    public void AppendNote(string text, Vector3 o, Vector4 c, Node? n0 = null, Node? n1 = null, Node? n2 = null, Node? n3 = null)
+#pragma warning disable SA1117 // Parameters should be on same line or separate lines
+        => btSoftBody_appendNote5(Native, Marshal.StringToHGlobalAnsi(text), ref o, ref c,
             n0 != null ? n0.Native : IntPtr.Zero,
             n1 != null ? n1.Native : IntPtr.Zero,
             n2 != null ? n2.Native : IntPtr.Zero,
             n3 != null ? n3.Native : IntPtr.Zero);
+#pragma warning restore SA1117 // Parameters should be on same line or separate lines
 
-    public void AppendTetra(int model, Material mat) => btSoftBody_appendTetra(Native, model, mat != null ? mat.Native : IntPtr.Zero);
+    public void AppendTetra(int model, Material mat)
+        => btSoftBody_appendTetra(Native, model, mat != null ? mat.Native : IntPtr.Zero);
 
-    public void AppendTetra(int node0, int node1, int node2, int node3, Material mat = null) => btSoftBody_appendTetra2(Native, node0, node1, node2, node3, mat != null ? mat.Native : IntPtr.Zero);
+    public void AppendTetra(int node0, int node1, int node2, int node3, Material? mat = null)
+        => btSoftBody_appendTetra2(Native, node0, node1, node2, node3, mat != null ? mat.Native : IntPtr.Zero);
 
-    public void ApplyClusters(bool drift) => btSoftBody_applyClusters(Native, drift);
+    public void ApplyClusters(bool drift)
+        => btSoftBody_applyClusters(Native, drift);
 
-    public void ApplyForces() => btSoftBody_applyForces(Native);
+    public void ApplyForces()
+        => btSoftBody_applyForces(Native);
 
-    public bool CheckContact(CollisionObjectWrapper colObjWrap, Vector3 x, float margin,
-        ContactInfo cti) => btSoftBody_checkContact(Native, colObjWrap.Native, ref x, margin,
-            cti.Native);
+    public bool CheckContact(CollisionObjectWrapper colObjWrap, Vector3 x, float margin, ContactInfo cti)
+        => btSoftBody_checkContact(Native, colObjWrap.Native, ref x, margin, cti.Native);
 
-    public bool CheckDeformableContact(CollisionObjectWrapper colObjWrap, Vector3 x, float margin,
-        ContactInfo cti, bool predict = false) => btSoftBody_checkDeformableContact(Native, colObjWrap.Native, ref x, margin,
-            cti.Native, predict);
+    public bool CheckDeformableContact(CollisionObjectWrapper colObjWrap, Vector3 x, float margin, ContactInfo cti, bool predict = false)
+        => btSoftBody_checkDeformableContact(Native, colObjWrap.Native, ref x, margin, cti.Native, predict);
 
-    public bool CheckFace(int node0, int node1, int node2) => btSoftBody_checkFace(Native, node0, node1, node2);
+    public bool CheckFace(int node0, int node1, int node2)
+        => btSoftBody_checkFace(Native, node0, node1, node2);
 
-    public bool CheckLink(Node node0, Node node1) => btSoftBody_checkLink(Native, node0.Native, node1.Native);
+    public bool CheckLink(Node node0, Node node1)
+        => btSoftBody_checkLink(Native, node0.Native, node1.Native);
 
-    public bool CheckLink(int node0, int node1) => btSoftBody_checkLink2(Native, node0, node1);
-
-    public void CleanupClusters()
-    {
-        _aJointControls.Clear();
-        btSoftBody_cleanupClusters(Native);
-    }
-
-    public static void ClusterAImpulse(Cluster cluster, Impulse impulse) => btSoftBody_clusterAImpulse(cluster.Native, impulse.Native);
+    public bool CheckLink(int node0, int node1)
+        => btSoftBody_checkLink2(Native, node0, node1);
 
     public Vector3 ClusterCom(int cluster)
     {
@@ -2542,43 +3088,23 @@ public class SoftBody : CollisionObject
         return value;
     }
 
-    public static Vector3 ClusterCom(Cluster cluster)
-    {
-        Vector3 value;
-        btSoftBody_clusterCom2(cluster.Native, out value);
-        return value;
-    }
+    public int ClusterCount()
+        => btSoftBody_clusterCount(Native);
 
-    public int ClusterCount() => btSoftBody_clusterCount(Native);
+    public bool CutLink(Node node0, Node node1, float position)
+        => btSoftBody_cutLink(Native, node0.Native, node1.Native, position);
 
-    public static void ClusterDAImpulse(Cluster cluster, Vector3 impulse) => btSoftBody_clusterDAImpulse(cluster.Native, ref impulse);
+    public bool CutLink(int node0, int node1, float position)
+        => btSoftBody_cutLink2(Native, node0, node1, position);
 
-    public static void ClusterDCImpulse(Cluster cluster, Vector3 impulse) => btSoftBody_clusterDCImpulse(cluster.Native, ref impulse);
+    public void DampClusters()
+        => btSoftBody_dampClusters(Native);
 
-    public static void ClusterDImpulse(Cluster cluster, Vector3 rpos, Vector3 impulse) => btSoftBody_clusterDImpulse(cluster.Native, ref rpos, ref impulse);
+    public void DefaultCollisionHandler(CollisionObjectWrapper pcoWrap)
+        => btSoftBody_defaultCollisionHandler(Native, pcoWrap.Native);
 
-    public static void ClusterImpulse(Cluster cluster, Vector3 rpos, Impulse impulse) => btSoftBody_clusterImpulse(cluster.Native, ref rpos, impulse.Native);
-
-    public static void ClusterVAImpulse(Cluster cluster, Vector3 impulse) => btSoftBody_clusterVAImpulse(cluster.Native, ref impulse);
-
-    public static Vector3 ClusterVelocity(Cluster cluster, Vector3 rpos)
-    {
-        Vector3 value;
-        btSoftBody_clusterVelocity(cluster.Native, ref rpos, out value);
-        return value;
-    }
-
-    public static void ClusterVImpulse(Cluster cluster, Vector3 rpos, Vector3 impulse) => btSoftBody_clusterVImpulse(cluster.Native, ref rpos, ref impulse);
-
-    public bool CutLink(Node node0, Node node1, float position) => btSoftBody_cutLink(Native, node0.Native, node1.Native, position);
-
-    public bool CutLink(int node0, int node1, float position) => btSoftBody_cutLink2(Native, node0, node1, position);
-
-    public void DampClusters() => btSoftBody_dampClusters(Native);
-
-    public void DefaultCollisionHandler(CollisionObjectWrapper pcoWrap) => btSoftBody_defaultCollisionHandler(Native, pcoWrap.Native);
-
-    public void DefaultCollisionHandler(SoftBody psb) => btSoftBody_defaultCollisionHandler2(Native, psb.Native);
+    public void DefaultCollisionHandler(SoftBody psb)
+        => btSoftBody_defaultCollisionHandler2(Native, psb.Native);
 
     public Vector3 EvaluateCom()
     {
@@ -2587,15 +3113,21 @@ public class SoftBody : CollisionObject
         return value;
     }
 
-    public int GenerateBendingConstraints(int distance, Material mat = null) => btSoftBody_generateBendingConstraints(Native, distance, mat != null ? mat.Native : IntPtr.Zero);
+    public int GenerateBendingConstraints(int distance, Material? mat = null)
+        => btSoftBody_generateBendingConstraints(Native, distance, mat != null ? mat.Native : IntPtr.Zero);
 
-    public int GenerateClusters(int k) => btSoftBody_generateClusters(Native, k);
+    public int GenerateClusters(int k)
+        => btSoftBody_generateClusters(Native, k);
 
-    public int GenerateClusters(int k, int maxIterations) => btSoftBody_generateClusters2(Native, k, maxIterations);
+    public int GenerateClusters(int k, int maxIterations)
+        => btSoftBody_generateClusters2(Native, k, maxIterations);
 
-    public void GetAabb(out Vector3 aabbMin, out Vector3 aabbMax) => btSoftBody_getAabb(Native, out aabbMin, out aabbMax);
+    public void GetAabb(out Vector3 aabbMin, out Vector3 aabbMax)
+        => btSoftBody_getAabb(Native, out aabbMin, out aabbMax);
 
-    public float GetMass(int node) => btSoftBody_getMass(Native, node);
+    public float GetMass(int node)
+        => btSoftBody_getMass(Native, node);
+
     /*
 		public static psolver_t GetSolver(PositionSolver solver)
 		{
@@ -2607,31 +3139,33 @@ public class SoftBody : CollisionObject
 			return btSoftBody_getSolver2(solver._native);
 		}
 		*/
-    public void IndicesToPointers(int[] map = null) => btSoftBody_indicesToPointers(Native, map);
 
-    public void InitDefaults() => btSoftBody_initDefaults(Native);
+    public void IndicesToPointers(int[]? map = null)
+        => btSoftBody_indicesToPointers(Native, map);
 
-    public void InitializeClusters() => btSoftBody_initializeClusters(Native);
+    public void InitDefaults()
+        => btSoftBody_initDefaults(Native);
 
-    public void InitializeFaceTree() => btSoftBody_initializeFaceTree(Native);
+    public void InitializeClusters()
+        => btSoftBody_initializeClusters(Native);
 
-    public void InitializeDmInverse() => btSoftBody_initializeDmInverse(Native);
+    public void InitializeFaceTree()
+        => btSoftBody_initializeFaceTree(Native);
 
-    public void IntegrateMotion() => btSoftBody_integrateMotion(Native);
+    public void InitializeDmInverse()
+        => btSoftBody_initializeDmInverse(Native);
 
-    public void PointersToIndices() => btSoftBody_pointersToIndices(Native);
+    public void IntegrateMotion()
+        => btSoftBody_integrateMotion(Native);
 
-    public void PredictMotion(float deltaTime) => btSoftBody_predictMotion(Native, deltaTime);
+    public void PointersToIndices()
+        => btSoftBody_pointersToIndices(Native);
 
-    public void PrepareClusters(int iterations) => btSoftBody_prepareClusters(Native, iterations);
+    public void PredictMotion(float deltaTime)
+        => btSoftBody_predictMotion(Native, deltaTime);
 
-    public static void PSolveAnchors(SoftBody psb, float kst, float ti) => btSoftBody_PSolve_Anchors(psb.Native, kst, ti);
-
-    public static void PSolveLinks(SoftBody psb, float kst, float ti) => btSoftBody_PSolve_Links(psb.Native, kst, ti);
-
-    public static void PSolveRContacts(SoftBody psb, float kst, float ti) => btSoftBody_PSolve_RContacts(psb.Native, kst, ti);
-
-    public static void PSolveSContacts(SoftBody psb, float __unnamed1, float ti) => btSoftBody_PSolve_SContacts(psb.Native, __unnamed1, ti);
+    public void PrepareClusters(int iterations)
+        => btSoftBody_prepareClusters(Native, iterations);
 
     public void RandomizeConstraints() => btSoftBody_randomizeConstraints(Native);
 
@@ -2659,85 +3193,108 @@ public class SoftBody : CollisionObject
         return ret;
     }
 
-    public int RayTest(Vector3 rayFrom, Vector3 rayTo, ref float mint, out FeatureType feature,
-        out int index, bool countOnly) => btSoftBody_rayTest2(Native, ref rayFrom, ref rayTo, ref mint,
-            out feature, out index, countOnly);
+    public int RayTest(Vector3 rayFrom, Vector3 rayTo, ref float mint, out FeatureType feature, out int index, bool countOnly)
+        => btSoftBody_rayTest2(Native, ref rayFrom, ref rayTo, ref mint, out feature, out index, countOnly);
 
-    public void Refine(ImplicitFn ifn, float accurary, bool cut) => btSoftBody_refine(Native, ifn.Native, accurary, cut);
+    public void Refine(ImplicitFn ifn, float accurary, bool cut)
+        => btSoftBody_refine(Native, ifn.Native, accurary, cut);
 
-    public void ReleaseCluster(int index) => btSoftBody_releaseCluster(Native, index);
+    public void ReleaseCluster(int index)
+        => btSoftBody_releaseCluster(Native, index);
 
-    public void ReleaseClusters() => btSoftBody_releaseClusters(Native);
+    public void ReleaseClusters()
+        => btSoftBody_releaseClusters(Native);
 
-    public void ResetLinkRestLengths() => btSoftBody_resetLinkRestLengths(Native);
+    public void ResetLinkRestLengths()
+        => btSoftBody_resetLinkRestLengths(Native);
 
-    public void Rotate(Quaternion rot) => btSoftBody_rotate(Native, ref rot);
+    public void Rotate(Quaternion rot)
+        => btSoftBody_rotate(Native, ref rot);
 
-    public void Scale(Vector3 scl) => btSoftBody_scale(Native, ref scl);
+    public void Scale(Vector3 scl)
+        => btSoftBody_scale(Native, ref scl);
 
-    public void SetDampingCoefficient(float dampingCoeff) => btSoftBody_setDampingCoefficient(Native, dampingCoeff);
+    public void SetDampingCoefficient(float dampingCoeff)
+        => btSoftBody_setDampingCoefficient(Native, dampingCoeff);
 
-    public void SetMass(int node, float mass) => btSoftBody_setMass(Native, node, mass);
+    public void SetMass(int node, float mass)
+        => btSoftBody_setMass(Native, node, mass);
 
-    public void SetPose(bool bvolume, bool bframe) => btSoftBody_setPose(Native, bvolume, bframe);
+    public void SetPose(bool bvolume, bool bframe)
+        => btSoftBody_setPose(Native, bvolume, bframe);
+
     /*
 		public void SetSolver(SolverPresets preset)
 		{
 			btSoftBody_setSolver(_native, preset._native);
 		}
 		*/
-    public void SetTotalDensity(float density) => btSoftBody_setTotalDensity(Native, density);
 
-    public void SetTotalMass(float mass, bool fromFaces = false) => btSoftBody_setTotalMass(Native, mass, fromFaces);
+    public void SetTotalDensity(float density)
+        => btSoftBody_setTotalDensity(Native, density);
 
-    public void SetVelocity(Vector3 velocity) => btSoftBody_setVelocity(Native, ref velocity);
+    public void SetTotalMass(float mass, bool fromFaces = false)
+        => btSoftBody_setTotalMass(Native, mass, fromFaces);
 
-    public void SetVolumeDensity(float density) => btSoftBody_setVolumeDensity(Native, density);
+    public void SetVelocity(Vector3 velocity)
+        => btSoftBody_setVelocity(Native, ref velocity);
 
-    public void SetVolumeMass(float mass) => btSoftBody_setVolumeMass(Native, mass);
+    public void SetVolumeDensity(float density)
+        => btSoftBody_setVolumeDensity(Native, density);
 
-    public static void SolveClusters(AlignedSoftBodyArray bodies) => btSoftBody_solveClusters(bodies.Native);
+    public void SetVolumeMass(float mass)
+        => btSoftBody_setVolumeMass(Native, mass);
 
-    public void SolveClusters(float sor) => btSoftBody_solveClusters2(Native, sor);
+    public void SolveClusters(float sor)
+        => btSoftBody_solveClusters2(Native, sor);
 
-    public static void SolveCommonConstraints(SoftBody bodies, int count, int iterations) => btSoftBody_solveCommonConstraints(bodies.Native, count, iterations);
+    public void SolveConstraints()
+        => btSoftBody_solveConstraints(Native);
 
-    public void SolveConstraints() => btSoftBody_solveConstraints(Native);
+    public void StaticSolve(int iterations)
+        => btSoftBody_staticSolve(Native, iterations);
 
-    public void StaticSolve(int iterations) => btSoftBody_staticSolve(Native, iterations);
+    public void Transform(Matrix4x4 trs)
+        => btSoftBody_transform(Native, ref trs);
 
-    public void Transform(Matrix4x4 trs) => btSoftBody_transform(Native, ref trs);
-
-    public void Translate(Vector3 trs) => btSoftBody_translate(Native, ref trs);
+    public void Translate(Vector3 trs)
+        => btSoftBody_translate(Native, ref trs);
 
     public void Translate(float x, float y, float z)
     {
         Vector3 trs = new Vector3(x, y, z);
         btSoftBody_translate(Native, ref trs);
     }
+
     /*
 		public static SoftBody Upcast(CollisionObject colObj)
 		{
 			return btSoftBody_upcast(colObj._native);
 		}
 		*/
-    public void UpdateArea(bool averageArea = true) => btSoftBody_updateArea(Native, averageArea);
 
-    public void UpdateBounds() => btSoftBody_updateBounds(Native);
+    public void UpdateArea(bool averageArea = true)
+        => btSoftBody_updateArea(Native, averageArea);
 
-    public void UpdateClusters() => btSoftBody_updateClusters(Native);
+    public void UpdateBounds()
+        => btSoftBody_updateBounds(Native);
 
-    public void UpdateConstants() => btSoftBody_updateConstants(Native);
+    public void UpdateClusters()
+        => btSoftBody_updateClusters(Native);
 
-    public void UpdateLinkConstants() => btSoftBody_updateLinkConstants(Native);
+    public void UpdateConstants()
+        => btSoftBody_updateConstants(Native);
 
-    public void UpdateNormals() => btSoftBody_updateNormals(Native);
+    public void UpdateLinkConstants()
+        => btSoftBody_updateLinkConstants(Native);
 
-    public void UpdatePose() => btSoftBody_updatePose(Native);
+    public void UpdateNormals()
+        => btSoftBody_updateNormals(Native);
 
-    public static void VSolveLinks(SoftBody psb, float kst) => btSoftBody_VSolve_Links(psb.Native, kst);
+    public void UpdatePose()
+        => btSoftBody_updatePose(Native);
 
-    public int GetFaceVertexData(ref float[] vertices)
+    public int GetFaceVertexData(ref float[]? vertices)
     {
         int floatCount = Faces.Count * 3 * 3;
 
@@ -2782,6 +3339,7 @@ public class SoftBody : CollisionObject
         {
             vertices = new Vector3[vertexCount];
         }
+
         if (normals == null || normals.Length != vertexCount)
         {
             normals = new Vector3[vertexCount];
@@ -2814,6 +3372,48 @@ public class SoftBody : CollisionObject
         return btSoftBody_getLinkVertexNormalData(Native, vertices);
     }
 
+    public void CleanupClusters()
+    {
+        _aJointControls.Clear();
+        btSoftBody_cleanupClusters(Native);
+    }
+
+    public int GetVertexNormalData(ref Vector3[] data)
+    {
+        if (Faces.Count != 0)
+        {
+            return GetFaceVertexNormalData(ref data);
+        }
+        else if (Tetras.Count != 0)
+        {
+            return GetTetraVertexNormalData(ref data);
+        }
+
+        return GetLinkVertexNormalData(ref data);
+    }
+
+    public int GetVertexNormalData(ref Vector3[] vertices, [DisallowNull] ref Vector3[]? normals)
+    {
+        if (Faces.Count != 0)
+        {
+            return GetFaceVertexNormalData(ref vertices, ref normals);
+        }
+        else if (Tetras.Count != 0)
+        {
+            return GetTetraVertexNormalData(ref vertices, ref normals);
+        }
+
+        normals = null;
+        return GetLinkVertexData(ref vertices);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        _collisionShape.FreeUnmanagedHandle();
+
+        base.Dispose(disposing);
+    }
+
     private int GetTetraVertexData(ref Vector3[] vertices)
     {
         int vertexCount = Tetras.Count * 12;
@@ -2838,6 +3438,14 @@ public class SoftBody : CollisionObject
         return btSoftBody_getTetraVertexNormalData(Native, vertices);
     }
 
+    private void StoreAngularJointControlRef(AngularJoint.Specs specs)
+    {
+        if (specs.Control != null && specs.Control != AngularJoint.IControl.Default)
+        {
+            _aJointControls.Add(specs.Control);
+        }
+    }
+
     private int GetTetraVertexNormalData(ref Vector3[] vertices, ref Vector3[] normals)
     {
         int vertexCount = Tetras.Count * 12;
@@ -2846,356 +3454,12 @@ public class SoftBody : CollisionObject
         {
             vertices = new Vector3[vertexCount];
         }
+
         if (normals == null || normals.Length != vertexCount)
         {
             normals = new Vector3[vertexCount];
         }
 
         return btSoftBody_getTetraVertexNormalData2(Native, vertices, normals);
-    }
-
-    public int GetVertexNormalData(ref Vector3[] data)
-    {
-        if (Faces.Count != 0)
-        {
-            return GetFaceVertexNormalData(ref data);
-        }
-        else if (Tetras.Count != 0)
-        {
-            return GetTetraVertexNormalData(ref data);
-        }
-        return GetLinkVertexNormalData(ref data);
-    }
-
-    public int GetVertexNormalData(ref Vector3[] vertices, ref Vector3[] normals)
-    {
-        if (Faces.Count != 0)
-        {
-            return GetFaceVertexNormalData(ref vertices, ref normals);
-        }
-        else if (Tetras.Count != 0)
-        {
-            return GetTetraVertexNormalData(ref vertices, ref normals);
-        }
-        normals = null;
-        return GetLinkVertexData(ref vertices);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        _collisionShape.FreeUnmanagedHandle();
-
-        base.Dispose(disposing);
-    }
-
-    public AlignedAnchorArray Anchors
-    {
-        get
-        {
-            if (_anchors == null)
-            {
-                _anchors = new AlignedAnchorArray(btSoftBody_getAnchors(Native));
-            }
-            return _anchors;
-        }
-    }
-
-    public Vector3Array Bounds
-    {
-        get
-        {
-            if (_bounds == null)
-            {
-                _bounds = new Vector3Array(btSoftBody_getBounds(Native), 2);
-            }
-            return _bounds;
-        }
-    }
-
-    public Dbvt ClusterDbvt
-    {
-        get
-        {
-            if (_clusterDbvt == null)
-            {
-                _clusterDbvt = new Dbvt(btSoftBody_getCdbvt(Native));
-            }
-            return _clusterDbvt;
-        }
-    }
-
-    public Config Cfg
-    {
-        get
-        {
-            if (_config == null)
-            {
-                _config = new Config(btSoftBody_getCfg(Native));
-            }
-            return _config;
-        }
-    }
-    /*
-		public AlignedObjectArray ClusterConnectivity
-		{
-			get { return btSoftBody_getClusterConnectivity(_native); }
-			set { btSoftBody_setClusterConnectivity(_native, value._native); }
-		}
-		*/
-    public AlignedClusterArray Clusters
-    {
-        get
-        {
-            if (_clusters == null)
-            {
-                _clusters = new AlignedClusterArray(btSoftBody_getClusters(Native));
-            }
-            return _clusters;
-        }
-    }
-    /*
-		public AlignedObjectArray<CollisionObject> CollisionDisabledObjects
-		{
-			get { return btSoftBody_getCollisionDisabledObjects(_native); }
-			set { btSoftBody_setCollisionDisabledObjects(_native, value._native); }
-		}
-		*/
-    public AlignedFaceArray Faces
-    {
-        get
-        {
-            if (_faces == null)
-            {
-                _faces = new AlignedFaceArray(btSoftBody_getFaces(Native));
-            }
-            return _faces;
-        }
-    }
-
-    public Dbvt FaceDbvt
-    {
-        get
-        {
-            if (_faceDbvt == null)
-            {
-                _faceDbvt = new Dbvt(btSoftBody_getFdbvt(Native));
-            }
-            return _faceDbvt;
-        }
-    }
-
-    public AlignedJointArray Joints
-    {
-        get
-        {
-            if (_joints == null)
-            {
-                _joints = new AlignedJointArray(btSoftBody_getJoints(Native));
-            }
-            return _joints;
-        }
-    }
-
-    public AlignedLinkArray Links
-    {
-        get
-        {
-            if (_links == null)
-            {
-                _links = new AlignedLinkArray(btSoftBody_getLinks(Native));
-            }
-            return _links;
-        }
-    }
-
-    public AlignedMaterialArray Materials
-    {
-        get
-        {
-            if (_materials == null)
-            {
-                _materials = new AlignedMaterialArray(btSoftBody_getMaterials(Native));
-            }
-            return _materials;
-        }
-    }
-
-    public Dbvt NodeDbvt
-    {
-        get
-        {
-            if (_nodeDbvt == null)
-            {
-                _nodeDbvt = new Dbvt(btSoftBody_getNdbvt(Native));
-            }
-            return _nodeDbvt;
-        }
-    }
-
-    public AlignedNodeArray Nodes
-    {
-        get
-        {
-            if (_nodes == null)
-            {
-                _nodes = new AlignedNodeArray(btSoftBody_getNodes(Native));
-            }
-            return _nodes;
-        }
-    }
-
-    public AlignedNoteArray Notes
-    {
-        get
-        {
-            if (_notes == null)
-            {
-                _notes = new AlignedNoteArray(btSoftBody_getNotes(Native));
-            }
-            return _notes;
-        }
-    }
-
-    public Pose Pose
-    {
-        get
-        {
-            if (_pose == null)
-            {
-                _pose = new Pose(btSoftBody_getPose(Native));
-            }
-            return _pose;
-        }
-    }
-    /*
-		public tRContactArray Rcontacts
-		{
-			get { return btSoftBody_getRcontacts(_native); }
-			set { btSoftBody_setRcontacts(_native, value._native); }
-		}
-		*/
-    public float RestLengthScale
-    {
-        get => btSoftBody_getRestLengthScale(Native);
-        set => btSoftBody_setRestLengthScale(Native, value);
-    }
-    /*
-		public tSContactArray Scontacts
-		{
-			get { return btSoftBody_getScontacts(_native); }
-			set { btSoftBody_setScontacts(_native, value._native); }
-		}
-		*/
-    public SoftBodySolver SoftBodySolver
-    {
-        get => _softBodySolver;
-        set
-        {
-            btSoftBody_setSoftBodySolver(Native, (value != null) ? value.Native : IntPtr.Zero);
-            _softBodySolver = value;
-        }
-    }
-
-    public SolverState SolverState
-    {
-        get
-        {
-            if (_solverState == null)
-            {
-                _solverState = new SolverState(btSoftBody_getSst(Native));
-            }
-            return _solverState;
-        }
-    }
-
-    public object Tag { get; set; }
-
-    public AlignedTetraArray Tetras
-    {
-        get
-        {
-            if (_tetras == null)
-            {
-                _tetras = new AlignedTetraArray(btSoftBody_getTetras(Native));
-            }
-            return _tetras;
-        }
-    }
-
-    public AlignedTetraScratchArray TetraScratches
-    {
-        get
-        {
-            if (_tetraScratches == null)
-            {
-                _tetraScratches = new AlignedTetraScratchArray(btSoftBody_getTetraScratches(Native));
-            }
-            return _tetraScratches;
-        }
-    }
-
-    public AlignedTetraScratchArray TetraScratchesTn
-    {
-        get
-        {
-            if (_tetraScratchesTn == null)
-            {
-                _tetraScratchesTn = new AlignedTetraScratchArray(btSoftBody_getTetraScratchesTn(Native));
-            }
-            return _tetraScratchesTn;
-        }
-    }
-
-    public float Timeacc
-    {
-        get => btSoftBody_getTimeacc(Native);
-        set => btSoftBody_setTimeacc(Native, value);
-    }
-
-    public float TotalMass
-    {
-        get => btSoftBody_getTotalMass(Native);
-        set => SetTotalMass(value);
-    }
-
-    public bool UpdateRuntimeConstants
-    {
-        get => btSoftBody_getBUpdateRtCst(Native);
-        set => btSoftBody_setBUpdateRtCst(Native, value);
-    }
-    /*
-		public AlignedObjectArray UserIndexMapping
-		{
-			get { return btSoftBody_getUserIndexMapping(_native); }
-			set { btSoftBody_setUserIndexMapping(_native, value._native); }
-		}
-		*/
-
-    public bool UseSelfCollision
-    {
-        get => btSoftBody_useSelfCollision(Native);
-        set => btSoftBody_setSelfCollision(Native, value);
-    }
-
-    public Vector3 WindVelocity
-    {
-        get
-        {
-            Vector3 value;
-            btSoftBody_getWindVelocity(Native, out value);
-            return value;
-        }
-        set => btSoftBody_setWindVelocity(Native, ref value);
-    }
-
-    public float Volume => btSoftBody_getVolume(Native);
-
-    public SoftBodyWorldInfo WorldInfo
-    {
-        get => _worldInfo; set
-        {
-            btSoftBody_setWorldInfo(Native, value.Native);
-            _worldInfo = value;
-        }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
@@ -105,7 +106,7 @@ public class BroadphaseProxy : BulletObject
 
         set
         {
-            var collisionObject = value as CollisionObject;
+            CollisionObject? collisionObject = value as CollisionObject;
             if (collisionObject != null)
             {
                 btBroadphaseProxy_setClientObject(Native, collisionObject.Native);
@@ -173,7 +174,10 @@ public class BroadphaseProxy : BulletObject
         IntPtr clientObjectPtr = btBroadphaseProxy_getClientObject(native);
         if (clientObjectPtr != IntPtr.Zero)
         {
-            CollisionObject clientObject = CollisionObject.GetManaged(clientObjectPtr);
+            CollisionObject? clientObject = CollisionObject.GetManaged(clientObjectPtr);
+
+            Debug.Assert(clientObject is not null, $"{nameof(clientObject)} shouldn't be null when {nameof(clientObjectPtr)} != IntPtr.Zero");
+
             return clientObject.BroadphaseHandle;
         }
 
@@ -200,17 +204,30 @@ public class BroadphasePair : BulletObject
         set => btBroadphasePair_setAlgorithm(Native, (value.Native == IntPtr.Zero) ? IntPtr.Zero : value.Native);
     }
 
-    [DisallowNull]
-    public BroadphaseProxy? Proxy0
+    public BroadphaseProxy Proxy0
     {
-        get => BroadphaseProxy.GetManaged(btBroadphasePair_getPProxy0(Native));
+        get
+        {
+            BroadphaseProxy? managed = BroadphaseProxy.GetManaged(btBroadphasePair_getPProxy0(Native));
+
+            Debug.Assert(managed is not null, $"{nameof(managed)} shoud not be null.");
+
+            return managed;
+        }
+
         set => btBroadphasePair_setPProxy0(Native, value.Native);
     }
 
-    [DisallowNull]
-    public BroadphaseProxy? Proxy1
+    public BroadphaseProxy Proxy1
     {
-        get => BroadphaseProxy.GetManaged(btBroadphasePair_getPProxy1(Native));
+        get
+        {
+            BroadphaseProxy? managed = BroadphaseProxy.GetManaged(btBroadphasePair_getPProxy1(Native));
+
+            Debug.Assert(managed is not null, $"{nameof(managed)} shoud not be null.");
+
+            return managed;
+        }
         set => btBroadphasePair_setPProxy1(Native, value.Native);
     }
 }

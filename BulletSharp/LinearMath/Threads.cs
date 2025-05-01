@@ -58,13 +58,13 @@ public sealed class TaskSchedulerPpl : TaskScheduler
 
 public class Threads
 {
-    private static TaskSchedulerOpenMP _taskSchedulerOpenMP;
-    private static TaskSchedulerPpl _taskSchedulerPpl;
-    private static TaskSchedulerSequential _taskSchedulerSequential;
-    private static TaskSchedulerTbb _taskSchedulerTbb;
-    private static TaskScheduler _taskScheduler;
+    private static TaskSchedulerOpenMP? _taskSchedulerOpenMP;
+    private static TaskSchedulerPpl? _taskSchedulerPpl;
+    private static TaskSchedulerSequential? _taskSchedulerSequential;
+    private static TaskSchedulerTbb? _taskSchedulerTbb;
+    private static TaskScheduler? _taskScheduler;
 
-    public static TaskScheduler TaskScheduler
+    public static TaskScheduler? TaskScheduler
     {
         get => _taskScheduler;
         set
@@ -74,7 +74,7 @@ public class Threads
         }
     }
 
-    public static TaskSchedulerOpenMP GetOpenMPTaskScheduler()
+    public static TaskSchedulerOpenMP? GetOpenMPTaskScheduler()
     {
         if (_taskSchedulerOpenMP == null)
         {
@@ -84,11 +84,11 @@ public class Threads
                 _taskSchedulerOpenMP = new TaskSchedulerOpenMP(native);
             }
         }
+
         return _taskSchedulerOpenMP;
     }
 
-
-    public static TaskSchedulerPpl GetPplTaskScheduler()
+    public static TaskSchedulerPpl? GetPplTaskScheduler()
     {
         if (_taskSchedulerPpl == null)
         {
@@ -98,6 +98,7 @@ public class Threads
                 _taskSchedulerPpl = new TaskSchedulerPpl(native);
             }
         }
+
         return _taskSchedulerPpl;
     }
 
@@ -107,10 +108,11 @@ public class Threads
         {
             _taskSchedulerSequential = new TaskSchedulerSequential(btThreads_btGetSequentialTaskScheduler());
         }
+
         return _taskSchedulerSequential;
     }
 
-    public static TaskSchedulerTbb GetTbbTaskScheduler()
+    public static TaskSchedulerTbb? GetTbbTaskScheduler()
     {
         if (_taskSchedulerTbb == null)
         {
@@ -120,6 +122,7 @@ public class Threads
                 _taskSchedulerTbb = new TaskSchedulerTbb(native);
             }
         }
+
         return _taskSchedulerTbb;
     }
 }

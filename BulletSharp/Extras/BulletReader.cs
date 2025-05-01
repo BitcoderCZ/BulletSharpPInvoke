@@ -13,6 +13,58 @@ public class BulletReader : BinaryReader
     {
     }
 
+    public static Matrix4x4 ToMatrix(byte[] value, int startIndex)
+        => new Matrix4x4(
+            BitConverter.ToSingle(value, startIndex),
+            BitConverter.ToSingle(value, startIndex + 16),
+            BitConverter.ToSingle(value, startIndex + 32),
+            0,
+            BitConverter.ToSingle(value, startIndex + 4),
+            BitConverter.ToSingle(value, startIndex + 20),
+            BitConverter.ToSingle(value, startIndex + 36),
+            0,
+            BitConverter.ToSingle(value, startIndex + 8),
+            BitConverter.ToSingle(value, startIndex + 24),
+            BitConverter.ToSingle(value, startIndex + 40),
+            0,
+            BitConverter.ToSingle(value, startIndex + 48),
+            BitConverter.ToSingle(value, startIndex + 52),
+            BitConverter.ToSingle(value, startIndex + 56),
+            1);
+
+    public static Matrix4x4 ToMatrixDouble(byte[] value, int startIndex)
+        => new Matrix4x4(
+            (float)BitConverter.ToDouble(value, startIndex),
+            (float)BitConverter.ToDouble(value, startIndex + 32),
+            (float)BitConverter.ToDouble(value, startIndex + 64),
+            0,
+            (float)BitConverter.ToDouble(value, startIndex + 8),
+            (float)BitConverter.ToDouble(value, startIndex + 40),
+            (float)BitConverter.ToDouble(value, startIndex + 72),
+            0,
+            (float)BitConverter.ToDouble(value, startIndex + 16),
+            (float)BitConverter.ToDouble(value, startIndex + 48),
+            (float)BitConverter.ToDouble(value, startIndex + 80),
+            0,
+            (float)BitConverter.ToDouble(value, startIndex + 96),
+            (float)BitConverter.ToDouble(value, startIndex + 104),
+            (float)BitConverter.ToDouble(value, startIndex + 112),
+            1);
+
+    public static long ToPtr(byte[] value, int startIndex) => IntPtr.Size == 8
+            ? BitConverter.ToInt64(value, startIndex)
+            : BitConverter.ToInt32(value, startIndex);
+
+    public static Vector3 ToVector3(byte[] value, int startIndex) => new Vector3(
+            BitConverter.ToSingle(value, startIndex),
+            BitConverter.ToSingle(value, startIndex + 4),
+            BitConverter.ToSingle(value, startIndex + 8));
+
+    public static Vector3 ToVector3Double(byte[] value, int startIndex) => new Vector3(
+            (float)BitConverter.ToDouble(value, startIndex),
+            (float)BitConverter.ToDouble(value, startIndex + 8),
+            (float)BitConverter.ToDouble(value, startIndex + 16));
+
     public byte ReadByte(int position)
     {
         BaseStream.Position = position;
@@ -45,7 +97,7 @@ public class BulletReader : BinaryReader
 
     public Matrix4x4 ReadMatrix()
     {
-        float[] m = new float[16];
+        Span<float> m = stackalloc float[16];
         m[0] = ReadSingle();
         m[4] = ReadSingle();
         m[8] = ReadSingle();
@@ -68,7 +120,7 @@ public class BulletReader : BinaryReader
 
     public Matrix4x4 ReadMatrixDouble()
     {
-        float[] m = new float[16];
+        Span<float> m = stackalloc float[16];
         m[0] = (float)ReadDouble();
         m[4] = (float)ReadDouble();
         m[8] = (float)ReadDouble();
@@ -110,10 +162,12 @@ public class BulletReader : BinaryReader
             name.Add(ch);
             ch = ReadByte();
         }
-        return Encoding.ASCII.GetString(name.ToArray());
+
+        return Encoding.ASCII.GetString([.. name]);
     }
 
-    public long ReadPtr() => (IntPtr.Size == 8) ? ReadInt64() : ReadInt32();
+    public long ReadPtr()
+        => (IntPtr.Size == 8) ? ReadInt64() : ReadInt32();
 
     public long ReadPtr(int position)
     {
@@ -173,54 +227,4 @@ public class BulletReader : BinaryReader
         BaseStream.Position = position;
         return ReadVector3Double();
     }
-
-    public static Matrix4x4 ToMatrix(byte[] value, int startIndex) => new Matrix4x4(
-            BitConverter.ToSingle(value, startIndex),
-            BitConverter.ToSingle(value, startIndex + 16),
-            BitConverter.ToSingle(value, startIndex + 32),
-            0,
-            BitConverter.ToSingle(value, startIndex + 4),
-            BitConverter.ToSingle(value, startIndex + 20),
-            BitConverter.ToSingle(value, startIndex + 36),
-            0,
-            BitConverter.ToSingle(value, startIndex + 8),
-            BitConverter.ToSingle(value, startIndex + 24),
-            BitConverter.ToSingle(value, startIndex + 40),
-            0,
-            BitConverter.ToSingle(value, startIndex + 48),
-            BitConverter.ToSingle(value, startIndex + 52),
-            BitConverter.ToSingle(value, startIndex + 56),
-            1);
-
-    public static Matrix4x4 ToMatrixDouble(byte[] value, int startIndex) => new Matrix4x4(
-            (float)BitConverter.ToDouble(value, startIndex),
-            (float)BitConverter.ToDouble(value, startIndex + 32),
-            (float)BitConverter.ToDouble(value, startIndex + 64),
-            0,
-            (float)BitConverter.ToDouble(value, startIndex + 8),
-            (float)BitConverter.ToDouble(value, startIndex + 40),
-            (float)BitConverter.ToDouble(value, startIndex + 72),
-            0,
-            (float)BitConverter.ToDouble(value, startIndex + 16),
-            (float)BitConverter.ToDouble(value, startIndex + 48),
-            (float)BitConverter.ToDouble(value, startIndex + 80),
-            0,
-            (float)BitConverter.ToDouble(value, startIndex + 96),
-            (float)BitConverter.ToDouble(value, startIndex + 104),
-            (float)BitConverter.ToDouble(value, startIndex + 112),
-            1);
-
-    public static long ToPtr(byte[] value, int startIndex) => IntPtr.Size == 8
-            ? BitConverter.ToInt64(value, startIndex)
-            : BitConverter.ToInt32(value, startIndex);
-
-    public static Vector3 ToVector3(byte[] value, int startIndex) => new Vector3(
-            BitConverter.ToSingle(value, startIndex),
-            BitConverter.ToSingle(value, startIndex + 4),
-            BitConverter.ToSingle(value, startIndex + 8));
-
-    public static Vector3 ToVector3Double(byte[] value, int startIndex) => new Vector3(
-            (float)BitConverter.ToDouble(value, startIndex),
-            (float)BitConverter.ToDouble(value, startIndex + 8),
-            (float)BitConverter.ToDouble(value, startIndex + 16));
 }

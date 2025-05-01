@@ -7,6 +7,7 @@ public abstract class MlcpSolverInterface : BulletDisposableObject
     protected internal MlcpSolverInterface()
     {
     }
+
     /*
 		public bool SolveMLCP(btMatrixX<float> a, btVectorX<float> b, btVectorX<float> x,
 			btVectorX<float> lo, btVectorX<float> hi, AlignedObjectArray<int> limitDependency,
@@ -18,5 +19,6 @@ public abstract class MlcpSolverInterface : BulletDisposableObject
 		}
 		*/
 
-    protected override void Dispose(bool disposing) => btMLCPSolverInterface_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btMLCPSolverInterface_delete(Native);
 }

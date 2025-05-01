@@ -5,24 +5,67 @@ namespace BulletSharp;
 
 public class SequentialImpulseConstraintSolver : ConstraintSolver
 {
-    internal SequentialImpulseConstraintSolver(IntPtr native, BulletObject owner)
-    {
-        InitializeSubObject(native, owner);
-    }
-
-    internal SequentialImpulseConstraintSolver(ConstructionInfo? info)
-    {
-    }
-
     public SequentialImpulseConstraintSolver()
     {
         IntPtr native = btSequentialImpulseConstraintSolver_new();
         InitializeUserOwned(native);
     }
 
-    public ulong BtRand2() => btSequentialImpulseConstraintSolver_btRand2(Native);
+    internal SequentialImpulseConstraintSolver(IntPtr native, BulletObject owner)
+    {
+        InitializeSubObject(native, owner);
+    }
 
-    public int BtRandInt2(int n) => btSequentialImpulseConstraintSolver_btRandInt2(Native, n);
+#pragma warning disable IDE0060 // Remove unused parameter
+    internal SequentialImpulseConstraintSolver(ConstructionInfo? info)
+#pragma warning restore IDE0060 // Remove unused parameter
+    {
+    }
+
+    public ulong RandSeed
+    {
+        get => btSequentialImpulseConstraintSolver_getRandSeed(Native);
+        set => btSequentialImpulseConstraintSolver_setRandSeed(Native, value);
+    }
+
+    /*
+            public SingleConstraintRowSolver ScalarConstraintRowSolverGeneric
+            {
+                get { return btSequentialImpulseConstraintSolver_getScalarConstraintRowSolverGeneric(Native); }
+            }
+
+            public SingleConstraintRowSolver ScalarConstraintRowSolverLowerLimit
+            {
+                get { return btSequentialImpulseConstraintSolver_getScalarConstraintRowSolverLowerLimit(Native); }
+            }
+
+            public SingleConstraintRowSolver SSE2ConstraintRowSolverGeneric
+            {
+                get { return btSequentialImpulseConstraintSolver_getSSE2ConstraintRowSolverGeneric(Native); }
+            }
+
+            public SingleConstraintRowSolver SSE2ConstraintRowSolverLowerLimit
+            {
+                get { return btSequentialImpulseConstraintSolver_getSSE2ConstraintRowSolverLowerLimit(Native); }
+            }
+
+            public SingleConstraintRowSolver SSE41ConstraintRowSolverGeneric
+            {
+                get { return btSequentialImpulseConstraintSolver_getSSE4_1ConstraintRowSolverGeneric(Native); }
+            }
+
+            public SingleConstraintRowSolver SSE41ConstraintRowSolverLowerLimit
+            {
+                get { return btSequentialImpulseConstraintSolver_getSSE4_1ConstraintRowSolverLowerLimit(Native); }
+            }
+    */
+
+    public ulong BtRand2()
+        => btSequentialImpulseConstraintSolver_btRand2(Native);
+
+    public int BtRandInt2(int n)
+        => btSequentialImpulseConstraintSolver_btRandInt2(Native, n);
+
     /*
             public void SetConstraintRowSolverGeneric(SingleConstraintRowSolver rowSolver)
             {
@@ -53,42 +96,6 @@ public class SequentialImpulseConstraintSolver : ConstraintSolver
             public SingleConstraintRowSolver ActiveConstraintRowSolverLowerLimit
             {
                 get { return btSequentialImpulseConstraintSolver_getActiveConstraintRowSolverLowerLimit(Native); }
-            }
-    */
-    public ulong RandSeed
-    {
-        get => btSequentialImpulseConstraintSolver_getRandSeed(Native);
-        set => btSequentialImpulseConstraintSolver_setRandSeed(Native, value);
-    }
-    /*
-            public SingleConstraintRowSolver ScalarConstraintRowSolverGeneric
-            {
-                get { return btSequentialImpulseConstraintSolver_getScalarConstraintRowSolverGeneric(Native); }
-            }
-
-            public SingleConstraintRowSolver ScalarConstraintRowSolverLowerLimit
-            {
-                get { return btSequentialImpulseConstraintSolver_getScalarConstraintRowSolverLowerLimit(Native); }
-            }
-
-            public SingleConstraintRowSolver SSE2ConstraintRowSolverGeneric
-            {
-                get { return btSequentialImpulseConstraintSolver_getSSE2ConstraintRowSolverGeneric(Native); }
-            }
-
-            public SingleConstraintRowSolver SSE2ConstraintRowSolverLowerLimit
-            {
-                get { return btSequentialImpulseConstraintSolver_getSSE2ConstraintRowSolverLowerLimit(Native); }
-            }
-
-            public SingleConstraintRowSolver SSE41ConstraintRowSolverGeneric
-            {
-                get { return btSequentialImpulseConstraintSolver_getSSE4_1ConstraintRowSolverGeneric(Native); }
-            }
-
-            public SingleConstraintRowSolver SSE41ConstraintRowSolverLowerLimit
-            {
-                get { return btSequentialImpulseConstraintSolver_getSSE4_1ConstraintRowSolverLowerLimit(Native); }
             }
     */
 }

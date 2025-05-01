@@ -1,4 +1,4 @@
-﻿///*
+﻿// *
 // * C# / XNA  port of Bullet (c) 2011 Mark Neale <xexuxjy@hotmail.com>
 // *
 // * Bullet Continuous Collision Detection and Physics Library
@@ -1235,7 +1235,7 @@ public static class MathUtil
         matrix.SetComponent((row * 4) + column, value);
     }
 
-    public static Matrix4x4 MakeMatrix4x4(float[] values)
+    public static Matrix4x4 MakeMatrix4x4(ReadOnlySpan<float> values)
 #pragma warning disable SA1117 // Parameters should be on same line or separate lines
         => values == null
             ? throw new ArgumentNullException(nameof(values))
@@ -1289,7 +1289,9 @@ internal struct TransformFloatData
     public Matrix3x3FloatData Basis;
     public Vector3FloatData Origin;
 
+#pragma warning disable SA1203 // Constants should appear before fields
     public const int OriginOffset = 48;
+#pragma warning restore SA1203 // Constants should appear before fields
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -1298,19 +1300,25 @@ internal struct TransformDoubleData
     public Matrix3x3DoubleData Basis;
     public Vector3DoubleData Origin;
 
+#pragma warning disable SA1203 // Constants should appear before fields
     public const int OriginOffset = 96;
+#pragma warning restore SA1203 // Constants should appear before fields
 }
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct Vector3FloatData
 {
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+#pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
     public float[] floats;
+#pragma warning restore SA1307 // Accessible fields should begin with upper-case letter
 }
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct Vector3DoubleData
 {
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+#pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
     public double[] floats;
+#pragma warning restore SA1307 // Accessible fields should begin with upper-case letter
 }

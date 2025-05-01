@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -9,17 +10,44 @@ namespace BulletSharp;
 
 public class BulletXmlWorldImporter : WorldImporter
 {
+    private readonly List<byte[]> _collisionShapeData = [];
+    private readonly List<byte[]> _constraintData = [];
+    private readonly List<byte[]> _rigidBodyData = [];
+    private readonly Dictionary<long, byte[]> _pointerLookup = [];
+
     private int _fileVersion = -1;
     private bool _fileOK = false;
-
-    private List<byte[]> _collisionShapeData = [];
-    private List<byte[]> _constraintData = [];
-    private List<byte[]> _rigidBodyData = [];
-    private Dictionary<long, byte[]> _pointerLookup = [];
 
     public BulletXmlWorldImporter(DynamicsWorld world)
         : base(world)
     {
+    }
+
+    public bool LoadFile(string fileName)
+    {
+        XmlDocument doc = new XmlDocument();
+        doc.Load(fileName);
+
+        XmlElement bulletPhysics = doc.DocumentElement;
+        if (!bulletPhysics.Name.Equals("bullet_physics", StringComparison.Ordinal))
+        {
+            Console.WriteLine("ERROR: no bullet_physics element");
+            return false;
+        }
+
+        if (!int.TryParse(bulletPhysics.GetAttribute("version"), out _fileVersion))
+        {
+            return false;
+        }
+
+        if (_fileVersion == 281)
+        {
+            _fileOK = true;
+            AutoSerializeRootLevelChildren(bulletPhysics);
+            return _fileOK;
+        }
+
+        return false;
     }
 
     private void AutoSerializeRootLevelChildren(XmlElement parent)
@@ -31,7 +59,8 @@ public class BulletXmlWorldImporter : WorldImporter
                 continue;
             }
 
-            XmlElement element = node as XmlElement;
+            XmlElement? element = node as XmlElement;
+            Debug.Assert(element is not null, $"{nameof(element)} should not be null.");
             switch (element.Name)
             {
                 case "btCompoundShapeChildData":
@@ -68,7 +97,7 @@ public class BulletXmlWorldImporter : WorldImporter
 
         foreach (byte[] shapeData in _collisionShapeData)
         {
-            CollisionShape shape = ConvertCollisionShape(shapeData, _pointerLookup);
+            CollisionShape? shape = ConvertCollisionShape(shapeData, _pointerLookup);
             if (shape != null)
             {
                 foreach (KeyValuePair<long, byte[]> lib in _pointerLookup)
@@ -80,9 +109,9 @@ public class BulletXmlWorldImporter : WorldImporter
                     }
                 }
 
-                using (var stream = new MemoryStream(shapeData, false))
+                using (MemoryStream stream = new MemoryStream(shapeData, false))
                 {
-                    using (var reader = new BulletReader(stream))
+                    using (BulletReader reader = new BulletReader(stream))
                     {
                         long namePtr = reader.ReadPtr(CollisionShapeData.Offset("Name"));
                         if (namePtr != 0)
@@ -103,11 +132,13 @@ public class BulletXmlWorldImporter : WorldImporter
             ConvertRigidBodyFloat(rbData, _pointerLookup);
         }
 
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
         foreach (byte[] constraintData in _constraintData)
         {
             //throw new NotImplementedException();
             //ConvertConstraint(constraintData);
         }
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
     }
 
     private void DeSerializeCollisionShapeData(XmlElement parent, BulletWriter writer)
@@ -129,9 +160,9 @@ public class BulletXmlWorldImporter : WorldImporter
         int dataSize = Marshal.SizeOf(typeof(CompoundShapeChildData));
         byte[] compoundChild = new byte[dataSize * numChildren];
 
-        using (var stream = new MemoryStream(compoundChild))
+        using (MemoryStream stream = new MemoryStream(compoundChild))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 int offset = 0;
                 for (int i = 0; i < numChildren; i++)
@@ -154,16 +185,17 @@ public class BulletXmlWorldImporter : WorldImporter
         int ptr = int.Parse(element.GetAttribute("pointer"));
         byte[] convexShape = new byte[Marshal.SizeOf(typeof(CompoundShapeData))];
 
-        using (var stream = new MemoryStream(convexShape))
+        using (MemoryStream stream = new MemoryStream(convexShape))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 XmlNode node = element["m_collisionShapeData"];
                 if (node == null)
                 {
                     return;
                 }
-                DeSerializeCollisionShapeData(node as XmlElement, writer);
+
+                DeSerializeCollisionShapeData((XmlElement)node, writer);
 
                 SetIntValue(writer, element["m_numChildShapes"], CompoundShapeData.Offset("NumChildShapes"));
                 SetPointerValue(writer, element["m_childShapePtr"], CompoundShapeData.Offset("ChildShapePtr"));
@@ -180,16 +212,17 @@ public class BulletXmlWorldImporter : WorldImporter
         int ptr = int.Parse(element.GetAttribute("pointer"));
         byte[] convexHullData = new byte[Marshal.SizeOf(typeof(ConvexHullShapeData))];
 
-        using (var stream = new MemoryStream(convexHullData))
+        using (MemoryStream stream = new MemoryStream(convexHullData))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 XmlNode node = element["m_convexInternalShapeData"];
                 if (node == null)
                 {
                     return;
                 }
-                DeSerializeConvexInternalShapeData(node as XmlElement, writer);
+
+                DeSerializeConvexInternalShapeData((XmlElement)node, writer);
 
                 SetPointerValue(writer, element["m_unscaledPointsFloatPtr"], ConvexHullShapeData.Offset("UnscaledPointsFloatPtr"));
                 SetPointerValue(writer, element["m_unscaledPointsDoublePtr"], ConvexHullShapeData.Offset("UnscaledPointsDoublePtr"));
@@ -206,9 +239,9 @@ public class BulletXmlWorldImporter : WorldImporter
         int ptr = int.Parse(element.GetAttribute("pointer"));
         byte[] convexShapeData = new byte[Marshal.SizeOf(typeof(ConvexInternalShapeData))];
 
-        using (var stream = new MemoryStream(convexShapeData))
+        using (MemoryStream stream = new MemoryStream(convexShapeData))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 DeSerializeConvexInternalShapeData(element, writer);
             }
@@ -225,31 +258,37 @@ public class BulletXmlWorldImporter : WorldImporter
         {
             return;
         }
-        DeSerializeCollisionShapeData(node as XmlElement, writer);
+
+        DeSerializeCollisionShapeData((XmlElement)node, writer);
 
         SetFloatValue(writer, element["m_collisionMargin"], ConvexInternalShapeData.Offset("CollisionMargin"));
         SetVector4Value(writer, element["m_localScaling"], ConvexInternalShapeData.Offset("LocalScaling"));
         SetVector4Value(writer, element["m_implicitShapeDimensions"], ConvexInternalShapeData.Offset("ImplicitShapeDimensions"));
     }
 
+#pragma warning disable IDE0060 // Remove unused parameter
     private void DeSerializeDynamicsWorldData(XmlElement element)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
     }
 
     private void DeSerializeGeneric6DofConstraintData(XmlElement element)
     {
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
         int ptr = int.Parse(element.GetAttribute("pointer"));
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
         byte[] dof6Data = new byte[Marshal.SizeOf(typeof(Generic6DofConstraintFloatData))];
 
-        using (var stream = new MemoryStream(dof6Data))
+        using (MemoryStream stream = new MemoryStream(dof6Data))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 XmlNode node = element["m_typeConstraintData"];
                 if (node == null)
                 {
                     return;
                 }
+
                 SetPointerValue(writer, node["m_rbA"], TypedConstraintFloatData.Offset("RigidBodyA"));
                 SetPointerValue(writer, node["m_rbB"], TypedConstraintFloatData.Offset("RigidBodyB"));
                 writer.Write(0, TypedConstraintFloatData.Offset("Name"));
@@ -281,23 +320,26 @@ public class BulletXmlWorldImporter : WorldImporter
     private void DeSerializeRigidBodyFloatData(XmlElement element)
     {
         int ptr;
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
         if (!int.TryParse(element.GetAttribute("pointer"), out ptr))
         {
             _fileOK = false;
             return;
         }
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
 
         byte[] rbData = new byte[Marshal.SizeOf(typeof(RigidBodyFloatData))];
 
-        using (var stream = new MemoryStream(rbData))
+        using (MemoryStream stream = new MemoryStream(rbData))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 XmlNode node = element["m_collisionObjectData"];
                 if (node == null)
                 {
                     return;
                 }
+
                 SetPointerValue(writer, node["m_collisionShape"], CollisionObjectFloatData.Offset("CollisionShape"));
                 SetTransformValue(writer, node["m_worldTransform"], CollisionObjectFloatData.Offset("WorldTransform"));
                 SetTransformValue(writer, node["m_interpolationWorldTransform"], CollisionObjectFloatData.Offset("InterpolationWorldTransform"));
@@ -350,16 +392,17 @@ public class BulletXmlWorldImporter : WorldImporter
         int ptr = int.Parse(element.GetAttribute("pointer"));
         byte[] convexShape = new byte[Marshal.SizeOf(typeof(StaticPlaneShapeData))];
 
-        using (var stream = new MemoryStream(convexShape))
+        using (MemoryStream stream = new MemoryStream(convexShape))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 XmlNode node = element["m_collisionShapeData"];
                 if (node == null)
                 {
                     return;
                 }
-                DeSerializeCollisionShapeData(node as XmlElement, writer);
+
+                DeSerializeCollisionShapeData((XmlElement)node, writer);
 
                 SetVector4Value(writer, element["m_localScaling"], StaticPlaneShapeData.Offset("LocalScaling"));
                 SetVector4Value(writer, element["m_planeNormal"], StaticPlaneShapeData.Offset("PlaneNormal"));
@@ -381,9 +424,9 @@ public class BulletXmlWorldImporter : WorldImporter
         int vectorSize = Marshal.SizeOf(typeof(Vector3FloatData));
         byte[] v = new byte[numVectors * vectorSize];
 
-        using (var stream = new MemoryStream(v))
+        using (MemoryStream stream = new MemoryStream(v))
         {
-            using (var writer = new BulletWriter(stream))
+            using (BulletWriter writer = new BulletWriter(stream))
             {
                 int offset = 0;
                 for (int i = 0; i < numVectors; i++)
@@ -395,33 +438,6 @@ public class BulletXmlWorldImporter : WorldImporter
         }
 
         _pointerLookup.Add(ptr, v);
-    }
-
-    public bool LoadFile(string fileName)
-    {
-        var doc = new XmlDocument();
-        doc.Load(fileName);
-
-        XmlElement bulletPhysics = doc.DocumentElement;
-        if (!bulletPhysics.Name.Equals("bullet_physics"))
-        {
-            Console.WriteLine("ERROR: no bullet_physics element");
-            return false;
-        }
-
-        if (!int.TryParse(bulletPhysics.GetAttribute("version"), out _fileVersion))
-        {
-            return false;
-        }
-
-        if (_fileVersion == 281)
-        {
-            _fileOK = true;
-            AutoSerializeRootLevelChildren(bulletPhysics);
-            return _fileOK;
-        }
-
-        return false;
     }
 
     private void SetFloatValue(BulletWriter writer, XmlNode valueNode, int offset) => writer.Write(float.Parse(valueNode.InnerText, CultureInfo.InvariantCulture), offset);
@@ -453,7 +469,7 @@ public class BulletXmlWorldImporter : WorldImporter
         {
             if (!string.IsNullOrWhiteSpace(value))
             {
-                writer.Write(float.Parse(value, CultureInfo.InvariantCulture), offset + i * sizeof(float));
+                writer.Write(float.Parse(value, CultureInfo.InvariantCulture), offset + (i * sizeof(float)));
                 i++;
                 if (i == 4)
                 {

@@ -12,7 +12,7 @@ public class MultiBodyConstraintSolver : SequentialImpulseConstraintSolver
         InitializeUserOwned(native);
     }
 
-    internal MultiBodyConstraintSolver(ConstructionInfo info)
+    internal MultiBodyConstraintSolver(ConstructionInfo? info)
         : base(info)
     {
     }

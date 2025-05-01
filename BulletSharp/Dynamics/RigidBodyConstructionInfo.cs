@@ -6,25 +6,21 @@ namespace BulletSharp;
 
 public class RigidBodyConstructionInfo : BulletDisposableObject
 {
-    private CollisionShape _collisionShape;
-    private MotionState _motionState;
+    private CollisionShape? _collisionShape;
+    private MotionState? _motionState;
 
-    public RigidBodyConstructionInfo(float mass, MotionState motionState,
-        CollisionShape collisionShape)
+    public RigidBodyConstructionInfo(float mass, MotionState? motionState, CollisionShape? collisionShape)
     {
-        IntPtr native = btRigidBody_btRigidBodyConstructionInfo_new(mass, motionState != null ? motionState.Native : IntPtr.Zero,
-            collisionShape != null ? collisionShape.Native : IntPtr.Zero);
+        IntPtr native = btRigidBody_btRigidBodyConstructionInfo_new(mass, motionState != null ? motionState.Native : IntPtr.Zero, collisionShape != null ? collisionShape.Native : IntPtr.Zero);
         InitializeUserOwned(native);
 
         _collisionShape = collisionShape;
         _motionState = motionState;
     }
 
-    public RigidBodyConstructionInfo(float mass, MotionState motionState,
-        CollisionShape collisionShape, Vector3 localInertia)
+    public RigidBodyConstructionInfo(float mass, MotionState? motionState, CollisionShape? collisionShape, Vector3 localInertia)
     {
-        IntPtr native = btRigidBody_btRigidBodyConstructionInfo_new2(mass, motionState != null ? motionState.Native : IntPtr.Zero,
-            collisionShape != null ? collisionShape.Native : IntPtr.Zero, ref localInertia);
+        IntPtr native = btRigidBody_btRigidBodyConstructionInfo_new2(mass, motionState != null ? motionState.Native : IntPtr.Zero, collisionShape != null ? collisionShape.Native : IntPtr.Zero, ref localInertia);
         InitializeUserOwned(native);
 
         _collisionShape = collisionShape;
@@ -73,7 +69,7 @@ public class RigidBodyConstructionInfo : BulletDisposableObject
         set => btRigidBody_btRigidBodyConstructionInfo_setAngularSleepingThreshold(Native, value);
     }
 
-    public CollisionShape CollisionShape
+    public CollisionShape? CollisionShape
     {
         get => _collisionShape;
         set
@@ -118,7 +114,7 @@ public class RigidBodyConstructionInfo : BulletDisposableObject
         set => btRigidBody_btRigidBodyConstructionInfo_setMass(Native, value);
     }
 
-    public MotionState MotionState
+    public MotionState? MotionState
     {
         get => _motionState;
         set
@@ -151,5 +147,6 @@ public class RigidBodyConstructionInfo : BulletDisposableObject
         set => btRigidBody_btRigidBodyConstructionInfo_setStartWorldTransform(Native, ref value);
     }
 
-    protected override void Dispose(bool disposing) => btRigidBody_btRigidBodyConstructionInfo_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btRigidBody_btRigidBodyConstructionInfo_delete(Native);
 }

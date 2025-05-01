@@ -6,18 +6,12 @@ namespace BulletSharp;
 
 public class Hinge2Constraint : Generic6DofSpring2Constraint
 {
-    public Hinge2Constraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 anchor,
-        Vector3 axis1, Vector3 axis2)
+    public Hinge2Constraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 anchor, Vector3 axis1, Vector3 axis2)
     {
-        IntPtr native = btHinge2Constraint_new(rigidBodyA.Native, rigidBodyB.Native,
-            ref anchor, ref axis1, ref axis2);
+        IntPtr native = btHinge2Constraint_new(rigidBodyA.Native, rigidBodyB.Native, ref anchor, ref axis1, ref axis2);
         InitializeUserOwned(native);
         InitializeMembers(rigidBodyA, rigidBodyB);
     }
-
-    public void SetLowerLimit(float ang1min) => btHinge2Constraint_setLowerLimit(Native, ang1min);
-
-    public void SetUpperLimit(float ang1max) => btHinge2Constraint_setUpperLimit(Native, ang1max);
 
     public Vector3 Anchor
     {
@@ -62,4 +56,10 @@ public class Hinge2Constraint : Generic6DofSpring2Constraint
             return value;
         }
     }
+
+    public void SetLowerLimit(float ang1min)
+        => btHinge2Constraint_setLowerLimit(Native, ang1min);
+
+    public void SetUpperLimit(float ang1max)
+        => btHinge2Constraint_setUpperLimit(Native, ang1max);
 }

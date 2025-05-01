@@ -28,47 +28,61 @@ public class VehicleTuning
 
 public class RaycastVehicle : IAction
 {
-    private WheelInfo[] wheelInfo = new WheelInfo[0];
-    private Vector3[] forwardWS = new Vector3[0];
-    private Vector3[] axle = new Vector3[0];
-    private float[] forwardImpulse = new float[0];
-    private float[] sideImpulse = new float[0];
+#pragma warning disable SA1201 // Elements should appear in the correct order
+#pragma warning disable SX1309 // Field names should begin with underscore
+    private WheelInfo[] wheelInfo = [];
+    private Vector3[] forwardWS = [];
+    private Vector3[] axle = [];
+    private float[] forwardImpulse = [];
+    private float[] sideImpulse = [];
 
-    public Matrix4x4 ChassisWorldTransform
-    {
-        get
-        {
-            /*if (RigidBody.MotionState != null)
-            {
-                return RigidBody.MotionState.WorldTransform;
-            }*/
-            return RigidBody.CenterOfMassTransform;
-        }
-    }
+    /*if (RigidBody.MotionState != null)
+{
+return RigidBody.MotionState.WorldTransform;
+}*/
+    public Matrix4x4 ChassisWorldTransform => RigidBody.CenterOfMassTransform;
 
     private float currentVehicleSpeedKmHour;
 
-    public int NumWheels
-    {
-        get { return wheelInfo.Length; }
-    }
+    public int NumWheels => wheelInfo.Length;
 
     private int indexRightAxis = 0;
-    public int RightAxis
-    {
-        get { return indexRightAxis; }
-    }
+
+    public int RightAxis => indexRightAxis;
 
     private int indexUpAxis = 2;
     private int indexForwardAxis = 1;
-    private RigidBody chassisBody;
-    public RigidBody RigidBody
+#pragma warning disable SA1214 // Readonly fields should appear before non-readonly fields
+    private readonly RigidBody chassisBody;
+#pragma warning restore SA1214 // Readonly fields should appear before non-readonly fields
+
+    public RigidBody RigidBody => chassisBody;
+
+    private readonly IVehicleRaycaster vehicleRaycaster;
+#pragma warning disable SA1204 // Static elements should appear before instance elements
+#pragma warning disable SA1311 // Static readonly fields should begin with upper-case letter
+    private static readonly RigidBody fixedBody;
+#pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
+#pragma warning restore SA1204 // Static elements should appear before instance elements
+#pragma warning restore SX1309 // Field names should begin with underscore
+#pragma warning restore SA1201 // Elements should appear in the correct order
+
+    static RaycastVehicle()
     {
-        get { return chassisBody; }
+        using (RigidBodyConstructionInfo ci = new RigidBodyConstructionInfo(0, null, null))
+        {
+            fixedBody = new RigidBody(ci);
+            fixedBody.SetMassProps(0, Vector3.Zero);
+        }
     }
 
-    private IVehicleRaycaster vehicleRaycaster;
-    private static RigidBody fixedBody;
+#pragma warning disable IDE0060 // Remove unused parameter
+    public RaycastVehicle(VehicleTuning tuning, RigidBody chassis, IVehicleRaycaster raycaster)
+#pragma warning restore IDE0060 // Remove unused parameter
+    {
+        chassisBody = chassis;
+        vehicleRaycaster = raycaster;
+    }
 
     public void SetBrake(float brake, int wheelIndex)
     {
@@ -76,7 +90,8 @@ public class RaycastVehicle : IAction
         GetWheelInfo(wheelIndex).Brake = brake;
     }
 
-    public float GetSteeringValue(int wheel) => GetWheelInfo(wheel).Steering;
+    public float GetSteeringValue(int wheel)
+        => GetWheelInfo(wheel).Steering;
 
     public void SetSteeringValue(float steering, int wheel)
     {
@@ -99,24 +114,9 @@ public class RaycastVehicle : IAction
         return wheelInfo[wheelIndex].WorldTransform;
     }
 
-    static RaycastVehicle()
-    {
-        using (var ci = new RigidBodyConstructionInfo(0, null, null))
-        {
-            fixedBody = new RigidBody(ci);
-            fixedBody.SetMassProps(0, Vector3.Zero);
-        }
-    }
-
-    public RaycastVehicle(VehicleTuning tuning, RigidBody chassis, IVehicleRaycaster raycaster)
-    {
-        chassisBody = chassis;
-        vehicleRaycaster = raycaster;
-    }
-
     public WheelInfo AddWheel(Vector3 connectionPointCS, Vector3 wheelDirectionCS0, Vector3 wheelAxleCS, float suspensionRestLength, float wheelRadius, VehicleTuning tuning, bool isFrontWheel)
     {
-        var ci = new WheelInfoConstructionInfo()
+        WheelInfoConstructionInfo ci = new WheelInfoConstructionInfo()
         {
             ChassisConnectionCS = connectionPointCS,
             WheelDirectionCS = wheelDirectionCS0,
@@ -133,8 +133,8 @@ public class RaycastVehicle : IAction
         };
 
         Array.Resize(ref wheelInfo, wheelInfo.Length + 1);
-        var wheel = new WheelInfo(ci);
-        wheelInfo[wheelInfo.Length - 1] = wheel;
+        WheelInfo wheel = new WheelInfo(ci);
+        wheelInfo[^1] = wheel;
 
         UpdateWheelTransformsWS(wheel, false);
         UpdateWheelTransform(NumWheels - 1, false);
@@ -168,14 +168,19 @@ public class RaycastVehicle : IAction
 
         // calculate j that moves us to zero relative velocity
         j1 = -vrel * jacDiagABInv;
-        j1 = System.Math.Min(j1, maxImpulse);
-        j1 = System.Math.Max(j1, -maxImpulse);
+        j1 = MathF.Min(j1, maxImpulse);
+        j1 = MathF.Max(j1, -maxImpulse);
 
         return j1;
     }
 
+#pragma warning disable SA1201 // Elements should appear in the correct order
+#pragma warning disable SX1309 // Field names should begin with underscore
     private Vector3 blue = new Vector3(0, 0, 1);
     private Vector3 magenta = new Vector3(1, 0, 1);
+#pragma warning restore SX1309 // Field names should begin with underscore
+#pragma warning restore SA1201 // Elements should appear in the correct order
+
     public void DebugDraw(DebugDraw debugDrawer)
     {
         for (int v = 0; v < NumWheels; v++)
@@ -206,7 +211,6 @@ public class RaycastVehicle : IAction
             //debug wheels (cylinders)
             debugDrawer.DrawLine(ref wheelPosWS, ref to1, ref wheelColor);
             debugDrawer.DrawLine(ref wheelPosWS, ref to2, ref wheelColor);
-
         }
     }
 
@@ -229,11 +233,11 @@ public class RaycastVehicle : IAction
         wheel.RaycastInfo.ContactPointWS = source + rayvector;
         Vector3 target = wheel.RaycastInfo.ContactPointWS;
 
-        float param = 0;
+        float param;
         VehicleRaycasterResult rayResults = new VehicleRaycasterResult();
 
-        Debug.Assert(vehicleRaycaster != null);
-        object obj = vehicleRaycaster.CastRay(ref source, ref target, rayResults);
+        Debug.Assert(vehicleRaycaster is not null, $"{nameof(vehicleRaycaster)} should not be null.");
+        object? obj = vehicleRaycaster.CastRay(ref source, ref target, rayResults);
 
         wheel.RaycastInfo.GroundObject = null;
 
@@ -244,19 +248,20 @@ public class RaycastVehicle : IAction
             wheel.RaycastInfo.ContactNormalWS = rayResults.HitNormalInWorld;
             wheel.RaycastInfo.IsInContact = true;
 
-            wheel.RaycastInfo.GroundObject = fixedBody;///@todo for driving on dynamic/movable objects!;
+            wheel.RaycastInfo.GroundObject = fixedBody;//@todo for driving on dynamic/movable objects!;
             /////wheel.RaycastInfo.GroundObject = object;
 
             float hitDistance = param * raylen;
             wheel.RaycastInfo.SuspensionLength = hitDistance - wheel.WheelsRadius;
             //clamp on max suspension travel
 
-            float minSuspensionLength = wheel.SuspensionRestLength - wheel.MaxSuspensionTravelCm * 0.01f;
-            float maxSuspensionLength = wheel.SuspensionRestLength + wheel.MaxSuspensionTravelCm * 0.01f;
+            float minSuspensionLength = wheel.SuspensionRestLength - (wheel.MaxSuspensionTravelCm * 0.01f);
+            float maxSuspensionLength = wheel.SuspensionRestLength + (wheel.MaxSuspensionTravelCm * 0.01f);
             if (wheel.RaycastInfo.SuspensionLength < minSuspensionLength)
             {
                 wheel.RaycastInfo.SuspensionLength = minSuspensionLength;
             }
+
             if (wheel.RaycastInfo.SuspensionLength > maxSuspensionLength)
             {
                 wheel.RaycastInfo.SuspensionLength = maxSuspensionLength;
@@ -314,12 +319,13 @@ public class RaycastVehicle : IAction
     private void ResolveSingleBilateral(RigidBody body1, Vector3 pos1, RigidBody body2, Vector3 pos2, float distance, Vector3 normal, ref float impulse, float timeStep)
     {
         float normalLenSqr = normal.LengthSquared();
-        Debug.Assert(System.Math.Abs(normalLenSqr) < 1.1f);
+        Debug.Assert(MathF.Abs(normalLenSqr) < 1.1f);
         if (normalLenSqr > 1.1f)
         {
             impulse = 0;
             return;
         }
+
         Vector3 rel_pos1 = pos1 - body1.CenterOfMassPosition;
         Vector3 rel_pos2 = pos2 - body2.CenterOfMassPosition;
 
@@ -356,15 +362,27 @@ public class RaycastVehicle : IAction
 #endif
     }
 
-    public void UpdateAction(CollisionWorld collisionWorld, float deltaTimeStep) => UpdateVehicle(deltaTimeStep);
+#pragma warning disable SA1202 // Elements should be ordered by access
+    public void UpdateAction(CollisionWorld collisionWorld, float deltaTimeStep)
+#pragma warning restore SA1202 // Elements should be ordered by access
+        => UpdateVehicle(deltaTimeStep);
 
+#pragma warning disable SA1201 // Elements should appear in the correct order
+#pragma warning disable SA1203 // Constants should appear before fields
+#pragma warning disable SA1303 // Const field names should begin with upper-case letter
     private const float sideFrictionStiffness2 = 1.0f;
+
+#pragma warning restore SA1303 // Const field names should begin with upper-case letter
+#pragma warning restore SA1203 // Constants should appear before fields
+#pragma warning restore SA1201 // Elements should appear in the correct order
     public void UpdateFriction(float timeStep)
     {
         //calculate the impulse, so that the wheels don't move sidewards
         int numWheel = NumWheels;
         if (numWheel == 0)
+        {
             return;
+        }
 
         Array.Resize(ref forwardWS, numWheel);
         Array.Resize(ref axle, numWheel);
@@ -376,9 +394,12 @@ public class RaycastVehicle : IAction
         //collapse all those loops into one!
         for (int i = 0; i < NumWheels; i++)
         {
-            RigidBody groundObject = wheelInfo[i].RaycastInfo.GroundObject as RigidBody;
+            RigidBody? groundObject = wheelInfo[i].RaycastInfo.GroundObject as RigidBody;
             if (groundObject != null)
+            {
                 numWheelsOnGround++;
+            }
+
             sideImpulse[i] = 0;
             forwardImpulse[i] = 0;
         }
@@ -387,7 +408,7 @@ public class RaycastVehicle : IAction
         {
             WheelInfo wheel = wheelInfo[i];
 
-            RigidBody groundObject = wheel.RaycastInfo.GroundObject as RigidBody;
+            RigidBody? groundObject = wheel.RaycastInfo.GroundObject as RigidBody;
             if (groundObject != null)
             {
                 Matrix4x4 wheelTrans = GetWheelTransformWS(i);
@@ -406,9 +427,7 @@ public class RaycastVehicle : IAction
                 forwardWS[i] = Vector3.Cross(surfNormalWS, axle[i]);
                 forwardWS[i] = Vector3.Normalize(forwardWS[i]);
 
-                ResolveSingleBilateral(chassisBody, wheel.RaycastInfo.ContactPointWS,
-                          groundObject, wheel.RaycastInfo.ContactPointWS,
-                          0, axle[i], ref sideImpulse[i], timeStep);
+                ResolveSingleBilateral(chassisBody, wheel.RaycastInfo.ContactPointWS, groundObject, wheel.RaycastInfo.ContactPointWS, 0, axle[i], ref sideImpulse[i], timeStep);
 
                 sideImpulse[i] *= sideFrictionStiffness2;
             }
@@ -422,7 +441,7 @@ public class RaycastVehicle : IAction
         for (int i = 0; i < NumWheels; i++)
         {
             WheelInfo wheel = wheelInfo[i];
-            RigidBody groundObject = wheel.RaycastInfo.GroundObject as RigidBody;
+            RigidBody? groundObject = wheel.RaycastInfo.GroundObject as RigidBody;
 
             float rollingFriction = 0.0f;
 
@@ -454,19 +473,18 @@ public class RaycastVehicle : IAction
 
                 float maximpSquared = maximp * maximpSide;
 
-
                 forwardImpulse[i] = rollingFriction;//wheel.EngineForce* timeStep;
 
                 float x = forwardImpulse[i] * fwdFactor;
                 float y = sideImpulse[i] * sideFactor;
 
-                float impulseSquared = (x * x + y * y);
+                float impulseSquared = (x * x) + (y * y);
 
                 if (impulseSquared > maximpSquared)
                 {
                     sliding = true;
 
-                    float factor = maximp / (float)System.Math.Sqrt(impulseSquared);
+                    float factor = maximp / MathF.Sqrt(impulseSquared);
 
                     wheelInfo[i].SkidInfo *= factor;
                 }
@@ -500,13 +518,14 @@ public class RaycastVehicle : IAction
             {
                 chassisBody.ApplyImpulse(forwardWS[i] * forwardImpulse[i], rel_pos);
             }
+
             if (sideImpulse[i] != 0)
             {
-                RigidBody groundObject = wheel.RaycastInfo.GroundObject as RigidBody;
+                RigidBody? groundObject = wheel.RaycastInfo.GroundObject as RigidBody;
 
-                Vector3 rel_pos2 = wheel.RaycastInfo.ContactPointWS -
-                    groundObject.CenterOfMassPosition;
+                Debug.Assert(groundObject is not null, $"{nameof(groundObject)} should not be null.");
 
+                Vector3 rel_pos2 = wheel.RaycastInfo.ContactPointWS - groundObject.CenterOfMassPosition;
 
                 Vector3 sideImp = axle[i] * sideImpulse[i];
 
@@ -530,7 +549,9 @@ public class RaycastVehicle : IAction
         }
     }
 
+#pragma warning disable IDE0060 // Remove unused parameter
     public void UpdateSuspension(float step)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         float chassisMass = 1.0f / chassisBody.InvMass;
 
@@ -546,7 +567,7 @@ public class RaycastVehicle : IAction
                     float susp_length = wheel_info.SuspensionRestLength;
                     float current_length = wheel_info.RaycastInfo.SuspensionLength;
 
-                    float length_diff = (susp_length - current_length);
+                    float length_diff = susp_length - current_length;
 
                     force = wheel_info.SuspensionStiffness
                         * length_diff * wheel_info.ClippedInvContactDotSuspension;
@@ -565,6 +586,7 @@ public class RaycastVehicle : IAction
                         {
                             susp_damping = wheel_info.WheelsDampingRelaxation;
                         }
+
                         force -= susp_damping * projected_rel_vel;
                     }
                 }
@@ -611,7 +633,6 @@ public class RaycastVehicle : IAction
             RayCast(wheelInfo[i]);
         }
 
-
         UpdateSuspension(step);
 
         for (int i = 0; i < wheelInfo.Length; i++)
@@ -625,12 +646,12 @@ public class RaycastVehicle : IAction
             {
                 suspensionForce = wheel.MaxSuspensionForce;
             }
+
             Vector3 impulse = wheel.RaycastInfo.ContactNormalWS * suspensionForce * step;
             Vector3 relpos = wheel.RaycastInfo.ContactPointWS - RigidBody.CenterOfMassPosition;
 
             RigidBody.ApplyImpulse(impulse, relpos);
         }
-
 
         UpdateFriction(step);
 
@@ -654,7 +675,7 @@ public class RaycastVehicle : IAction
 
                 float proj2 = Vector3.Dot(fwd, vel);
 
-                wheel.DeltaRotation = (proj2 * step) / (wheel.WheelsRadius);
+                wheel.DeltaRotation = (proj2 * step) / wheel.WheelsRadius;
                 wheel.Rotation += wheel.DeltaRotation;
             }
             else
@@ -681,7 +702,7 @@ public class RaycastVehicle : IAction
         Matrix4x4 steeringMat = Matrix4x4.CreateFromAxisAngle(up, wheel.Steering);
         Matrix4x4 rotatingMat = Matrix4x4.CreateFromAxisAngle(right, -wheel.Rotation);
 
-        Matrix4x4 basis2 = new Matrix4x4();
+        Matrix4x4 basis2 = default;
         basis2.M11 = right.X;
         basis2.M12 = fwd.X;
         basis2.M13 = up.X;
@@ -693,7 +714,7 @@ public class RaycastVehicle : IAction
         basis2.M13 = up.Z;
 
         Matrix4x4 transform = steeringMat * rotatingMat * basis2;
-        transform.Translation = wheel.RaycastInfo.HardPointWS + wheel.RaycastInfo.WheelDirectionWS * wheel.RaycastInfo.SuspensionLength;
+        transform.Translation = wheel.RaycastInfo.HardPointWS + (wheel.RaycastInfo.WheelDirectionWS * wheel.RaycastInfo.SuspensionLength);
         wheel.WorldTransform = transform;
     }
 
@@ -716,23 +737,23 @@ public class RaycastVehicle : IAction
 
 public class DefaultVehicleRaycaster : IVehicleRaycaster
 {
-    private DynamicsWorld _dynamicsWorld;
+    private readonly DynamicsWorld _dynamicsWorld;
 
     public DefaultVehicleRaycaster(DynamicsWorld world)
     {
         _dynamicsWorld = world;
     }
 
-    public object CastRay(ref Vector3 from, ref Vector3 to, VehicleRaycasterResult result)
+    public object? CastRay(ref Vector3 from, ref Vector3 to, VehicleRaycasterResult result)
     {
         //	RayResultCallback& resultCallback;
-        using (var rayCallback = new ClosestRayResultCallback(ref from, ref to))
+        using (ClosestRayResultCallback rayCallback = new ClosestRayResultCallback(ref from, ref to))
         {
             _dynamicsWorld.RayTestRef(ref from, ref to, rayCallback);
 
             if (rayCallback.HasHit)
             {
-                var body = RigidBody.Upcast(rayCallback.CollisionObject);
+                RigidBody? body = RigidBody.Upcast(rayCallback.CollisionObject);
                 if (body != null && body.HasContactResponse)
                 {
                     result.HitPointInWorld = rayCallback.HitPointWorld;
@@ -744,6 +765,7 @@ public class DefaultVehicleRaycaster : IVehicleRaycaster
                 }
             }
         }
+
         return null;
     }
 }

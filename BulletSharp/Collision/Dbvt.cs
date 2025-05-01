@@ -442,7 +442,7 @@ public class Dbvt : BulletObject
         }
 
 #pragma warning disable IDE0060 // Remove unused parameter
-        internal ICollide(ConstructionInfo info)
+        internal ICollide(ConstructionInfo? info)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
         }

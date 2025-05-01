@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using static BulletSharp.UnsafeNativeMethods;
 
@@ -19,7 +18,6 @@ public class AxisSweep3 : BroadphaseInterface
 
     public ushort NumHandles => btAxisSweep3_getNumHandles(Native);
 
-    [DisallowNull]
     public OverlappingPairCallback? OverlappingPairUserCallback
     {
         get => _overlappingPairUserCallback;

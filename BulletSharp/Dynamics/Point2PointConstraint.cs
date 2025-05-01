@@ -13,6 +13,28 @@ public enum Point2PointFlags
     Cfm = 2,
 }
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct Point2PointConstraintFloatData
+{
+    public TypedConstraintFloatData TypedConstraintData;
+    public Vector3FloatData PivotInA;
+    public Vector3FloatData PivotInB;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(Point2PointConstraintFloatData), fieldName).ToInt32();
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct Point2PointConstraintDoubleData
+{
+    public TypedConstraintDoubleData TypedConstraintData;
+    public Vector3DoubleData PivotInA;
+    public Vector3DoubleData PivotInB;
+
+    public static int Offset(string fieldName)
+        => Marshal.OffsetOf(typeof(Point2PointConstraintDoubleData), fieldName).ToInt32();
+}
+
 public class ConstraintSetting
 {
     internal IntPtr Native;
@@ -43,11 +65,9 @@ public class ConstraintSetting
 
 public class Point2PointConstraint : TypedConstraint
 {
-    public Point2PointConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB,
-        Vector3 pivotInA, Vector3 pivotInB)
+    public Point2PointConstraint(RigidBody rigidBodyA, RigidBody rigidBodyB, Vector3 pivotInA, Vector3 pivotInB)
     {
-        IntPtr native = btPoint2PointConstraint_new(rigidBodyA.Native, rigidBodyB.Native,
-            ref pivotInA, ref pivotInB);
+        IntPtr native = btPoint2PointConstraint_new(rigidBodyA.Native, rigidBodyB.Native, ref pivotInA, ref pivotInB);
         InitializeUserOwned(native);
         InitializeMembers(rigidBodyA, rigidBodyB);
     }
@@ -58,13 +78,6 @@ public class Point2PointConstraint : TypedConstraint
         InitializeUserOwned(native);
         InitializeMembers(rigidBodyA, GetFixedBody());
     }
-
-    public void GetInfo1NonVirtual(ConstraintInfo1 info) => btPoint2PointConstraint_getInfo1NonVirtual(Native, info.Native);
-
-    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 body0Trans, Matrix4x4 body1Trans) => btPoint2PointConstraint_getInfo2NonVirtual(Native, info.Native, ref body0Trans,
-            ref body1Trans);
-
-    public void UpdateRhs(float timeStep) => btPoint2PointConstraint_updateRHS(Native, timeStep);
 
     public Point2PointFlags Flags => btPoint2PointConstraint_getFlags(Native);
 
@@ -97,24 +110,12 @@ public class Point2PointConstraint : TypedConstraint
         get => btPoint2PointConstraint_getUseSolveConstraintObsolete(Native);
         set => btPoint2PointConstraint_setUseSolveConstraintObsolete(Native, value);
     }
-}
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct Point2PointConstraintFloatData
-{
-    public TypedConstraintFloatData TypedConstraintData;
-    public Vector3FloatData PivotInA;
-    public Vector3FloatData PivotInB;
+    public void GetInfo1NonVirtual(ConstraintInfo1 info) => btPoint2PointConstraint_getInfo1NonVirtual(Native, info.Native);
 
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(Point2PointConstraintFloatData), fieldName).ToInt32();
-}
+    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 body0Trans, Matrix4x4 body1Trans)
+        => btPoint2PointConstraint_getInfo2NonVirtual(Native, info.Native, ref body0Trans, ref body1Trans);
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct Point2PointConstraintDoubleData
-{
-    public TypedConstraintDoubleData TypedConstraintData;
-    public Vector3DoubleData PivotInA;
-    public Vector3DoubleData PivotInB;
-
-    public static int Offset(string fieldName) => Marshal.OffsetOf(typeof(Point2PointConstraintDoubleData), fieldName).ToInt32();
+    public void UpdateRhs(float timeStep)
+        => btPoint2PointConstraint_updateRHS(Native, timeStep);
 }

@@ -21,36 +21,25 @@ public sealed class SoftBodyRigidBodyCollisionConfiguration : DefaultCollisionCo
         }
 
         IntPtr native = btSoftBodyRigidBodyCollisionConfiguration_new2(constructionInfo.Native);
-        InitializeUserOwned(Native);
+        InitializeUserOwned(native);
 
         _collisionAlgorithmPool = constructionInfo.CollisionAlgorithmPool;
         _persistentManifoldPool = constructionInfo.PersistentManifoldPool;
     }
 
-    public override CollisionAlgorithmCreateFunc GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0,
-        BroadphaseNativeType proxyType1)
+    public override CollisionAlgorithmCreateFunc GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0, BroadphaseNativeType proxyType1)
     {
         IntPtr createFunc = btCollisionConfiguration_getCollisionAlgorithmCreateFunc(Native, (int)proxyType0, (int)proxyType1);
-        if (proxyType0 == BroadphaseNativeType.SoftBodyShape && proxyType1 == BroadphaseNativeType.SoftBodyShape)
-        {
-            return new SoftSoftCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.SoftBodyShape && BroadphaseProxy.IsConvex(proxyType1))
-        {
-            return new SoftRigidCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConvex(proxyType0) && proxyType1 == BroadphaseNativeType.SoftBodyShape)
-        {
-            return new SoftRigidCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (proxyType0 == BroadphaseNativeType.SoftBodyShape && BroadphaseProxy.IsConcave(proxyType1))
-        {
-            return new SoftBodyConcaveCollisionAlgorithm.CreateFunc(createFunc, this);
-        }
-        if (BroadphaseProxy.IsConcave(proxyType0) && proxyType1 == BroadphaseNativeType.SoftBodyShape)
-        {
-            return new SoftBodyConcaveCollisionAlgorithm.SwappedCreateFunc(createFunc, this);
-        }
-        return base.GetCollisionAlgorithmCreateFunc(proxyType0, proxyType1);
+        return proxyType0 == BroadphaseNativeType.SoftBodyShape && proxyType1 == BroadphaseNativeType.SoftBodyShape
+            ? new SoftSoftCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.SoftBodyShape && BroadphaseProxy.IsConvex(proxyType1)
+            ? new SoftRigidCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConvex(proxyType0) && proxyType1 == BroadphaseNativeType.SoftBodyShape
+            ? new SoftRigidCollisionAlgorithm.CreateFunc(createFunc, this)
+            : proxyType0 == BroadphaseNativeType.SoftBodyShape && BroadphaseProxy.IsConcave(proxyType1)
+            ? new SoftBodyConcaveCollisionAlgorithm.CreateFunc(createFunc, this)
+            : BroadphaseProxy.IsConcave(proxyType0) && proxyType1 == BroadphaseNativeType.SoftBodyShape
+            ? new SoftBodyConcaveCollisionAlgorithm.SwappedCreateFunc(createFunc, this)
+            : base.GetCollisionAlgorithmCreateFunc(proxyType0, proxyType1);
     }
 }

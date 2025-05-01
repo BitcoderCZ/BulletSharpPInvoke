@@ -16,11 +16,19 @@ public abstract class ConstraintSolver : BulletDisposableObject
     {
     }
 
-    public void AllSolved(ContactSolverInfo __unnamed0, DebugDraw __unnamed1) => btConstraintSolver_allSolved(Native, __unnamed0.Native, __unnamed1 != null ? __unnamed1.Native : IntPtr.Zero);
+    public ConstraintSolverType SolverType => btConstraintSolver_getSolverType(Native);
 
-    public void PrepareSolve(int __unnamed0, int __unnamed1) => btConstraintSolver_prepareSolve(Native, __unnamed0, __unnamed1);
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public void AllSolved(ContactSolverInfo __unnamed0, DebugDraw? __unnamed1)
+        => btConstraintSolver_allSolved(Native, __unnamed0.Native, __unnamed1 != null ? __unnamed1.Native : IntPtr.Zero);
 
-    public void Reset() => btConstraintSolver_reset(Native);
+    public void PrepareSolve(int __unnamed0, int __unnamed1)
+        => btConstraintSolver_prepareSolve(Native, __unnamed0, __unnamed1);
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+
+    public void Reset()
+        => btConstraintSolver_reset(Native);
+
     /*
 		public float SolveGroup(CollisionObject bodies, int numBodies, PersistentManifold manifold,
 			int numManifolds, TypedConstraint constraints, int numConstraints, ContactSolverInfo info,
@@ -31,7 +39,6 @@ public abstract class ConstraintSolver : BulletDisposableObject
 				info._native, DebugDraw.GetUnmanaged(debugDrawer), dispatcher._native);
 		}
 		*/
-    public ConstraintSolverType SolverType => btConstraintSolver_getSolverType(Native);
 
     protected override void Dispose(bool disposing)
     {

@@ -96,7 +96,7 @@ public class DefaultCollisionConfiguration : CollisionConfiguration
     }
 
 #pragma warning disable IDE0060
-    internal DefaultCollisionConfiguration(ConstructionInfo info)
+    internal DefaultCollisionConfiguration(ConstructionInfo? info)
 #pragma warning restore IDE0060
     {
     }

@@ -68,55 +68,6 @@ public class ConeTwistConstraint : TypedConstraint
         InitializeMembers(rigidBodyA, GetFixedBody());
     }
 
-    public void CalcAngleInfo()
-        => btConeTwistConstraint_calcAngleInfo(Native);
-
-    public void CalcAngleInfo2Ref(ref Matrix4x4 transA, ref Matrix4x4 transB, ref Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
-        => btConeTwistConstraint_calcAngleInfo2(Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
-
-    public void CalcAngleInfo2(Matrix4x4 transA, Matrix4x4 transB, Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
-        => btConeTwistConstraint_calcAngleInfo2(Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
-
-    public void EnableMotor(bool b)
-        => btConeTwistConstraint_enableMotor(Native, b);
-
-    public void GetInfo2NonVirtualRef(ConstraintInfo2 info, ref Matrix4x4 transA, ref Matrix4x4 transB, Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
-        => btConeTwistConstraint_getInfo2NonVirtual(Native, info.Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
-
-    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 transA, Matrix4x4 transB, Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
-        => btConeTwistConstraint_getInfo2NonVirtual(Native, info.Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
-
-    public float GetLimit(int limitIndex)
-        => btConeTwistConstraint_getLimit(Native, limitIndex);
-
-    public Vector3 GetPointForAngle(float fAngleInRadians, float fLength)
-    {
-        Vector3 value;
-        btConeTwistConstraint_GetPointForAngle(Native, fAngleInRadians, fLength, out value);
-        return value;
-    }
-
-    public void SetFramesRef(ref Matrix4x4 frameA, ref Matrix4x4 frameB)
-        => btConeTwistConstraint_setFrames(Native, ref frameA, ref frameB);
-
-    public void SetFrames(Matrix4x4 frameA, Matrix4x4 frameB)
-        => btConeTwistConstraint_setFrames(Native, ref frameA, ref frameB);
-
-    public void SetLimit(int limitIndex, float limitValue)
-        => btConeTwistConstraint_setLimit(Native, limitIndex, limitValue);
-
-    public void SetLimit(float swingSpan1, float swingSpan2, float twistSpan, float softness = 1.0f, float biasFactor = 0.3f, float relaxationFactor = 1.0f)
-        => btConeTwistConstraint_setLimit2(Native, swingSpan1, swingSpan2, twistSpan, softness, biasFactor, relaxationFactor);
-
-    public void SetMaxMotorImpulseNormalized(float maxMotorImpulse)
-        => btConeTwistConstraint_setMaxMotorImpulseNormalized(Native, maxMotorImpulse);
-
-    public void SetMotorTargetInConstraintSpace(Quaternion q)
-        => btConeTwistConstraint_setMotorTargetInConstraintSpace(Native, ref q);
-
-    public void UpdateRhs(float timeStep)
-        => btConeTwistConstraint_updateRHS(Native, timeStep);
-
     public Matrix4x4 AFrame
     {
         get
@@ -219,4 +170,53 @@ public class ConeTwistConstraint : TypedConstraint
     public float TwistLimitSign => btConeTwistConstraint_getTwistLimitSign(Native);
 
     public float TwistSpan => btConeTwistConstraint_getTwistSpan(Native);
+
+    public void CalcAngleInfo()
+        => btConeTwistConstraint_calcAngleInfo(Native);
+
+    public void CalcAngleInfo2Ref(ref Matrix4x4 transA, ref Matrix4x4 transB, ref Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
+        => btConeTwistConstraint_calcAngleInfo2(Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
+
+    public void CalcAngleInfo2(Matrix4x4 transA, Matrix4x4 transB, Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
+        => btConeTwistConstraint_calcAngleInfo2(Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
+
+    public void EnableMotor(bool b)
+        => btConeTwistConstraint_enableMotor(Native, b);
+
+    public void GetInfo2NonVirtualRef(ConstraintInfo2 info, ref Matrix4x4 transA, ref Matrix4x4 transB, Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
+        => btConeTwistConstraint_getInfo2NonVirtual(Native, info.Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
+
+    public void GetInfo2NonVirtual(ConstraintInfo2 info, Matrix4x4 transA, Matrix4x4 transB, Matrix4x4 invInertiaWorldA, Matrix4x4 invInertiaWorldB)
+        => btConeTwistConstraint_getInfo2NonVirtual(Native, info.Native, ref transA, ref transB, ref invInertiaWorldA, ref invInertiaWorldB);
+
+    public float GetLimit(int limitIndex)
+        => btConeTwistConstraint_getLimit(Native, limitIndex);
+
+    public Vector3 GetPointForAngle(float fAngleInRadians, float fLength)
+    {
+        Vector3 value;
+        btConeTwistConstraint_GetPointForAngle(Native, fAngleInRadians, fLength, out value);
+        return value;
+    }
+
+    public void SetFramesRef(ref Matrix4x4 frameA, ref Matrix4x4 frameB)
+        => btConeTwistConstraint_setFrames(Native, ref frameA, ref frameB);
+
+    public void SetFrames(Matrix4x4 frameA, Matrix4x4 frameB)
+        => btConeTwistConstraint_setFrames(Native, ref frameA, ref frameB);
+
+    public void SetLimit(int limitIndex, float limitValue)
+        => btConeTwistConstraint_setLimit(Native, limitIndex, limitValue);
+
+    public void SetLimit(float swingSpan1, float swingSpan2, float twistSpan, float softness = 1.0f, float biasFactor = 0.3f, float relaxationFactor = 1.0f)
+        => btConeTwistConstraint_setLimit2(Native, swingSpan1, swingSpan2, twistSpan, softness, biasFactor, relaxationFactor);
+
+    public void SetMaxMotorImpulseNormalized(float maxMotorImpulse)
+        => btConeTwistConstraint_setMaxMotorImpulseNormalized(Native, maxMotorImpulse);
+
+    public void SetMotorTargetInConstraintSpace(Quaternion q)
+        => btConeTwistConstraint_setMotorTargetInConstraintSpace(Native, ref q);
+
+    public void UpdateRhs(float timeStep)
+        => btConeTwistConstraint_updateRHS(Native, timeStep);
 }

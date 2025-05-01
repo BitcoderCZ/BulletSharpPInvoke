@@ -61,12 +61,12 @@ csharp_style_var_for_built_in_types = false:error
 csharp_style_var_when_type_is_apparent = false:silent
 csharp_style_var_elsewhere = false:silent
 csharp_space_around_binary_operators = before_and_after
-dotnet_diagnostic.SA1604.severity = warning
+dotnet_diagnostic.SA1604.severity = suggestion
 dotnet_diagnostic.SA1605.severity = warning
 dotnet_diagnostic.SA1606.severity = warning
 dotnet_diagnostic.SA1607.severity = warning
 dotnet_diagnostic.SA1608.severity = warning
-dotnet_diagnostic.SA1609.severity = warning
+dotnet_diagnostic.SA1609.severity = suggestion
 dotnet_diagnostic.SA1610.severity = warning
 dotnet_diagnostic.SA1612.severity = warning
 dotnet_diagnostic.SA1613.severity = warning
@@ -113,6 +113,9 @@ dotnet_diagnostic.CA1051.severity = silent
 dotnet_diagnostic.SA1515.severity = suggestion
 dotnet_diagnostic.SA1512.severity = suggestion
 dotnet_diagnostic.SA1649.severity = suggestion
+
+# SA1108: Block statements should not contain embedded comments
+dotnet_diagnostic.SA1108.severity = suggestion
 
 [*.{cs,vb}]
 #### Naming styles ####

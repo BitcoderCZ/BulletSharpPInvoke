@@ -59,7 +59,7 @@ public abstract class StridingMeshInterface : BulletDisposableObject
 
     public unsafe UnmanagedMemoryStream GetIndexStream(int subpart = 0)
     {
-        btStridingMeshInterface_getLockedReadOnlyVertexIndexBase(Native, out _, out _, out _, out _, out var indexBase, out int indexStride, out int numFaces, out _, subpart);
+        btStridingMeshInterface_getLockedReadOnlyVertexIndexBase(Native, out _, out _, out _, out _, out IntPtr indexBase, out int indexStride, out int numFaces, out _, subpart);
 
         int length = numFaces * indexStride;
         return new UnmanagedMemoryStream((byte*)indexBase.ToPointer(), length, length, FileAccess.ReadWrite);
@@ -67,7 +67,7 @@ public abstract class StridingMeshInterface : BulletDisposableObject
 
     public unsafe UnmanagedMemoryStream GetVertexStream(int subpart = 0)
     {
-        btStridingMeshInterface_getLockedReadOnlyVertexIndexBase(Native, out var vertexBase, out int numVerts, out _, out int vertexStride, out _, out _, out _, out _, subpart);
+        btStridingMeshInterface_getLockedReadOnlyVertexIndexBase(Native, out IntPtr vertexBase, out int numVerts, out _, out int vertexStride, out _, out _, out _, out _, subpart);
 
         int length = numVerts * vertexStride;
         return new UnmanagedMemoryStream((byte*)vertexBase.ToPointer(), length, length, FileAccess.ReadWrite);

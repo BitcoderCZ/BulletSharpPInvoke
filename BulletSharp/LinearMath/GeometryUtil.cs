@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -6,14 +7,14 @@ namespace BulletSharp;
 
 public static class GeometryUtil
 {
-    public static bool AreVerticesBehindPlane(Vector3 planeNormal, float planeConstant, IEnumerable<Vector3> vertices,
-        float margin) => vertices.All(v => Vector3.Dot(planeNormal, v) + planeConstant <= margin);
+    public static bool AreVerticesBehindPlane(Vector3 planeNormal, float planeConstant, IEnumerable<Vector3> vertices, float margin)
+        => vertices.All(v => Vector3.Dot(planeNormal, v) + planeConstant <= margin);
 
     public static List<Vector4> GetPlaneEquationsFromVertices(ICollection<Vector3> vertices)
     {
         int numVertices = vertices.Count;
-        Vector3[] vertexArray = vertices.ToArray();
-        var planeEquations = new List<Vector4>();
+        Vector3[] vertexArray = [.. vertices];
+        List<Vector4> planeEquations = [];
 
         for (int i = 0; i < numVertices; i++)
         {
@@ -52,13 +53,16 @@ public static class GeometryUtil
         }
 
         return planeEquations;
-    }
 
-    private static bool Vector4EnumerableContainsVector3(IEnumerable<Vector4> vertices, Vector3 vertex) => vertices.Any(v =>
-                                                                                                                {
-                                                                                                                    var v3 = new Vector3(v.X, v.Y, v.Z);
-                                                                                                                    return Vector3.Dot(v3, vertex) > 0.999;
-                                                                                                                });
+        static bool Vector4EnumerableContainsVector3(IEnumerable<Vector4> vertices, Vector3 vertex)
+        {
+            return vertices.Any(v =>
+            {
+                Vector3 v3 = new Vector3(v.X, v.Y, v.Z);
+                return Vector3.Dot(v3, vertex) > 0.999;
+            });
+        }
+    }
 
     public static List<Vector3> GetVerticesFromPlaneEquations(ICollection<Vector4> planeEquations)
     {
@@ -73,7 +77,7 @@ public static class GeometryUtil
             i++;
         }
 
-        var vertices = new List<Vector3>();
+        List<Vector3> vertices = [];
 
         for (i = 0; i < numPlanes; i++)
         {
@@ -96,7 +100,7 @@ public static class GeometryUtil
                         //	N1 . ( N2 * N3 )  
 
                         float quotient = Vector3.Dot(planeNormals[i], n2n3);
-                        if (System.Math.Abs(quotient) > 0.000001)
+                        if (MathF.Abs(quotient) > 0.000001)
                         {
                             quotient = -1.0f / quotient;
                             n2n3 *= planeConstants[i];
@@ -118,6 +122,6 @@ public static class GeometryUtil
         return vertices;
     }
 
-    public static bool IsPointInsidePlanes(IEnumerable<Vector4> planeEquations,
-        Vector3 point, float margin) => planeEquations.All(p => Vector3.Dot(new Vector3(p.X, p.Y, p.Z), point) + p.W <= margin);
+    public static bool IsPointInsidePlanes(IEnumerable<Vector4> planeEquations, Vector3 point, float margin)
+        => planeEquations.All(p => Vector3.Dot(new Vector3(p.X, p.Y, p.Z), point) + p.W <= margin);
 }

@@ -7,7 +7,7 @@ namespace BulletSharp.SoftBody;
 
 public class AlignedTetraArrayDebugView
 {
-    private AlignedTetraArray _array;
+    private readonly AlignedTetraArray _array;
 
     public AlignedTetraArrayDebugView(AlignedTetraArray array)
     {
@@ -20,11 +20,12 @@ public class AlignedTetraArrayDebugView
         get
         {
             int count = _array.Count;
-            var array = new Tetra[count];
+            Tetra[] array = new Tetra[count];
             for (int i = 0; i < count; i++)
             {
                 array[i] = _array[i];
             }
+
             return array;
         }
     }
@@ -32,9 +33,9 @@ public class AlignedTetraArrayDebugView
 
 public class AlignedTetraArrayEnumerator : IEnumerator<Tetra>
 {
+    private readonly int _count;
+    private readonly AlignedTetraArray _array;
     private int _i;
-    private int _count;
-    private AlignedTetraArray _array;
 
     public AlignedTetraArrayEnumerator(AlignedTetraArray array)
     {
@@ -45,11 +46,11 @@ public class AlignedTetraArrayEnumerator : IEnumerator<Tetra>
 
     public Tetra Current => _array[_i];
 
+    object System.Collections.IEnumerator.Current => _array[_i];
+
     public void Dispose()
     {
     }
-
-    object System.Collections.IEnumerator.Current => _array[_i];
 
     public bool MoveNext()
     {
@@ -57,54 +58,60 @@ public class AlignedTetraArrayEnumerator : IEnumerator<Tetra>
         return _i != _count;
     }
 
-    public void Reset() => _i = 0;
+    public void Reset()
+        => _i = 0;
 }
 
 [Serializable]
 [DebuggerTypeProxy(typeof(AlignedTetraArrayDebugView))]
 [DebuggerDisplay("Count = {Count}")]
-public class AlignedTetraArray : BulletObject, IList<Tetra>
+public class AlignedTetraArray : BulletObject, IList<Tetra>, IReadOnlyList<Tetra>
 {
     internal AlignedTetraArray(IntPtr native)
     {
         Initialize(native);
     }
 
-    public int IndexOf(Tetra item) => throw new NotImplementedException();
-
-    public void Insert(int index, Tetra item) => throw new NotImplementedException();
-
-    public void RemoveAt(int index) => throw new NotImplementedException();
-
-    public Tetra this[int index]
-    {
-        get
-        {
-            if ((uint)index >= (uint)Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-            return new Tetra(btAlignedObjectArray_btSoftBody_Tetra_at(Native, index));
-        }
-
-        set => throw new NotImplementedException();
-    }
-
-    public void Add(Tetra item) => btAlignedObjectArray_btSoftBody_Tetra_push_back(Native, item.Native);
-
-    public void Clear() => btAlignedObjectArray_btSoftBody_Tetra_resizeNoInitialize(Native, 0);
-
-    public bool Contains(Tetra item) => throw new NotImplementedException();
-
-    public void CopyTo(Tetra[] array, int arrayIndex) => throw new NotImplementedException();
-
     public int Count => btAlignedObjectArray_btSoftBody_Tetra_size(Native);
 
     public bool IsReadOnly => false;
 
-    public bool Remove(Tetra item) => throw new NotImplementedException();
+    public Tetra this[int index]
+    {
+        get => (uint)index >= (uint)Count
+              ? throw new ArgumentOutOfRangeException(nameof(index))
+              : new Tetra(btAlignedObjectArray_btSoftBody_Tetra_at(Native, index));
 
-    public IEnumerator<Tetra> GetEnumerator() => new AlignedTetraArrayEnumerator(this);
+        set => throw new NotImplementedException();
+    }
 
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => new AlignedTetraArrayEnumerator(this);
+    public int IndexOf(Tetra item)
+        => throw new NotImplementedException();
+
+    public void Insert(int index, Tetra item)
+        => throw new NotImplementedException();
+
+    public void RemoveAt(int index)
+        => throw new NotImplementedException();
+
+    public void Add(Tetra item)
+        => btAlignedObjectArray_btSoftBody_Tetra_push_back(Native, item.Native);
+
+    public void Clear()
+        => btAlignedObjectArray_btSoftBody_Tetra_resizeNoInitialize(Native, 0);
+
+    public bool Contains(Tetra item)
+        => throw new NotImplementedException();
+
+    public void CopyTo(Tetra[] array, int arrayIndex)
+        => throw new NotImplementedException();
+
+    public bool Remove(Tetra item)
+        => throw new NotImplementedException();
+
+    public IEnumerator<Tetra> GetEnumerator()
+        => new AlignedTetraArrayEnumerator(this);
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        => new AlignedTetraArrayEnumerator(this);
 }

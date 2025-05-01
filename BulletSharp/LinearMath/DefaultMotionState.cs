@@ -27,10 +27,6 @@ public class DefaultMotionState : MotionState
         InitializeUserOwned(native);
     }
 
-    public override void GetWorldTransform(out Matrix4x4 worldTrans) => btMotionState_getWorldTransform(Native, out worldTrans);
-
-    public override void SetWorldTransform(ref Matrix4x4 worldTrans) => btMotionState_setWorldTransform(Native, ref worldTrans);
-
     public Matrix4x4 CenterOfMassOffset
     {
         get
@@ -69,4 +65,10 @@ public class DefaultMotionState : MotionState
         get => btDefaultMotionState_getUserPointer(Native);
         set => btDefaultMotionState_setUserPointer(Native, value);
     }
+
+    public override void GetWorldTransform(out Matrix4x4 worldTrans)
+        => btMotionState_getWorldTransform(Native, out worldTrans);
+
+    public override void SetWorldTransform(ref Matrix4x4 worldTrans)
+        => btMotionState_setWorldTransform(Native, ref worldTrans);
 }

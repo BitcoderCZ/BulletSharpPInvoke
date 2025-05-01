@@ -7,7 +7,7 @@ namespace BulletSharp.SoftBody;
 
 public class AlignedAnchorArrayDebugView
 {
-    private AlignedAnchorArray _array;
+    private readonly AlignedAnchorArray _array;
 
     public AlignedAnchorArrayDebugView(AlignedAnchorArray array)
     {
@@ -20,11 +20,12 @@ public class AlignedAnchorArrayDebugView
         get
         {
             int count = _array.Count;
-            var array = new Anchor[count];
+            Anchor[] array = new Anchor[count];
             for (int i = 0; i < count; i++)
             {
                 array[i] = _array[i];
             }
+
             return array;
         }
     }
@@ -32,9 +33,9 @@ public class AlignedAnchorArrayDebugView
 
 public class AlignedAnchorArrayEnumerator : IEnumerator<Anchor>
 {
+    private readonly int _count;
+    private readonly AlignedAnchorArray _array;
     private int _i;
-    private int _count;
-    private AlignedAnchorArray _array;
 
     public AlignedAnchorArrayEnumerator(AlignedAnchorArray array)
     {
@@ -45,11 +46,11 @@ public class AlignedAnchorArrayEnumerator : IEnumerator<Anchor>
 
     public Anchor Current => _array[_i];
 
+    object System.Collections.IEnumerator.Current => _array[_i];
+
     public void Dispose()
     {
     }
-
-    object System.Collections.IEnumerator.Current => _array[_i];
 
     public bool MoveNext()
     {
@@ -57,54 +58,60 @@ public class AlignedAnchorArrayEnumerator : IEnumerator<Anchor>
         return _i != _count;
     }
 
-    public void Reset() => _i = 0;
+    public void Reset()
+        => _i = 0;
 }
 
 [Serializable]
 [DebuggerTypeProxy(typeof(AlignedAnchorArrayDebugView))]
 [DebuggerDisplay("Count = {Count}")]
-public class AlignedAnchorArray : BulletObject, IList<Anchor>
+public class AlignedAnchorArray : BulletObject, IList<Anchor>, IReadOnlyList<Anchor>
 {
     internal AlignedAnchorArray(IntPtr native)
     {
         Initialize(native);
     }
 
-    public int IndexOf(Anchor item) => throw new NotImplementedException();
-
-    public void Insert(int index, Anchor item) => throw new NotImplementedException();
-
-    public void RemoveAt(int index) => throw new NotImplementedException();
-
-    public Anchor this[int index]
-    {
-        get
-        {
-            if ((uint)index >= (uint)Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-            return new Anchor(btAlignedObjectArray_btSoftBody_Anchor_at(Native, index));
-        }
-
-        set => throw new NotImplementedException();
-    }
-
-    public void Add(Anchor item) => btAlignedObjectArray_btSoftBody_Anchor_push_back(Native, item.Native);
-
-    public void Clear() => btAlignedObjectArray_btSoftBody_Anchor_resizeNoInitialize(Native, 0);
-
-    public bool Contains(Anchor item) => throw new NotImplementedException();
-
-    public void CopyTo(Anchor[] array, int arrayIndex) => throw new NotImplementedException();
-
     public int Count => btAlignedObjectArray_btSoftBody_Anchor_size(Native);
 
     public bool IsReadOnly => false;
 
-    public bool Remove(Anchor item) => throw new NotImplementedException();
+    public Anchor this[int index]
+    {
+        get => (uint)index >= (uint)Count
+              ? throw new ArgumentOutOfRangeException(nameof(index))
+              : new Anchor(btAlignedObjectArray_btSoftBody_Anchor_at(Native, index));
 
-    public IEnumerator<Anchor> GetEnumerator() => new AlignedAnchorArrayEnumerator(this);
+        set => throw new NotImplementedException();
+    }
 
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => new AlignedAnchorArrayEnumerator(this);
+    public int IndexOf(Anchor item)
+        => throw new NotImplementedException();
+
+    public void Insert(int index, Anchor item)
+        => throw new NotImplementedException();
+
+    public void RemoveAt(int index)
+        => throw new NotImplementedException();
+
+    public void Add(Anchor item)
+        => btAlignedObjectArray_btSoftBody_Anchor_push_back(Native, item.Native);
+
+    public void Clear()
+        => btAlignedObjectArray_btSoftBody_Anchor_resizeNoInitialize(Native, 0);
+
+    public bool Contains(Anchor item)
+        => throw new NotImplementedException();
+
+    public void CopyTo(Anchor[] array, int arrayIndex)
+        => throw new NotImplementedException();
+
+    public bool Remove(Anchor item)
+        => throw new NotImplementedException();
+
+    public IEnumerator<Anchor> GetEnumerator()
+        => new AlignedAnchorArrayEnumerator(this);
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        => new AlignedAnchorArrayEnumerator(this);
 }

@@ -23,7 +23,7 @@ public struct RaycastInfo
 {
     public Vector3 ContactNormalWS;
     public Vector3 ContactPointWS;
-    public BulletObject GroundObject;
+    public BulletObject? GroundObject;
     public Vector3 HardPointWS;
     public bool IsInContact;
     public float SuspensionLength;
@@ -33,6 +33,32 @@ public struct RaycastInfo
 
 public class WheelInfo
 {
+    public bool IsFrontWheel;
+    public float Brake;
+    public Vector3 ChassisConnectionPointCS;
+    public IntPtr ClientInfo;
+    public float ClippedInvContactDotSuspension;
+    public float DeltaRotation;
+    public float EngineForce;
+    public float FrictionSlip;
+    public float MaxSuspensionForce;
+    public float MaxSuspensionTravelCm;
+    public RaycastInfo RaycastInfo;
+    public float RollInfluence;
+    public float Rotation;
+    public float SkidInfo;
+    public float Steering;
+    public float SuspensionRelativeVelocity;
+    public float SuspensionRestLength1;
+    public float SuspensionStiffness;
+    public Vector3 WheelAxleCS;
+    public Vector3 WheelDirectionCS;
+    public float WheelsDampingCompression;
+    public float WheelsDampingRelaxation;
+    public float WheelsRadius;
+    public float WheelsSuspensionForce;
+    public Matrix4x4 WorldTransform;
+
     public WheelInfo(WheelInfoConstructionInfo ci)
     {
         SuspensionRestLength1 = ci.SuspensionRestLength;
@@ -61,8 +87,10 @@ public class WheelInfo
         //WheelsSuspensionForce = 0;
         //SuspensionRelativeVelocity = 0;
         //SkidInfo = 0;
-        RaycastInfo = new RaycastInfo();
+        RaycastInfo = default;
     }
+
+    public float SuspensionRestLength => SuspensionRestLength1;
 
     public void UpdateWheel(RigidBody chassis, RaycastInfo raycastInfo)
     {
@@ -84,9 +112,7 @@ public class WheelInfo
                 SuspensionRelativeVelocity = projVel * inv;
                 ClippedInvContactDotSuspension = inv;
             }
-
         }
-
         else    // Not in contact : position wheel in a nice (rest length) position
         {
             RaycastInfo.SuspensionLength = SuspensionRestLength;
@@ -95,35 +121,4 @@ public class WheelInfo
             ClippedInvContactDotSuspension = 1.0f;
         }
     }
-
-    public float SuspensionRestLength
-    {
-        get { return SuspensionRestLength1; }
-    }
-
-    public bool IsFrontWheel;
-    public float Brake;
-    public Vector3 ChassisConnectionPointCS;
-    public IntPtr ClientInfo;
-    public float ClippedInvContactDotSuspension;
-    public float DeltaRotation;
-    public float EngineForce;
-    public float FrictionSlip;
-    public float MaxSuspensionForce;
-    public float MaxSuspensionTravelCm;
-    public RaycastInfo RaycastInfo;
-    public float RollInfluence;
-    public float Rotation;
-    public float SkidInfo;
-    public float Steering;
-    public float SuspensionRelativeVelocity;
-    public float SuspensionRestLength1;
-    public float SuspensionStiffness;
-    public Vector3 WheelAxleCS;
-    public Vector3 WheelDirectionCS;
-    public float WheelsDampingCompression;
-    public float WheelsDampingRelaxation;
-    public float WheelsRadius;
-    public float WheelsSuspensionForce;
-    public Matrix4x4 WorldTransform;
 }

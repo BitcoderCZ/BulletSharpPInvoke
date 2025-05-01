@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 #if !BULLET_OBJECT_TRACKING
 using System.Diagnostics;
 #endif
@@ -20,7 +19,7 @@ public sealed class BulletObjectTracker
     {
         lock (_userOwnedObjectsLock)
         {
-            return UserOwnedObjects.ToList();
+            return [.. UserOwnedObjects];
         }
     }
 
@@ -80,7 +79,7 @@ public sealed class BulletObjectTracker
 		}
 #else
 #pragma warning disable SA1201 // Elements should appear in the correct order
-    public static BulletObjectTracker Current { get; } = null;
+    public static BulletObjectTracker? Current { get; } = null;
 #pragma warning restore SA1201 // Elements should appear in the correct order
 
     [Conditional("BULLET_OBJECT_TRACKING")]

@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using static BulletSharp.UnsafeNativeMethods;
@@ -128,19 +127,22 @@ internal struct CollisionObjectDoubleData
 
 public class CollisionObject : BulletDisposableObject
 {
-    protected CollisionShape? _collisionShape;
+    protected CollisionShape _collisionShape;
     private BroadphaseProxy? _broadphaseHandle;
 
     public CollisionObject()
     {
         IntPtr native = btCollisionObject_new();
         InitializeCollisionObject(native);
+
+        _collisionShape = null!;
     }
 
 #pragma warning disable IDE0060 // Remove unused parameter
     internal CollisionObject(ConstructionInfo? info)
 #pragma warning restore IDE0060 // Remove unused parameter
     {
+        _collisionShape = null!;
     }
 
     public ActivationState ActivationState
@@ -190,8 +192,7 @@ public class CollisionObject : BulletDisposableObject
         set => btCollisionObject_setCollisionFlags(Native, value);
     }
 
-    [DisallowNull]
-    public CollisionShape? CollisionShape
+    public CollisionShape CollisionShape
     {
         get => _collisionShape;
         set

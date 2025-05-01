@@ -19,11 +19,12 @@ public class AlignedCollisionObjectArrayDebugView
     {
         get
         {
-            var array = new CollisionObject[_array.Count];
+            CollisionObject[] array = new CollisionObject[_array.Count];
             for (int i = 0; i < _array.Count; i++)
             {
                 array[i] = _array[i];
             }
+
             return array;
         }
     }
@@ -31,9 +32,9 @@ public class AlignedCollisionObjectArrayDebugView
 
 public class AlignedCollisionObjectArrayEnumerator : IEnumerator<CollisionObject>
 {
-    private int _i = -1;
     private readonly int _count;
     private readonly IReadOnlyList<CollisionObject> _array;
+    private int _i = -1;
 
     public AlignedCollisionObjectArrayEnumerator(IReadOnlyList<CollisionObject> array)
     {
@@ -43,11 +44,11 @@ public class AlignedCollisionObjectArrayEnumerator : IEnumerator<CollisionObject
 
     public CollisionObject Current => _array[_i];
 
+    object System.Collections.IEnumerator.Current => _array[_i];
+
     public void Dispose()
     {
     }
-
-    object System.Collections.IEnumerator.Current => _array[_i];
 
     public bool MoveNext()
     {
@@ -63,8 +64,8 @@ public class AlignedCollisionObjectArrayEnumerator : IEnumerator<CollisionObject
 [DebuggerDisplay("Count = {Count}")]
 public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>, IReadOnlyList<CollisionObject>
 {
-    private CollisionWorld _collisionWorld;
-    private List<CollisionObject> _backingList;
+    private readonly CollisionWorld? _collisionWorld;
+    private readonly List<CollisionObject>? _backingList;
 
     internal AlignedCollisionObjectArray(IntPtr native)
     {
@@ -79,6 +80,21 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
             _collisionWorld = collisionWorld;
             _backingList = [];
         }
+    }
+
+    public int Count => btAlignedObjectArray_btCollisionObjectPtr_size(Native);
+
+    public bool IsReadOnly => false;
+
+    public CollisionObject this[int index]
+    {
+        get => _backingList != null
+              ? _backingList[index]
+              : (uint)index >= (uint)Count
+              ? throw new ArgumentOutOfRangeException(nameof(index))
+              : CollisionObject.GetManaged(btAlignedObjectArray_btCollisionObjectPtr_at(Native, index))!;
+
+        set => throw new NotImplementedException();
     }
 
     public void Add(CollisionObject item)
@@ -104,43 +120,13 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
             }
 
             SetBodyBroadphaseHandle(item, _collisionWorld.Broadphase);
+            Debug.Assert(_backingList is not null, $"{nameof(_backingList)} should not be null.");
             _backingList.Add(item);
         }
         else
         {
             btAlignedObjectArray_btCollisionObjectPtr_push_back(Native, item.Native);
         }
-    }
-
-    internal void Add(CollisionObject item, int group, int mask)
-    {
-        if (item is RigidBody)
-        {
-            if (item.CollisionShape == null)
-            {
-                return;
-            }
-
-            btDynamicsWorld_addRigidBody2(_collisionWorld.Native, item.Native, group, mask);
-        }
-        else if (item is SoftBody.SoftBody)
-        {
-            if (_collisionWorld is SoftBody.DeformableMultiBodyDynamicsWorld)
-            {
-                btDeformableMultiBodyDynamicsWorld_addSoftBody(_collisionWorld.Native, item.Native, group, mask);
-            }
-            else
-            {
-                btSoftRigidDynamicsWorld_addSoftBody3(_collisionWorld.Native, item.Native, group, mask);
-            }
-        }
-        else
-        {
-            btCollisionWorld_addCollisionObject3(_collisionWorld.Native, item.Native, group, mask);
-        }
-
-        SetBodyBroadphaseHandle(item, _collisionWorld.Broadphase);
-        _backingList.Add(item);
     }
 
     public void Clear()
@@ -151,7 +137,8 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
         }
     }
 
-    public bool Contains(CollisionObject item) => IndexOf(item) != -1;
+    public bool Contains(CollisionObject item)
+        => IndexOf(item) != -1;
 
     public void CopyTo(CollisionObject[] array, int arrayIndex)
     {
@@ -178,14 +165,9 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
     }
 
     public int IndexOf(CollisionObject item)
-    {
-        if (item == null)
-        {
-            return -1;
-        }
-
-        return btAlignedObjectArray_btCollisionObjectPtr_findLinearSearch2(Native, item.Native);
-    }
+        => item == null
+        ? -1
+        : btAlignedObjectArray_btCollisionObjectPtr_findLinearSearch2(Native, item.Native);
 
     public void Insert(int index, CollisionObject item)
         => throw new NotImplementedException();
@@ -213,6 +195,7 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
         CollisionObject item = this[index];
         IntPtr itemPtr = item.Native;
 
+        Debug.Assert(_collisionWorld is not null, $"{nameof(_collisionWorld)} should not be null.");
         if (item is SoftBody.SoftBody)
         {
             btSoftRigidDynamicsWorld_removeSoftBody(_collisionWorld.Native, itemPtr);
@@ -225,6 +208,7 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
         {
             btCollisionWorld_removeCollisionObject(_collisionWorld.Native, itemPtr);
         }
+
         item.BroadphaseHandle = null;
 
         // Swap the last item with the item to be removed like Bullet does.
@@ -237,6 +221,51 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
         _backingList.RemoveAt(count);
     }
 
+    public IEnumerator<CollisionObject> GetEnumerator()
+        => _backingList != null
+        ? _backingList.GetEnumerator()
+        : new AlignedCollisionObjectArrayEnumerator(this);
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        => _backingList != null
+        ? _backingList.GetEnumerator()
+        : new AlignedCollisionObjectArrayEnumerator(this);
+
+    internal void Add(CollisionObject item, int group, int mask)
+    {
+        if (item is RigidBody)
+        {
+            if (item.CollisionShape == null)
+            {
+                return;
+            }
+
+            Debug.Assert(_collisionWorld is not null, $"{nameof(_collisionWorld)} should not be null.");
+            btDynamicsWorld_addRigidBody2(_collisionWorld.Native, item.Native, group, mask);
+        }
+        else if (item is SoftBody.SoftBody)
+        {
+            if (_collisionWorld is SoftBody.DeformableMultiBodyDynamicsWorld)
+            {
+                btDeformableMultiBodyDynamicsWorld_addSoftBody(_collisionWorld.Native, item.Native, group, mask);
+            }
+            else
+            {
+                Debug.Assert(_collisionWorld is not null, $"{nameof(_collisionWorld)} should not be null.");
+                btSoftRigidDynamicsWorld_addSoftBody3(_collisionWorld.Native, item.Native, group, mask);
+            }
+        }
+        else
+        {
+            Debug.Assert(_collisionWorld is not null, $"{nameof(_collisionWorld)} should not be null.");
+            btCollisionWorld_addCollisionObject3(_collisionWorld.Native, item.Native, group, mask);
+        }
+
+        SetBodyBroadphaseHandle(item, _collisionWorld.Broadphase);
+        Debug.Assert(_backingList is not null, $"{nameof(_backingList)} should not be null.");
+        _backingList.Add(item);
+    }
+
     private void SetBodyBroadphaseHandle(CollisionObject item, BroadphaseInterface broadphase)
     {
         IntPtr broadphaseHandle = btCollisionObject_getBroadphaseHandle(item.Native);
@@ -244,6 +273,7 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
         {
             item.BroadphaseHandle = new DbvtProxy(broadphaseHandle);
         }
+
         // TODO: implement AxisSweep3::Handle
         /*
 			else if (broadphase is AxisSweep3)
@@ -260,51 +290,4 @@ public class AlignedCollisionObjectArray : BulletObject, IList<CollisionObject>,
             item.BroadphaseHandle = new BroadphaseProxy(broadphaseHandle);
         }
     }
-
-    public IEnumerator<CollisionObject> GetEnumerator()
-    {
-        if (_backingList != null)
-        {
-            return _backingList.GetEnumerator();
-        }
-        else
-        {
-            return new AlignedCollisionObjectArrayEnumerator(this);
-        }
-    }
-
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-    {
-        if (_backingList != null)
-        {
-            return _backingList.GetEnumerator();
-        }
-        else
-        {
-            return new AlignedCollisionObjectArrayEnumerator(this);
-        }
-    }
-
-    public CollisionObject this[int index]
-    {
-        get
-        {
-            if (_backingList != null)
-            {
-                return _backingList[index];
-            }
-            if ((uint)index >= (uint)Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-
-            return CollisionObject.GetManaged(btAlignedObjectArray_btCollisionObjectPtr_at(Native, index));
-        }
-
-        set => throw new NotImplementedException();
-    }
-
-    public int Count => btAlignedObjectArray_btCollisionObjectPtr_size(Native);
-
-    public bool IsReadOnly => false;
 }

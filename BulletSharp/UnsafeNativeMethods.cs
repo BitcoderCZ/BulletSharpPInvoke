@@ -5198,7 +5198,7 @@ internal static class UnsafeNativeMethods
     public static extern void btSliderConstraint_testLinLimits(IntPtr obj);
 
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
-    public static extern IntPtr btSoftBody_new(IntPtr worldInfo, int node_count, [In] Vector3[] x, [In] float[] m);
+    public static extern IntPtr btSoftBody_new(IntPtr worldInfo, int node_count, [In] Vector3[] x, [In] float[]? m);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern IntPtr btSoftBody_new2(IntPtr worldInfo);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
@@ -5392,7 +5392,7 @@ internal static class UnsafeNativeMethods
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern IntPtr btSoftBody_getWorldInfo(IntPtr obj);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
-    public static extern void btSoftBody_indicesToPointers(IntPtr obj, int[] map);
+    public static extern void btSoftBody_indicesToPointers(IntPtr obj, int[]? map);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern void btSoftBody_initDefaults(IntPtr obj);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
@@ -6331,7 +6331,7 @@ internal static class UnsafeNativeMethods
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern IntPtr btSoftBodyHelpers_CreateFromConvexHull(IntPtr worldInfo, [In] Vector3[] vertices, int nvertices, bool randomizeConstraints);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
-    public static extern IntPtr btSoftBodyHelpers_CreatePatchUV(IntPtr worldInfo, [In] ref Vector3 corner00, [In] ref Vector3 corner10, [In] ref Vector3 corner01, [In] ref Vector3 corner11, int resx, int resy, int fixeds, bool gendiags, float[] tex_coords);
+    public static extern IntPtr btSoftBodyHelpers_CreatePatchUV(IntPtr worldInfo, [In] ref Vector3 corner00, [In] ref Vector3 corner10, [In] ref Vector3 corner01, [In] ref Vector3 corner11, int resx, int resy, int fixeds, bool gendiags, float[]? tex_coords);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]
     public static extern void btSoftBodyHelpers_Draw(IntPtr psb, IntPtr idraw, SoftBody.DrawFlags drawflags);
     [DllImport(Native.Dll, CallingConvention = Native.Conv)]

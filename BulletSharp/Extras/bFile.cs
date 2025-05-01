@@ -28,30 +28,25 @@ public enum FileVerboseMode
     DumpFileInfo = 8,
 }
 
-internal class PointerFixup
-{
-    public byte[] StructAlloc { get; set; }
-    public long[] Offsets { get; set; }
-
-    public PointerFixup(byte[] structAlloc, long[] offsets)
-    {
-        StructAlloc = structAlloc;
-        Offsets = offsets;
-    }
-}
-
+#pragma warning disable SA1202 // Elements should be ordered by access
+#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable SA1300 // Element should begin with upper-case letter
 public abstract class bFile
+#pragma warning restore SA1300 // Element should begin with upper-case letter
+#pragma warning restore IDE1006 // Naming Styles
 {
     protected const int SizeOfBlenderHeader = 12;
-    private const int MaxArrayLength = 512;
-    private const int MaxStringLength = 1024;
 
     protected List<ChunkInd> _chunks = [];
     protected long _dataStart;
     protected byte[] _fileBuffer;
-    protected Dna _fileDna, _memoryDna;
-    private bool[] _structChanged;
+    protected Dna? _fileDna;
+    protected Dna? _memoryDna;
     protected int _version;
+
+    private const int MaxArrayLength = 512;
+    private const int MaxStringLength = 1024;
+    private bool[]? _structChanged;
 
     public bFile(string filename)
     {
@@ -62,23 +57,29 @@ public abstract class bFile
         }
         catch
         {
-
         }
     }
 
+#pragma warning disable IDE0060 // Remove unused parameter
     public bFile(byte[] memoryBuffer, int len)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         _fileBuffer = memoryBuffer;
 
         ParseHeader();
     }
 
-    protected abstract string HeaderTag { get; }
-    protected BinaryReader ChunkReader { get; private set; }
     public bool OK { get; protected set; }
+
     public FileFlags Flags { get; protected set; }
+
     public Dictionary<long, byte[]> LibPointers { get; } = [];
+
     public int Version => _version;
+
+    protected abstract string HeaderTag { get; }
+
+    protected BinaryReader? ChunkReader { get; private set; }
 
     public abstract void AddDataBlock(byte[] dataBlock);
 
@@ -88,28 +89,25 @@ public abstract class bFile
 			bFile_dumpChunks(_native, dna._native);
 		}
     */
-    public byte[] FindLibPointer(long ptr)
+
+    public byte[]? FindLibPointer(long ptr)
     {
         byte[] data;
-        if (LibPointers.TryGetValue(ptr, out data))
-        {
-            return data;
-        }
-        return null;
+        return LibPointers.TryGetValue(ptr, out data) ? data : null;
     }
 
-    private void GetElement(BinaryReader reader, int ArrayLen, Dna.TypeDecl type, double[] data)
+    private void GetElement(BinaryReader reader, int arrayLen, Dna.TypeDecl type, double[] data)
     {
-        if (type.Name.Equals("float"))
+        if (type.Name.Equals("float", StringComparison.Ordinal))
         {
-            for (int i = 0; i < ArrayLen; i++)
+            for (int i = 0; i < arrayLen; i++)
             {
                 data[i] = reader.ReadSingle();
             }
         }
         else
         {
-            for (int i = 0; i < ArrayLen; i++)
+            for (int i = 0; i < arrayLen; i++)
             {
                 data[i] = reader.ReadDouble();
             }
@@ -152,6 +150,7 @@ public abstract class bFile
                 {
                     throw new NotImplementedException();
                 }
+
                 return new ChunkInd(c);
             }
             else
@@ -163,6 +162,7 @@ public abstract class bFile
     }
 
     public abstract void Parse(FileVerboseMode verboseMode);
+
     protected abstract void ReadChunks();
 
     public virtual void ParseData()
@@ -178,12 +178,13 @@ public abstract class bFile
             //swapLen(dataPtr);
         }
 
-        using (var memory = new MemoryStream(_fileBuffer, false))
+        using (MemoryStream memory = new MemoryStream(_fileBuffer, false))
         {
             using (ChunkReader = new BinaryReader(memory))
             {
                 ReadChunks();
             }
+
             ChunkReader = null;
         }
     }
@@ -191,7 +192,7 @@ public abstract class bFile
     protected void ParseHeader()
     {
         string header = Encoding.UTF8.GetString(_fileBuffer, 0, SizeOfBlenderHeader);
-        if (header.Substring(0, 6) != HeaderTag)
+        if (header[..6] != HeaderTag)
         {
             return;
         }
@@ -201,14 +202,16 @@ public abstract class bFile
             Flags |= FileFlags.DoublePrecision;
         }
 
-        int.TryParse(header.Substring(9), out _version);
+        int.TryParse(header[9..], out _version);
 
         // swap ptr sizes...
         if (header[7] == '-')
         {
             Flags |= FileFlags.File64;
             if (IntPtr.Size != 8)
+            {
                 Flags |= FileFlags.BitsVaries;
+            }
         }
         else if (IntPtr.Size == 8)
         {
@@ -219,12 +222,16 @@ public abstract class bFile
         if (header[8] == 'V')
         {
             if (BitConverter.IsLittleEndian)
+            {
                 Flags |= FileFlags.EndianSwap;
+            }
         }
         else
         {
             if (!BitConverter.IsLittleEndian)
+            {
                 Flags |= FileFlags.EndianSwap;
+            }
         }
 
         OK = true;
@@ -232,22 +239,30 @@ public abstract class bFile
 
     protected void ParseInternal(FileVerboseMode verboseMode)
     {
-        if (!OK) return;
+        if (!OK)
+        {
+            return;
+        }
 
         LoadDna(verboseMode);
-        if (!OK) return;
+        if (!OK)
+        {
+            return;
+        }
 
         ParseData();
         //ResolvePointers(verboseMode);
     }
 
+#pragma warning disable IDE0060 // Remove unused parameter
     private void LoadDna(FileVerboseMode verboseMode)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         bool swap = (Flags & FileFlags.EndianSwap) != 0;
 
-        using (var stream = new MemoryStream(_fileBuffer, false))
+        using (MemoryStream stream = new MemoryStream(_fileBuffer, false))
         {
-            using (var reader = new BulletReader(stream))
+            using (BulletReader reader = new BulletReader(stream))
             {
                 long dnaStart = FindDnaChunk(reader);
                 OK = dnaStart != -1;
@@ -280,7 +295,7 @@ public abstract class bFile
 
     private long FindDnaChunk(BinaryReader reader)
     {
-        var stream = reader.BaseStream;
+        Stream stream = reader.BaseStream;
 
         int i = 0;
         while (i < stream.Length)
@@ -292,7 +307,7 @@ public abstract class bFile
             byte[] codeData = reader.ReadBytes(4);
             string code = Encoding.ASCII.GetString(codeData);
 
-            if (_dataStart == 0 && code.Equals("REND"))
+            if (_dataStart == 0 && code.Equals("REND", StringComparison.Ordinal))
             {
                 _dataStart = stream.Position;
             }
@@ -320,6 +335,7 @@ public abstract class bFile
 
             i++;
         }
+
         Console.WriteLine("Failed to find DNA1+SDNA pair");
         return -1;
     }
@@ -335,37 +351,41 @@ public abstract class bFile
 
         if (StructChanged(dataChunk.StructIndex))
         {
+            Debug.Assert(_fileDna is not null, $"{nameof(_fileDna)} should not be null.");
+
             // Ouch! need to rebuild the struct
             Dna.StructDecl oldStruct = _fileDna.GetStruct(dataChunk.StructIndex);
 
             if ((Flags & FileFlags.BrokenDna) != 0)
             {
-                if (oldStruct.Type.Name.Equals("btQuantizedBvhNodeData") && oldStruct.Type.Length == 28)
+                if (oldStruct.Type.Name.Equals("btQuantizedBvhNodeData", StringComparison.Ordinal) && oldStruct.Type.Length == 28)
                 {
                     throw new NotImplementedException();
                 }
 
-                if (oldStruct.Type.Name.Equals("btShortIntIndexData"))
+                if (oldStruct.Type.Name.Equals("btShortIntIndexData", StringComparison.Ordinal))
                 {
                     throw new NotImplementedException();
                 }
             }
 
             // Don't try to convert Link block data, just memcpy it. Other data can be converted.
-            if (oldStruct.Type.Name.Equals("Link"))
+            if (oldStruct.Type.Name.Equals("Link", StringComparison.Ordinal))
             {
                 //Console.WriteLine("Link found");
             }
             else
             {
+                Debug.Assert(_memoryDna is not null, $"{nameof(_memoryDna)} should not be null.");
+
                 Dna.StructDecl curStruct = _memoryDna.GetStruct(oldStruct.Type.Name);
                 if (curStruct != null)
                 {
                     byte[] structAlloc = new byte[dataChunk.NumBlocks * curStruct.Type.Length];
                     AddDataBlock(structAlloc);
-                    using (var stream = new MemoryStream(structAlloc))
+                    using (MemoryStream stream = new MemoryStream(structAlloc))
                     {
-                        using (var writer = new BinaryWriter(stream))
+                        using (BinaryWriter writer = new BinaryWriter(stream))
                         {
                             long structOffset = chunkDataOffset;
                             for (int block = 0; block < dataChunk.NumBlocks; block++)
@@ -375,6 +395,7 @@ public abstract class bFile
                             }
                         }
                     }
+
                     return structAlloc;
                 }
             }
@@ -385,6 +406,8 @@ public abstract class bFile
 #endif
         }
 
+        Debug.Assert(ChunkReader is not null, $"{nameof(ChunkReader)} should not be null.");
+
         byte[] dataAlloc = new byte[dataChunk.Length];
         ChunkReader.Read(dataAlloc, 0, dataChunk.Length);
         return dataAlloc;
@@ -392,8 +415,8 @@ public abstract class bFile
 
     protected void ParseStruct(BinaryWriter writer, Dna.StructDecl memoryStruct, Dna.StructDecl fileStruct, long structOffset)
     {
-        Debug.Assert(memoryStruct != null);
-        Debug.Assert(fileStruct != null);
+        Debug.Assert(memoryStruct is not null, $"{nameof(memoryStruct)} should not be null.");
+        Debug.Assert(fileStruct is not null, $"{nameof(fileStruct)} should not be null.");
 
         foreach (Dna.ElementDecl element in memoryStruct.Elements)
         {
@@ -411,39 +434,48 @@ public abstract class bFile
     private void ParseElement(BinaryWriter writer, Dna.StructDecl fileStruct, Dna.ElementDecl memoryElement, long structOffset)
     {
         long elementOffset;
-        Dna.ElementDecl elementOld = GetFileElement(fileStruct, memoryElement, out elementOffset);
+        Dna.ElementDecl? elementOld = GetFileElement(fileStruct, memoryElement, out elementOffset);
         if (elementOld != null)
         {
+            Debug.Assert(_fileDna is not null, $"{nameof(_fileDna)} should not be null.");
+
             Dna.StructDecl typeStructOld = _fileDna.GetStruct(memoryElement.Type.Name);
             int arrayLength = elementOld.NameInfo.ArrayLength;
             for (int i = 0; i < arrayLength; i++)
             {
-                long subStructOffset = structOffset + i * typeStructOld.Type.Length + elementOffset;
+                long subStructOffset = structOffset + (i * typeStructOld.Type.Length) + elementOffset;
                 ParseStruct(writer, memoryElement.Type.Struct, typeStructOld, subStructOffset);
             }
         }
     }
 
-    protected Dna.ElementDecl GetFileElement(Dna.StructDecl fileStruct, Dna.ElementDecl lookupElement, out long elementOffset)
+    protected Dna.ElementDecl? GetFileElement(Dna.StructDecl fileStruct, Dna.ElementDecl lookupElement, out long elementOffset)
     {
         elementOffset = 0;
         foreach (Dna.ElementDecl element in fileStruct.Elements)
         {
             if (element.NameInfo.Equals(lookupElement.NameInfo))
             {
-                if (element.Type.Name.Equals(lookupElement.Type.Name))
+                if (element.Type.Name.Equals(lookupElement.Type.Name, StringComparison.Ordinal))
                 {
                     return element;
                 }
+
                 break;
             }
+
+            Debug.Assert(_fileDna is not null, $"{nameof(_fileDna)} should not be null.");
             elementOffset += _fileDna.GetElementSize(element);
         }
+
         return null;
     }
 
     protected void WriteElement(BinaryWriter writer, Dna.StructDecl fileStruct, Dna.ElementDecl memoryElement, long structOffset)
     {
+        Debug.Assert(_fileDna is not null, $"{nameof(_fileDna)} should not be null.");
+        Debug.Assert(ChunkReader is not null, $"{nameof(ChunkReader)} should not be null.");
+
         bool brokenDna = (Flags & FileFlags.BrokenDna) != 0;
 
         int elementOffset;
@@ -453,6 +485,7 @@ public abstract class bFile
 
         if (fileElement == null)
         {
+            Debug.Assert(_memoryDna is not null, $"{nameof(_memoryDna)} should not be null.");
             int elementLength = _memoryDna.GetElementSize(memoryElement);
             writer.BaseStream.Position += elementLength;
         }
@@ -460,13 +493,15 @@ public abstract class bFile
         {
             SafeSwapPtr(writer, ChunkReader);
         }
-        else if (fileElement.Type.Name.Equals(memoryElement.Type.Name))
+        else if (fileElement.Type.Name.Equals(memoryElement.Type.Name, StringComparison.Ordinal))
         {
+            Debug.Assert(_memoryDna is not null, $"{nameof(_memoryDna)} should not be null.");
             int elementLength = _fileDna.GetElementSize(fileElement);
             if (elementLength != _memoryDna.GetElementSize(memoryElement))
             {
                 throw new InvalidDataException();
             }
+
             byte[] mem = new byte[elementLength];
             ChunkReader.Read(mem, 0, elementLength);
             writer.Write(mem);
@@ -482,7 +517,7 @@ public abstract class bFile
 
     public void ResolvePointers(FileVerboseMode verboseMode)
     {
-        Dna fileDna = (_fileDna != null) ? _fileDna : _memoryDna;
+        Dna? fileDna = _fileDna ?? _memoryDna;
 
         if (true) // && ((_flags & FileFlags.BitsVaries | FileFlags.VersionVaries) != 0))
         {
@@ -499,6 +534,7 @@ public abstract class bFile
         {
             if (_fileDna == null || !StructChanged(dataChunk.StructIndex))
             {
+                Debug.Assert(fileDna is not null, $"{nameof(fileDna)} should not be null.");
                 Dna.StructDecl oldStruct = fileDna.GetStruct(dataChunk.StructIndex);
 
                 if ((verboseMode & FileVerboseMode.ExportXml) != 0)
@@ -527,15 +563,16 @@ public abstract class bFile
 
     protected void ResolvePointersChunk(ChunkInd dataChunk, FileVerboseMode verboseMode)
     {
-        Dna fileDna = (_fileDna != null) ? _fileDna : _memoryDna;
+        Dna? fileDna = _fileDna ?? _memoryDna;
+        Debug.Assert(fileDna is not null, $"{nameof(fileDna)} should not be null.");
 
         Dna.StructDecl oldStruct = fileDna.GetStruct(dataChunk.StructIndex);
         int oldLen = oldStruct.Type.Length;
 
-        byte[] cur = FindLibPointer(dataChunk.OldPtr);
-        using (var stream = new MemoryStream(cur, false))
+        byte[]? cur = FindLibPointer(dataChunk.OldPtr);
+        using (MemoryStream stream = new MemoryStream(cur, false))
         {
-            using (var reader = new BinaryReader(stream))
+            using (BinaryReader reader = new BinaryReader(stream))
             {
                 for (int block = 0; block < dataChunk.NumBlocks; block++)
                 {
@@ -549,12 +586,13 @@ public abstract class bFile
 
     protected int ResolvePointersStructRecursive(BinaryReader reader, Dna.StructDecl oldStruct, FileVerboseMode verboseMode, int recursion)
     {
-        Dna fileDna = (_fileDna != null) ? _fileDna : _memoryDna;
+        Dna? fileDna = _fileDna ?? _memoryDna;
 
         int totalSize = 0;
 
         foreach (Dna.ElementDecl element in oldStruct.Elements)
         {
+            Debug.Assert(fileDna is not null, $"{nameof(fileDna)} should not be null.");
             int size = fileDna.GetElementSize(element);
             int arrayLen = element.NameInfo.ArrayLength;
 
@@ -573,9 +611,11 @@ public abstract class bFile
                         {
                             Console.Write("  ");
                         }
-                        Console.WriteLine("<{0} type=\"pointer\"> {1} </{0}>", element.NameInfo.Name.Substring(1), ptr);
+
+                        Console.WriteLine("<{0} type=\"pointer\"> {1} </{0}>", element.NameInfo.Name[1..], ptr);
                     }
-                    byte[] ptrChunk = FindLibPointer(ptr);
+
+                    byte[]? ptrChunk = FindLibPointer(ptr);
                     if (ptrChunk != null)
                     {
                         //throw new NotImplementedException();
@@ -609,6 +649,7 @@ public abstract class bFile
 
                     for (int i = 0; i < arrayLen; i++)
                     {
+                        Debug.Assert(_fileDna is not null, $"{nameof(_fileDna)} should not be null.");
                         Dna.StructDecl revType = _fileDna.GetStruct(element.Type.Name);
                         ResolvePointersStructRecursive(reader, revType, verboseMode, recursion + 1);
                         //throw new NotImplementedException();
@@ -620,6 +661,7 @@ public abstract class bFile
                         {
                             Console.Write("  ");
                         }
+
                         Console.WriteLine("</{0}>", element.NameInfo.CleanName);
                     }
                 }
@@ -634,18 +676,11 @@ public abstract class bFile
                         }
                         else
                         {
-                            bool isIntegerType;
-                            switch (element.Type.Name)
+                            bool isIntegerType = element.Type.Name switch
                             {
-                                case "char":
-                                case "short":
-                                case "int":
-                                    isIntegerType = true;
-                                    break;
-                                default:
-                                    isIntegerType = false;
-                                    break;
-                            }
+                                "char" or "short" or "int" => true,
+                                _ => false,
+                            };
 
                             if (isIntegerType)
                             {
@@ -682,6 +717,7 @@ public abstract class bFile
                                 {
                                     Console.Write("  ");
                                 }
+
                                 if (arrayLen == 1)
                                 {
                                     Console.Write("<{0} type=\"{1}\">", element.NameInfo.Name, element.Type.Name);
@@ -690,17 +726,21 @@ public abstract class bFile
                                 {
                                     Console.Write("<{0} type=\"{1}\" count=\"{2}\">", element.NameInfo.CleanName, element.Type.Name, arrayLen);
                                 }
+
                                 for (int i = 0; i < arrayLen; i++)
                                 {
                                     Console.Write(" {0} ", dbArray[i].ToString(CultureInfo.InvariantCulture));
                                 }
+
                                 Console.WriteLine("</{0}>", element.NameInfo.CleanName);
                             }
                         }
                     }
+
                     reader.BaseStream.Position += size;
                 }
             }
+
             totalSize += size;
         }
 
@@ -709,6 +749,8 @@ public abstract class bFile
 
     protected void SafeSwapPtr(BinaryWriter writer, BinaryReader reader)
     {
+        Debug.Assert(_fileDna is not null, $"{nameof(_fileDna)} should not be null.");
+        Debug.Assert(_memoryDna is not null, $"{nameof(_memoryDna)} should not be null.");
         int filePtrSize = _fileDna.PointerSize;
         int memPtrSize = _memoryDna.PointerSize;
 
@@ -736,6 +778,7 @@ public abstract class bFile
                 {
                     throw new NotImplementedException();
                 }
+
                 longValue = longValue >> 3;
                 int intValue = (int)longValue;
                 writer.Write(intValue);
@@ -767,6 +810,7 @@ public abstract class bFile
         Debug.Assert(structIndex < _structChanged.Length);
         return _structChanged[structIndex];
     }
+
     /*
 		public int Write(char fileName, bool fixupPointers)
 		{
@@ -798,4 +842,18 @@ public abstract class bFile
 			get { return bFile_getFileDNA(_native); }
 		}
     */
+}
+#pragma warning restore SA1202 // Elements should be ordered by access
+
+internal class PointerFixup
+{
+    public PointerFixup(byte[] structAlloc, long[] offsets)
+    {
+        StructAlloc = structAlloc;
+        Offsets = offsets;
+    }
+
+    public byte[] StructAlloc { get; set; }
+
+    public long[] Offsets { get; set; }
 }

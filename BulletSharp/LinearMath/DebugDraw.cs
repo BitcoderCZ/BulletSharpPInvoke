@@ -31,54 +31,6 @@ namespace BulletSharp;
 
 public abstract class DebugDraw : BulletDisposableObject
 {
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawAabbUnmanagedDelegate([In] ref Vector3 from, [In] ref Vector3 to, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawArcUnmanagedDelegate([In] ref Vector3 center, [In] ref Vector3 normal, [In] ref Vector3 axis, float radiusA, float radiusB,
-        float minAngle, float maxAngle, ref Vector3 color, bool drawSect, float stepDegrees);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawBoxUnmanagedDelegate([In] ref Vector3 bbMin, [In] ref Vector3 bbMax, [In] ref Matrix4x4 trans, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawCapsuleUnmanagedDelegate(float radius, float halfHeight, int upAxis, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawConeUnmanagedDelegate(float radius, float height, int upAxis, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawContactPointUnmanagedDelegate([In] ref Vector3 pointOnB, [In] ref Vector3 normalOnB, float distance, int lifeTime, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawCylinderUnmanagedDelegate(float radius, float halfHeight, int upAxis, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawLineUnmanagedDelegate([In] ref Vector3 from, [In] ref Vector3 to, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawPlaneUnmanagedDelegate([In] ref Vector3 planeNormal, float planeConst, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawSphereUnmanagedDelegate(float radius, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawSpherePatchUnmanagedDelegate([In] ref Vector3 center, [In] ref Vector3 up, [In] ref Vector3 axis, float radius,
-        float minTh, float maxTh, float minPs, float maxPs, [In] ref Vector3 color, float stepDegrees);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawTransformUnmanagedDelegate([In] ref Matrix4x4 transform, float orthoLen);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void DrawTriangleUnmanagedDelegate([In] ref Vector3 v0, [In] ref Vector3 v1, [In] ref Vector3 v2, [In] ref Vector3 color, float alpha);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate void SimpleCallback(int x);
-    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
-    [SuppressUnmanagedCodeSecurity]
-    private delegate DebugDrawModes GetDebugModeUnmanagedDelegate();
-
     private readonly DrawAabbUnmanagedDelegate _drawAabb;
     private readonly DrawArcUnmanagedDelegate _drawArc;
     private readonly DrawBoxUnmanagedDelegate _drawBox;
@@ -94,21 +46,6 @@ public abstract class DebugDraw : BulletDisposableObject
     private readonly DrawTriangleUnmanagedDelegate _drawTriangle;
     private readonly GetDebugModeUnmanagedDelegate _getDebugMode;
     private readonly SimpleCallback _cb;
-
-    internal static DebugDraw GetManaged(IntPtr debugDrawer)
-    {
-        if (debugDrawer == IntPtr.Zero)
-        {
-            return null;
-        }
-
-        IntPtr handle = btIDebugDrawWrapper_getGCHandle(debugDrawer);
-        return GCHandle.FromIntPtr(handle).Target as DebugDraw;
-    }
-
-    private void SimpleCallbackUnmanaged(int x) => throw new NotImplementedException();
-
-    private DebugDrawModes GetDebugModeUnmanaged() => DebugMode;
 
     public DebugDraw()
     {
@@ -148,12 +85,98 @@ public abstract class DebugDraw : BulletDisposableObject
         InitializeUserOwned(native);
     }
 
-    public abstract void DrawLine(ref Vector3 from, ref Vector3 to, ref Vector3 color);
-    public abstract void Draw3DText(ref Vector3 location, string textString);
-    public abstract void ReportErrorWarning(string warningString);
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawAabbUnmanagedDelegate([In] ref Vector3 from, [In] ref Vector3 to, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawArcUnmanagedDelegate([In] ref Vector3 center, [In] ref Vector3 normal, [In] ref Vector3 axis, float radiusA, float radiusB, float minAngle, float maxAngle, ref Vector3 color, bool drawSect, float stepDegrees);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawBoxUnmanagedDelegate([In] ref Vector3 bbMin, [In] ref Vector3 bbMax, [In] ref Matrix4x4 trans, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawCapsuleUnmanagedDelegate(float radius, float halfHeight, int upAxis, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawConeUnmanagedDelegate(float radius, float height, int upAxis, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawContactPointUnmanagedDelegate([In] ref Vector3 pointOnB, [In] ref Vector3 normalOnB, float distance, int lifeTime, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawCylinderUnmanagedDelegate(float radius, float halfHeight, int upAxis, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawLineUnmanagedDelegate([In] ref Vector3 from, [In] ref Vector3 to, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawPlaneUnmanagedDelegate([In] ref Vector3 planeNormal, float planeConst, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawSphereUnmanagedDelegate(float radius, [In] ref Matrix4x4 transform, [In] ref Vector3 color);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawSpherePatchUnmanagedDelegate([In] ref Vector3 center, [In] ref Vector3 up, [In] ref Vector3 axis, float radius, float minTh, float maxTh, float minPs, float maxPs, [In] ref Vector3 color, float stepDegrees);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawTransformUnmanagedDelegate([In] ref Matrix4x4 transform, float orthoLen);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void DrawTriangleUnmanagedDelegate([In] ref Vector3 v0, [In] ref Vector3 v1, [In] ref Vector3 v2, [In] ref Vector3 color, float alpha);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate void SimpleCallback(int x);
+
+    [UnmanagedFunctionPointer(BulletSharp.Native.Conv)]
+    [SuppressUnmanagedCodeSecurity]
+    private delegate DebugDrawModes GetDebugModeUnmanagedDelegate();
+
     public abstract DebugDrawModes DebugMode { get; set; }
 
-    public void DrawLine(Vector3 from, Vector3 to, Vector3 color) => DrawLine(ref from, ref to, ref color);
+    public static void PlaneSpace1(ref Vector3 n, out Vector3 p, out Vector3 q)
+    {
+        if (MathF.Abs(n.Z) > MathUtil.SIMDSQRT12)
+        {
+            // choose p in y-z plane
+            float a = (n.Y * n.Y) + (n.Z * n.Z);
+            float k = MathUtil.RecipSqrt(a);
+            p = new Vector3(0, -n.Z * k, n.Y * k);
+            // set q = n x p
+            q = new Vector3(a * k, -n.X * p.Z, n.X * p.Y);
+        }
+        else
+        {
+            // choose p in x-y plane
+            float a = (n.X * n.X) + (n.Y * n.Y);
+            float k = MathUtil.RecipSqrt(a);
+            p = new Vector3(-n.Y * k, n.X * k, 0);
+            // set q = n x p
+            q = new Vector3(-n.Z * p.Y, n.Z * p.X, a * k);
+        }
+    }
+
+    public abstract void DrawLine(ref Vector3 from, ref Vector3 to, ref Vector3 color);
+
+    public abstract void Draw3DText(ref Vector3 location, string textString);
+
+    public abstract void ReportErrorWarning(string warningString);
+
+    public void DrawLine(Vector3 from, Vector3 to, Vector3 color)
+        => DrawLine(ref from, ref to, ref color);
 
     public virtual void DrawLine(ref Vector3 from, ref Vector3 to, ref Vector3 fromColor, ref Vector3 toColor) => DrawLine(ref from, ref to, ref fromColor);
 
@@ -190,8 +213,7 @@ public abstract class DebugDraw : BulletDisposableObject
         DrawLine(ref b, ref to, ref color);
     }
 
-    public virtual void DrawArc(ref Vector3 center, ref Vector3 normal, ref Vector3 axis, float radiusA, float radiusB,
-        float minAngle, float maxAngle, ref Vector3 color, bool drawSect, float stepDegrees = 10.0f)
+    public virtual void DrawArc(ref Vector3 center, ref Vector3 normal, ref Vector3 axis, float radiusA, float radiusB, float minAngle, float maxAngle, ref Vector3 color, bool drawSect, float stepDegrees = 10.0f)
     {
         Vector3 xAxis = radiusA * axis;
         Vector3 yAxis = radiusB * Vector3.Cross(normal, axis);
@@ -201,18 +223,21 @@ public abstract class DebugDraw : BulletDisposableObject
         {
             nSteps = 1;
         }
-        Vector3 prev = center + xAxis * (float)System.Math.Cos(minAngle) + yAxis * (float)System.Math.Sin(minAngle);
+
+        Vector3 prev = center + (xAxis * MathF.Cos(minAngle)) + (yAxis * MathF.Sin(minAngle));
         if (drawSect)
         {
             DrawLine(ref center, ref prev, ref color);
         }
+
         for (int i = 1; i <= nSteps; i++)
         {
-            float angle = minAngle + (maxAngle - minAngle) * i / nSteps;
-            Vector3 next = center + xAxis * (float)System.Math.Cos(angle) + yAxis * (float)System.Math.Sin(angle);
+            float angle = minAngle + ((maxAngle - minAngle) * i / nSteps);
+            Vector3 next = center + (xAxis * MathF.Cos(angle)) + (yAxis * MathF.Sin(angle));
             DrawLine(ref prev, ref next, ref color);
             prev = next;
         }
+
         if (drawSect)
         {
             DrawLine(ref center, ref prev, ref color);
@@ -316,8 +341,8 @@ public abstract class DebugDraw : BulletDisposableObject
         Matrix4x4 basis = transform.GetBasis();
         for (int i = 0; i < 360; i += stepDegrees)
         {
-            float primaryDirection = (float)System.Math.Sin(i * MathUtil.SIMD_RADS_PER_DEG) * radius;
-            float secondaryDirection = (float)System.Math.Cos(i * MathUtil.SIMD_RADS_PER_DEG) * radius;
+            float primaryDirection = MathF.Sin(i * MathUtil.SIMD_RADS_PER_DEG) * radius;
+            float secondaryDirection = MathF.Cos(i * MathUtil.SIMD_RADS_PER_DEG) * radius;
             capEnd.SetComponent((upAxis + 1) % 3, primaryDirection);
             capStart.SetComponent((upAxis + 1) % 3, primaryDirection);
             capEnd.SetComponent((upAxis + 2) % 3, secondaryDirection);
@@ -349,7 +374,7 @@ public abstract class DebugDraw : BulletDisposableObject
 
     public virtual void DrawContactPoint(ref Vector3 pointOnB, ref Vector3 normalOnB, float distance, int lifeTime, ref Vector3 color)
     {
-        Vector3 to = pointOnB + normalOnB * 1; // distance
+        Vector3 to = pointOnB + (normalOnB * 1); // distance
         DrawLine(ref pointOnB, ref to, ref color);
     }
 
@@ -371,10 +396,10 @@ public abstract class DebugDraw : BulletDisposableObject
         Vector3 vec0, vec1;
         PlaneSpace1(ref planeNormal, out vec0, out vec1);
         const float vecLen = 100f;
-        Vector3 pt0 = planeOrigin + vec0 * vecLen;
-        Vector3 pt1 = planeOrigin - vec0 * vecLen;
-        Vector3 pt2 = planeOrigin + vec1 * vecLen;
-        Vector3 pt3 = planeOrigin - vec1 * vecLen;
+        Vector3 pt0 = planeOrigin + (vec0 * vecLen);
+        Vector3 pt1 = planeOrigin - (vec0 * vecLen);
+        Vector3 pt2 = planeOrigin + (vec1 * vecLen);
+        Vector3 pt3 = planeOrigin - (vec1 * vecLen);
         pt0 = Vector3.Transform(pt0, transform);
         pt1 = Vector3.Transform(pt1, transform);
         pt2 = Vector3.Transform(pt2, transform);
@@ -424,17 +449,16 @@ public abstract class DebugDraw : BulletDisposableObject
         DrawSphere(radius, ref tr, ref color);
     }
 
-    public virtual void DrawSpherePatch(ref Vector3 center, ref Vector3 up, ref Vector3 axis, float radius,
-        float minTh, float maxTh, float minPs, float maxPs, ref Vector3 color) => DrawSpherePatch(ref center, ref up, ref axis, radius, minTh, maxTh, minPs, maxPs, ref color, 10.0f);
+    public virtual void DrawSpherePatch(ref Vector3 center, ref Vector3 up, ref Vector3 axis, float radius, float minTh, float maxTh, float minPs, float maxPs, ref Vector3 color)
+        => DrawSpherePatch(ref center, ref up, ref axis, radius, minTh, maxTh, minPs, maxPs, ref color, 10.0f);
 
-    public virtual void DrawSpherePatch(ref Vector3 center, ref Vector3 up, ref Vector3 axis, float radius,
-        float minTh, float maxTh, float minPs, float maxPs, ref Vector3 color, float stepDegrees)
+    public virtual void DrawSpherePatch(ref Vector3 center, ref Vector3 up, ref Vector3 axis, float radius, float minTh, float maxTh, float minPs, float maxPs, ref Vector3 color, float stepDegrees)
     {
         Vector3[] vA;
         Vector3[] vB;
         Vector3[] pvA, pvB, pT;
-        Vector3 npole = center + up * radius;
-        Vector3 spole = center - up * radius;
+        Vector3 npole = center + (up * radius);
+        Vector3 spole = center - (up * radius);
         Vector3 arcStart = Vector3.Zero;
         float step = stepDegrees * MathUtil.SIMD_RADS_PER_DEG;
         Vector3 kv = up;
@@ -448,19 +472,26 @@ public abstract class DebugDraw : BulletDisposableObject
             minTh = -MathUtil.SIMD_HALF_PI + step;
             drawN = true;
         }
+
         if (maxTh >= MathUtil.SIMD_HALF_PI)
         {
             maxTh = MathUtil.SIMD_HALF_PI - step;
             drawS = true;
         }
+
         if (minTh > maxTh)
         {
             minTh = -MathUtil.SIMD_HALF_PI + step;
             maxTh = MathUtil.SIMD_HALF_PI - step;
             drawN = drawS = true;
         }
+
         int n_hor = (int)((maxTh - minTh) / step) + 1;
-        if (n_hor < 2) n_hor = 2;
+        if (n_hor < 2)
+        {
+            n_hor = 2;
+        }
+
         float step_h = (maxTh - minTh) / (n_hor - 1);
         bool isClosed;
         if (minPs > maxPs)
@@ -477,25 +508,30 @@ public abstract class DebugDraw : BulletDisposableObject
         {
             isClosed = false;
         }
+
         int n_vert = (int)((maxPs - minPs) / step) + 1;
-        if (n_vert < 2) n_vert = 2;
+        if (n_vert < 2)
+        {
+            n_vert = 2;
+        }
 
         vA = new Vector3[n_vert];
         vB = new Vector3[n_vert];
-        pvA = vA; pvB = vB;
+        pvA = vA;
+        pvB = vB;
 
         float step_v = (maxPs - minPs) / (n_vert - 1);
         for (int i = 0; i < n_hor; i++)
         {
-            float th = minTh + i * step_h;
-            float sth = radius * (float)System.Math.Sin(th);
-            float cth = radius * (float)System.Math.Cos(th);
+            float th = minTh + (i * step_h);
+            float sth = radius * MathF.Sin(th);
+            float cth = radius * MathF.Cos(th);
             for (int j = 0; j < n_vert; j++)
             {
-                float psi = minPs + j * step_v;
-                float sps = (float)System.Math.Sin(psi);
-                float cps = (float)System.Math.Cos(psi);
-                pvB[j] = center + cth * cps * iv + cth * sps * jv + sth * kv;
+                float psi = minPs + (j * step_v);
+                float sps = MathF.Sin(psi);
+                float cps = MathF.Cos(psi);
+                pvB[j] = center + (cth * cps * iv) + (cth * sps * jv) + (sth * kv);
                 if (i != 0)
                 {
                     DrawLine(ref pvA[j], ref pvB[j], ref color);
@@ -504,6 +540,7 @@ public abstract class DebugDraw : BulletDisposableObject
                 {
                     DrawLine(ref spole, ref pvB[j], ref color);
                 }
+
                 if (j != 0)
                 {
                     DrawLine(ref pvB[j - 1], ref pvB[j], ref color);
@@ -512,10 +549,12 @@ public abstract class DebugDraw : BulletDisposableObject
                 {
                     arcStart = pvB[j];
                 }
+
                 if ((i == (n_hor - 1)) && drawN)
                 {
                     DrawLine(ref npole, ref pvB[j], ref color);
                 }
+
                 if (isClosed)
                 {
                     if (j == (n_vert - 1))
@@ -531,7 +570,10 @@ public abstract class DebugDraw : BulletDisposableObject
                     }
                 }
             }
-            pT = pvA; pvA = pvB; pvB = pT;
+
+            pT = pvA;
+            pvA = pvB;
+            pvB = pT;
         }
     }
 
@@ -572,27 +614,22 @@ public abstract class DebugDraw : BulletDisposableObject
         DrawLine(ref start, ref temp, ref colour);
     }
 
-    public static void PlaneSpace1(ref Vector3 n, out Vector3 p, out Vector3 q)
+    internal static DebugDraw? GetManaged(IntPtr debugDrawer)
     {
-        if (System.Math.Abs(n.Z) > MathUtil.SIMDSQRT12)
+        if (debugDrawer == IntPtr.Zero)
         {
-            // choose p in y-z plane
-            float a = n.Y * n.Y + n.Z * n.Z;
-            float k = MathUtil.RecipSqrt(a);
-            p = new Vector3(0, -n.Z * k, n.Y * k);
-            // set q = n x p
-            q = new Vector3(a * k, -n.X * p.Z, n.X * p.Y);
+            return null;
         }
-        else
-        {
-            // choose p in x-y plane
-            float a = n.X * n.X + n.Y * n.Y;
-            float k = MathUtil.RecipSqrt(a);
-            p = new Vector3(-n.Y * k, n.X * k, 0);
-            // set q = n x p
-            q = new Vector3(-n.Z * p.Y, n.Z * p.X, a * k);
-        }
+
+        IntPtr handle = btIDebugDrawWrapper_getGCHandle(debugDrawer);
+        return GCHandle.FromIntPtr(handle).Target as DebugDraw;
     }
 
     protected override void Dispose(bool disposing) => btIDebugDraw_delete(Native);
+
+    private void SimpleCallbackUnmanaged(int x)
+        => throw new NotImplementedException();
+
+    private DebugDrawModes GetDebugModeUnmanaged()
+        => DebugMode;
 }

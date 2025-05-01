@@ -6,8 +6,8 @@ public static class CompoundFromGImpact
 {
     public static CompoundShape Create(GImpactMeshShape impactMesh, float depth)
     {
-        var shape = new CompoundShape();
-        using (var callback = new MyInternalTriangleIndexCallback(shape, impactMesh, depth))
+        CompoundShape shape = new CompoundShape();
+        using (MyInternalTriangleIndexCallback callback = new MyInternalTriangleIndexCallback(shape, impactMesh, depth))
         {
             Vector3 aabbMin, aabbMax;
             impactMesh.GetAabb(Matrix4x4.Identity, out aabbMin, out aabbMax);
@@ -71,7 +71,7 @@ internal class MyInternalTriangleIndexCallback : InternalTriangleIndexCallback
         Vector3 rayFrom = centroid;
         Vector3 rayTo = centroid - (normal * _depth);
 
-        using (var cb = new MyCallback(ref rayFrom, ref rayTo, partId, triangleIndex))
+        using (MyCallback cb = new MyCallback(ref rayFrom, ref rayTo, partId, triangleIndex))
         {
             _meshShape.ProcessAllTrianglesRayRef(cb, ref rayFrom, ref rayTo);
             if (cb.HitFraction < 1)
@@ -83,7 +83,7 @@ internal class MyInternalTriangleIndexCallback : InternalTriangleIndexCallback
             }
         }
 
-        var triangle = new BuSimplex1To4(v0, v1, v2, rayTo);
+        BuSimplex1To4 triangle = new BuSimplex1To4(v0, v1, v2, rayTo);
         _collisionShape.AddChildShape(Matrix4x4.Identity, triangle);
     }
 }

@@ -7,33 +7,11 @@ using static BulletSharp.UnsafeNativeMethods;
 
 namespace BulletSharp;
 
-internal class ListDebugView
-{
-    private System.Collections.IEnumerable _list;
-
-    public ListDebugView(System.Collections.IEnumerable list)
-    {
-        _list = list;
-    }
-
-    [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-    public System.Collections.ArrayList Items
-    {
-        get
-        {
-            var list = new System.Collections.ArrayList();
-            foreach (var o in _list)
-                list.Add(o);
-            return list;
-        }
-    }
-};
-
 public class CompoundShapeChildArrayEnumerator : IEnumerator<CompoundShapeChild>
 {
+    private readonly int _count;
+    private readonly CompoundShapeChild[] _array;
     private int _i;
-    private int _count;
-    private CompoundShapeChild[] _array;
 
     public CompoundShapeChildArrayEnumerator(CompoundShapeChildArray array)
     {
@@ -42,6 +20,10 @@ public class CompoundShapeChildArrayEnumerator : IEnumerator<CompoundShapeChild>
         _i = -1;
     }
 
+    public CompoundShapeChild Current => _array[_i];
+
+    object System.Collections.IEnumerator.Current => _array[_i];
+
     public void Dispose()
     {
     }
@@ -53,25 +35,25 @@ public class CompoundShapeChildArrayEnumerator : IEnumerator<CompoundShapeChild>
     }
 
     public void Reset() => _i = 0;
-
-    public CompoundShapeChild Current => _array[_i];
-
-    object System.Collections.IEnumerator.Current => _array[_i];
 }
 
 public class UIntArrayEnumerator : IEnumerator<uint>
 {
+    private readonly int _count;
+    private readonly IReadOnlyList<uint> _array;
     private int _i;
-    private int _count;
-    private IList<uint> _array;
 
-    public UIntArrayEnumerator(IList<uint> array)
+    public UIntArrayEnumerator(IReadOnlyList<uint> array)
     {
         _array = array;
         _count = array.Count;
         _i = -1;
     }
 
+    public uint Current => _array[_i];
+
+    object System.Collections.IEnumerator.Current => _array[_i];
+
     public void Dispose()
     {
     }
@@ -83,19 +65,21 @@ public class UIntArrayEnumerator : IEnumerator<uint>
     }
 
     public void Reset() => _i = 0;
-
-    public uint Current => _array[_i];
-
-    object System.Collections.IEnumerator.Current => _array[_i];
 }
 
-public class CompoundShapeChildArray : FixedSizeArray<CompoundShapeChild>, IList<CompoundShapeChild>
+public class CompoundShapeChildArray : FixedSizeArray<CompoundShapeChild>, IList<CompoundShapeChild>, IReadOnlyList<CompoundShapeChild>
 {
-    internal CompoundShapeChild[] _backingArray = new CompoundShapeChild[0];
+    internal CompoundShapeChild[] _backingArray = [];
 
     internal CompoundShapeChildArray(IntPtr compoundShape)
         : base(compoundShape, 0)
     {
+    }
+
+    public CompoundShapeChild this[int index]
+    {
+        get => _backingArray[index];
+        set => throw new NotImplementedException();
     }
 
     public void AddChildShape(ref Matrix4x4 localTransform, CollisionShape shape)
@@ -120,21 +104,20 @@ public class CompoundShapeChildArray : FixedSizeArray<CompoundShapeChild>, IList
         _backingArray[childIndex] = new CompoundShapeChild(btCompoundShapeChild_array_at(childList, childIndex), shape);
     }
 
-    public int IndexOf(CompoundShapeChild item) => throw new NotImplementedException();
+    public int IndexOf(CompoundShapeChild item)
+        => throw new NotImplementedException();
 
-    public CompoundShapeChild this[int index]
-    {
-        get => _backingArray[index];
-        set => throw new NotImplementedException();
-    }
+    public bool Contains(CompoundShapeChild item)
+        => throw new NotImplementedException();
 
-    public bool Contains(CompoundShapeChild item) => throw new NotImplementedException();
+    public void CopyTo(CompoundShapeChild[] array, int arrayIndex)
+        => throw new NotImplementedException();
 
-    public void CopyTo(CompoundShapeChild[] array, int arrayIndex) => throw new NotImplementedException();
+    public IEnumerator<CompoundShapeChild> GetEnumerator()
+        => new CompoundShapeChildArrayEnumerator(this);
 
-    public IEnumerator<CompoundShapeChild> GetEnumerator() => new CompoundShapeChildArrayEnumerator(this);
-
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => new CompoundShapeChildArrayEnumerator(this);
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        => new CompoundShapeChildArrayEnumerator(this);
 
     public void RemoveChildShape(CollisionShape shape)
     {
@@ -160,45 +143,68 @@ public class CompoundShapeChildArray : FixedSizeArray<CompoundShapeChild>, IList
             lastItem.Native = _backingArray[childShapeIndex].Native;
             _backingArray[childShapeIndex] = lastItem;
         }
-        _backingArray[Count] = null;
+
+        _backingArray[Count] = null!;
     }
 }
 
 [DebuggerTypeProxy(typeof(ListDebugView))]
-public class UIntArray : FixedSizeArray<uint>, IList<uint>
+public class UIntArray : FixedSizeArray<uint>, IList<uint>, IReadOnlyList<uint>
 {
     internal UIntArray(IntPtr native, int count)
         : base(native, count)
     {
     }
 
-    public int IndexOf(uint item) => throw new NotImplementedException();
-
     public uint this[int index]
     {
-        get
-        {
-            if ((uint)index >= (uint)Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-            return (uint)Marshal.ReadInt32(Native, index * sizeof(uint));
-        }
+        get => (uint)index >= (uint)Count
+                ? throw new ArgumentOutOfRangeException(nameof(index))
+                : (uint)Marshal.ReadInt32(Native, index * sizeof(uint));
         set
         {
             if ((uint)index >= (uint)Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
+
             Marshal.WriteInt32(Native, index * sizeof(uint), (int)value);
         }
     }
 
-    public bool Contains(uint item) => throw new NotImplementedException();
+    public int IndexOf(uint item)
+        => throw new NotImplementedException();
 
-    public void CopyTo(uint[] array, int arrayIndex) => throw new NotImplementedException();
+    public bool Contains(uint item)
+        => throw new NotImplementedException();
 
-    public IEnumerator<uint> GetEnumerator() => new UIntArrayEnumerator(this);
+    public void CopyTo(uint[] array, int arrayIndex)
+        => throw new NotImplementedException();
 
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => new UIntArrayEnumerator(this);
+    public IEnumerator<uint> GetEnumerator()
+        => new UIntArrayEnumerator(this);
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        => new UIntArrayEnumerator(this);
+}
+
+internal class ListDebugView
+{
+    private readonly System.Collections.IEnumerable _list;
+
+    public ListDebugView(System.Collections.IEnumerable list)
+    {
+        _list = list;
+    }
+
+    [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+    public System.Collections.ArrayList Items
+    {
+        get
+        {
+            System.Collections.ArrayList list = [.. _list];
+
+            return list;
+        }
+    }
 }

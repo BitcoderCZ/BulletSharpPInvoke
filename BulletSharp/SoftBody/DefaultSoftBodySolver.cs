@@ -10,6 +10,7 @@ public class DefaultSoftBodySolver : SoftBodySolver
         IntPtr native = btDefaultSoftBodySolver_new();
         InitializeUserOwned(native);
     }
+
     /*
 		public void CopySoftBodyToVertexBuffer(SoftBody softBody, VertexBufferDescriptor vertexBuffer)
 		{

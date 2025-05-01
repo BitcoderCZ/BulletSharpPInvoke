@@ -6,17 +6,14 @@ namespace BulletSharp.SoftBody;
 
 public class DeformableMultiBodyDynamicsWorld : MultiBodyDynamicsWorld
 {
-    private DeformableBodySolver _deformableBodySolver; // private ref passed to bodies during AddSoftBody
-    private HashSet<DeformableLagrangianForce> _forces = [];
+    private readonly DeformableBodySolver _deformableBodySolver; // private ref passed to bodies during AddSoftBody
+    private readonly HashSet<DeformableLagrangianForce> _forces = [];
 
-    public DeformableMultiBodyDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache,
-        DeformableMultiBodyConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration,
-        DeformableBodySolver deformableBodySolver)
+    public DeformableMultiBodyDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache, DeformableMultiBodyConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration, DeformableBodySolver deformableBodySolver)
     {
         _deformableBodySolver = deformableBodySolver;
 
-        IntPtr native = btDeformableMultiBodyDynamicsWorld_new(dispatcher.Native, pairCache.Native,
-            constraintSolver.Native, collisionConfiguration.Native, deformableBodySolver.Native);
+        IntPtr native = btDeformableMultiBodyDynamicsWorld_new(dispatcher.Native, pairCache.Native, constraintSolver.Native, collisionConfiguration.Native, deformableBodySolver.Native);
         InitializeUserOwned(native);
         InitializeMembers(dispatcher, pairCache, constraintSolver);
 

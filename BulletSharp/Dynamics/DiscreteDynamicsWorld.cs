@@ -8,8 +8,7 @@ public class DiscreteDynamicsWorld : DynamicsWorld
 {
     private SimulationIslandManager? _simulationIslandManager;
 
-    public DiscreteDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache,
-        ConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration)
+    public DiscreteDynamicsWorld(Dispatcher? dispatcher, BroadphaseInterface pairCache, ConstraintSolver? constraintSolver, CollisionConfiguration? collisionConfiguration)
     {
         IntPtr native = btDiscreteDynamicsWorld_new(
             dispatcher != null ? dispatcher.Native : IntPtr.Zero,
@@ -24,20 +23,72 @@ public class DiscreteDynamicsWorld : DynamicsWorld
     {
     }
 
+    public bool ApplySpeculativeContactRestitution
+    {
+        get => btDiscreteDynamicsWorld_getApplySpeculativeContactRestitution(Native);
+        set => btDiscreteDynamicsWorld_setApplySpeculativeContactRestitution(Native, value);
+    }
+
+    public bool LatencyMotionStateInterpolation
+    {
+        get => btDiscreteDynamicsWorld_getLatencyMotionStateInterpolation(Native);
+        set => btDiscreteDynamicsWorld_setLatencyMotionStateInterpolation(Native, value);
+    }
+
+    public SimulationIslandManager SimulationIslandManager
+    {
+        get
+        {
+            if (_simulationIslandManager == null)
+            {
+                _simulationIslandManager = new SimulationIslandManager(btDiscreteDynamicsWorld_getSimulationIslandManager(Native));
+            }
+
+            return _simulationIslandManager;
+        }
+    }
+
+    public bool SynchronizeAllMotionStates
+    {
+        get => btDiscreteDynamicsWorld_getSynchronizeAllMotionStates(Native);
+        set => btDiscreteDynamicsWorld_setSynchronizeAllMotionStates(Native, value);
+    }
+
     public void ApplyGravity()
         => btDiscreteDynamicsWorld_applyGravity(Native);
 
     public void DebugDrawConstraint(TypedConstraint constraint)
         => btDiscreteDynamicsWorld_debugDrawConstraint(Native, constraint.Native);
 
+    public override void Serialize(Serializer serializer)
+    {
+        serializer.StartSerialization();
+        SerializeDynamicsWorldInfo(serializer);
+        SerializeCollisionObjects(serializer);
+        SerializeRigidBodies(serializer);
+        serializer.FinishSerialization();
+    }
+
+    public void SetNumTasks(int numTasks)
+        => btDiscreteDynamicsWorld_setNumTasks(Native, numTasks);
+
+    public void SolveConstraints(ContactSolverInfo solverInfo)
+        => btDiscreteDynamicsWorld_solveConstraints(Native, solverInfo.Native);
+
+    public void SynchronizeSingleMotionState(RigidBody body)
+        => btDiscreteDynamicsWorld_synchronizeSingleMotionState(Native, body.Native);
+
+    public void UpdateVehicles(float timeStep)
+        => btDiscreteDynamicsWorld_updateVehicles(Native, timeStep);
+
     private unsafe void SerializeDynamicsWorldInfo(Serializer serializer)
     {
         int len = 88;
         Chunk chunk = serializer.Allocate((uint)len, 1);
 
-        using (var stream = new UnmanagedMemoryStream((byte*)chunk.OldPtr.ToPointer(), len, len, FileAccess.Write))
+        using (UnmanagedMemoryStream stream = new UnmanagedMemoryStream((byte*)chunk.OldPtr.ToPointer(), len, len, FileAccess.Write))
         {
-            using (var writer = new BinaryWriter(stream))
+            using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 ContactSolverInfo solverInfo = SolverInfo;
                 writer.Write(solverInfo.Tau);
@@ -94,52 +145,5 @@ public class DiscreteDynamicsWorld : DynamicsWorld
             string structType = constraint.Serialize(chunk.OldPtr, serializer);
             serializer.FinalizeChunk(chunk, structType, DnaID.Constraint, constraint.Native);
         }
-    }
-
-    public override void Serialize(Serializer serializer)
-    {
-        serializer.StartSerialization();
-        SerializeDynamicsWorldInfo(serializer);
-        SerializeCollisionObjects(serializer);
-        SerializeRigidBodies(serializer);
-        serializer.FinishSerialization();
-    }
-
-    public void SetNumTasks(int numTasks) => btDiscreteDynamicsWorld_setNumTasks(Native, numTasks);
-
-    public void SolveConstraints(ContactSolverInfo solverInfo) => btDiscreteDynamicsWorld_solveConstraints(Native, solverInfo.Native);
-
-    public void SynchronizeSingleMotionState(RigidBody body) => btDiscreteDynamicsWorld_synchronizeSingleMotionState(Native, body.Native);
-
-    public void UpdateVehicles(float timeStep) => btDiscreteDynamicsWorld_updateVehicles(Native, timeStep);
-
-    public bool ApplySpeculativeContactRestitution
-    {
-        get => btDiscreteDynamicsWorld_getApplySpeculativeContactRestitution(Native);
-        set => btDiscreteDynamicsWorld_setApplySpeculativeContactRestitution(Native, value);
-    }
-
-    public bool LatencyMotionStateInterpolation
-    {
-        get => btDiscreteDynamicsWorld_getLatencyMotionStateInterpolation(Native);
-        set => btDiscreteDynamicsWorld_setLatencyMotionStateInterpolation(Native, value);
-    }
-
-    public SimulationIslandManager SimulationIslandManager
-    {
-        get
-        {
-            if (_simulationIslandManager == null)
-            {
-                _simulationIslandManager = new SimulationIslandManager(btDiscreteDynamicsWorld_getSimulationIslandManager(Native));
-            }
-            return _simulationIslandManager;
-        }
-    }
-
-    public bool SynchronizeAllMotionStates
-    {
-        get => btDiscreteDynamicsWorld_getSynchronizeAllMotionStates(Native);
-        set => btDiscreteDynamicsWorld_setSynchronizeAllMotionStates(Native, value);
     }
 }

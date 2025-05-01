@@ -335,9 +335,9 @@ public abstract class ContactResultCallback : BulletDisposableObject
 
     private bool NeedsCollisionUnmanaged(IntPtr proxy0)
     {
-        var managed = BroadphaseProxy.GetManaged(proxy0);
+        BroadphaseProxy? managed = BroadphaseProxy.GetManaged(proxy0);
 
-        Debug.Assert(managed is not null);
+        Debug.Assert(managed is not null, $"{nameof(managed)} shoud not be null.");
 
         return NeedsCollision(managed);
     }
@@ -399,15 +399,15 @@ public abstract class ConvexResultCallback : BulletDisposableObject
 
     private float AddSingleResultUnmanaged(IntPtr convexResult, bool normalInWorldSpace)
     {
-        var convexResultManaged = new LocalConvexResult(convexResult);
+        LocalConvexResult convexResultManaged = new LocalConvexResult(convexResult);
         return AddSingleResult(ref convexResultManaged, normalInWorldSpace);
     }
 
     private bool NeedsCollisionUnmanaged(IntPtr proxy0)
     {
-        var managed = BroadphaseProxy.GetManaged(proxy0);
+        BroadphaseProxy? managed = BroadphaseProxy.GetManaged(proxy0);
 
-        Debug.Assert(managed is not null);
+        Debug.Assert(managed is not null, $"{nameof(managed)} shoud not be null.");
 
         return NeedsCollision(managed);
     }
@@ -467,6 +467,7 @@ public abstract class RayResultCallback : BulletDisposableObject
         set => btCollisionWorld_RayResultCallback_setFlags(Native, value);
     }
 
+    [MemberNotNullWhen(true, nameof(CollisionObject))]
     public bool HasHit => btCollisionWorld_RayResultCallback_hasHit(Native);
 
     public abstract float AddSingleResult(ref LocalRayResult rayResult, bool normalInWorldSpace);
@@ -479,15 +480,15 @@ public abstract class RayResultCallback : BulletDisposableObject
 
     private float AddSingleResultUnmanaged(IntPtr rayResult, bool normalInWorldSpace)
     {
-        var localRayResult = new LocalRayResult(rayResult);
+        LocalRayResult localRayResult = new LocalRayResult(rayResult);
         return AddSingleResult(ref localRayResult, normalInWorldSpace);
     }
 
     private bool NeedsCollisionUnmanaged(IntPtr proxy0)
     {
-        var managed = BroadphaseProxy.GetManaged(proxy0);
+        BroadphaseProxy? managed = BroadphaseProxy.GetManaged(proxy0);
 
-        Debug.Assert(managed is not null);
+        Debug.Assert(managed is not null, $"{nameof(managed)} shoud not be null.");
 
         return NeedsCollision(managed);
     }
@@ -506,13 +507,20 @@ public class CollisionWorld : BulletDisposableObject
         InitializeMembers(dispatcher, broadphasePairCache);
     }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     protected internal CollisionWorld()
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     {
     }
 
-    public BroadphaseInterface? Broadphase
+    public BroadphaseInterface Broadphase
     {
-        get => _broadphase;
+        get
+        {
+            Debug.Assert(_broadphase is not null, $"{_broadphase} should not be null.");
+
+            return _broadphase;
+        }
 
         [MemberNotNull(nameof(_broadphase))]
         set
@@ -647,7 +655,7 @@ public class CollisionWorld : BulletDisposableObject
 
     public void UpdateSingleAabb(CollisionObject colObj) => btCollisionWorld_updateSingleAabb(Native, colObj.Native);
 
-    [MemberNotNull(nameof(Dispatcher), nameof(_broadphase), nameof(CollisionObjectArray))]
+    [MemberNotNull(nameof(Dispatcher), nameof(Broadphase), nameof(_broadphase), nameof(CollisionObjectArray))]
     protected internal void InitializeMembers(Dispatcher dispatcher, BroadphaseInterface broadphasePairCache)
     {
         Dispatcher = dispatcher;
@@ -658,11 +666,11 @@ public class CollisionWorld : BulletDisposableObject
     protected void SerializeCollisionObjects(Serializer serializer)
     {
         // keep track of shapes already serialized
-        var serializedShapes = new Dictionary<CollisionShape, int>();
+        Dictionary<CollisionShape, int> serializedShapes = [];
 
-        foreach (var colObj in CollisionObjectArray)
+        foreach (CollisionObject colObj in CollisionObjectArray)
         {
-            var shape = colObj.CollisionShape;
+            CollisionShape? shape = colObj.CollisionShape;
 
             Debug.Assert(shape is not null, $"{nameof(shape)} shoudn't be null.");
 
@@ -674,7 +682,7 @@ public class CollisionWorld : BulletDisposableObject
         }
 
         // serialize all collision objects
-        foreach (var colObj in CollisionObjectArray)
+        foreach (CollisionObject colObj in CollisionObjectArray)
         {
             if (colObj.InternalType == CollisionObjectTypes.CollisionObject)
             {

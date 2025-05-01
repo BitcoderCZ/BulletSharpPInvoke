@@ -35,21 +35,14 @@ public sealed class SoftBodyHelpers
     }
 
     public static float CalculateUV(int resx, int resy, int ix, int iy, int id)
-    {
-        switch (id)
+        => id switch
         {
-            case 0:
-                return 1.0f / (resx - 1) * ix;
-            case 1:
-                return 1.0f / (resy - 1) * (resy - 1 - iy);
-            case 2:
-                return 1.0f / (resy - 1) * (resy - 1 - iy - 1);
-            case 3:
-                return 1.0f / (resx - 1) * (ix + 1);
-            default:
-                return 0;
-        }
-    }
+            0 => 1f / (resx - 1) * ix,
+            1 => 1f / (resy - 1) * (resy - 1 - iy),
+            2 => 1f / (resy - 1) * (resy - 1 - iy - 1),
+            3 => 1f / (resx - 1) * (ix + 1),
+            _ => 0f,
+        };
 
     public static SoftBody CreateEllipsoid(SoftBodyWorldInfo worldInfo, Vector3 center, Vector3 radius, int res)
     {
@@ -61,47 +54,43 @@ public sealed class SoftBodyHelpers
             for (int j = i; j > 0; j >>= 1)
             {
                 if ((j & 1) != 0)
+                {
                     t += p;
+                }
+
                 p *= 0.5f;
             }
-            float w = 2 * t - 1;
-            float a = ((1 + 2 * i) * (float)System.Math.PI) / numVertices;
-            float s = (float)System.Math.Sqrt(1 - w * w);
-            vtx[i] = new Vector3(s * (float)System.Math.Cos(a), s * (float)System.Math.Sin(a), w) * radius + center;
+
+            float w = (2 * t) - 1;
+            float a = ((1 + (2 * i)) * MathF.PI) / numVertices;
+            float s = MathF.Sqrt(1 - (w * w));
+            vtx[i] = (new Vector3(s * MathF.Cos(a), s * MathF.Sin(a), w) * radius) + center;
         }
+
         return CreateFromConvexHull(worldInfo, vtx);
     }
 
-    public static SoftBody CreateFromConvexHull(SoftBodyWorldInfo worldInfo,
-        Vector3[] vertices, int nVertices, bool randomizeConstraints = true)
+    public static SoftBody CreateFromConvexHull(SoftBodyWorldInfo worldInfo, Vector3[] vertices, int nVertices, bool randomizeConstraints = true)
     {
-        var body = new SoftBody(btSoftBodyHelpers_CreateFromConvexHull(
-            worldInfo.Native, vertices, nVertices, randomizeConstraints))
-        {
-            WorldInfo = worldInfo,
-        };
+        SoftBody body = new SoftBody(btSoftBodyHelpers_CreateFromConvexHull(worldInfo.Native, vertices, nVertices, randomizeConstraints), worldInfo);
         return body;
     }
 
-    public static SoftBody CreateFromConvexHull(SoftBodyWorldInfo worldInfo,
-        Vector3[] vertices, bool randomizeConstraints = true)
+    public static SoftBody CreateFromConvexHull(SoftBodyWorldInfo worldInfo, Vector3[] vertices, bool randomizeConstraints = true)
     {
-        var body = new SoftBody(btSoftBodyHelpers_CreateFromConvexHull(
-            worldInfo.Native, vertices, vertices.Length, randomizeConstraints))
-        {
-            WorldInfo = worldInfo,
-        };
+        SoftBody body = new SoftBody(btSoftBodyHelpers_CreateFromConvexHull(worldInfo.Native, vertices, vertices.Length, randomizeConstraints), worldInfo);
         return body;
     }
 
-    public static SoftBody CreateFromTetGenData(SoftBodyWorldInfo worldInfo,
-        string ele, string face, string node, bool faceLinks, bool tetraLinks, bool facesFromTetras)
+#pragma warning disable IDE0060 // Remove unused parameter
+    public static SoftBody CreateFromTetGenData(SoftBodyWorldInfo worldInfo, string? ele, string? face, string node, bool faceLinks, bool tetraLinks, bool facesFromTetras)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         CultureInfo culture = CultureInfo.InvariantCulture;
-        char[] separator = new[] { ' ' };
+        char[] separator = [' '];
         Vector3[] pos;
 
-        using (var nodeReader = new StringReader(node))
+        using (StringReader nodeReader = new StringReader(node))
         {
             string[] nodeHeader = nodeReader.ReadLine().Split(separator, StringSplitOptions.RemoveEmptyEntries);
             int numNodes = int.Parse(nodeHeader[0]);
@@ -119,16 +108,19 @@ public sealed class SoftBodyHelpers
                     float.Parse(nodeLine[3], culture));
             }
         }
-        var psb = new SoftBody(worldInfo, pos.Length, pos, null);
+
+        SoftBody psb = new SoftBody(worldInfo, pos.Length, pos, null);
+
         /*
 			if (!string.IsNullOrEmpty(face))
 			{
 				throw new NotImplementedException();
 			}
 			*/
+
         if (!string.IsNullOrEmpty(ele))
         {
-            using (var eleReader = new StringReader(ele))
+            using (StringReader eleReader = new StringReader(ele))
             {
                 string[] eleHeader = eleReader.ReadLine().Split(separator, StringSplitOptions.RemoveEmptyEntries);
                 int numTetras = int.Parse(eleHeader[0]);
@@ -167,14 +159,13 @@ public sealed class SoftBodyHelpers
 
     public static SoftBody CreateFromTetGenFile(SoftBodyWorldInfo worldInfo, string elementFilename, string faceFilename, string nodeFilename, bool faceLinks, bool tetraLinks, bool facesFromTetras)
     {
-        string ele = (elementFilename != null) ? File.ReadAllText(elementFilename) : null;
-        string face = (faceFilename != null) ? File.ReadAllText(faceFilename) : null;
+        string? ele = (elementFilename != null) ? File.ReadAllText(elementFilename) : null;
+        string? face = (faceFilename != null) ? File.ReadAllText(faceFilename) : null;
 
         return CreateFromTetGenData(worldInfo, ele, face, File.ReadAllText(nodeFilename), faceLinks, tetraLinks, facesFromTetras);
     }
 
-    public static SoftBody CreateFromTriMesh(SoftBodyWorldInfo worldInfo, float[] vertices,
-        int[] triangles, bool randomizeConstraints = true)
+    public static SoftBody CreateFromTriMesh(SoftBodyWorldInfo worldInfo, float[] vertices, int[] triangles, bool randomizeConstraints = true)
     {
         int numVertices = vertices.Length / 3;
         Vector3[] vtx = new Vector3[numVertices];
@@ -182,14 +173,14 @@ public sealed class SoftBodyHelpers
         {
             vtx[j] = new Vector3(vertices[i], vertices[i + 1], vertices[i + 2]);
         }
+
         return CreateFromTriMesh(worldInfo, vtx, triangles, randomizeConstraints);
     }
 
-    public static SoftBody CreateFromTriMesh(SoftBodyWorldInfo worldInfo, Vector3[] vertices,
-        int[] triangles, bool randomizeConstraints = true)
+    public static SoftBody CreateFromTriMesh(SoftBodyWorldInfo worldInfo, Vector3[] vertices, int[] triangles, bool randomizeConstraints = true)
     {
         int numTriangleIndices = triangles.Length;
-        int numTriangles = numTriangleIndices / 3;
+        //int numTriangles = numTriangleIndices / 3;
 
         int maxIndex = 0; // triangles.Max() + 1;
         for (int i = 0; i < numTriangleIndices; i++)
@@ -199,24 +190,26 @@ public sealed class SoftBodyHelpers
                 maxIndex = triangles[i];
             }
         }
+
         maxIndex++;
 
-        var psb = new SoftBody(worldInfo, maxIndex, vertices, null);
+        SoftBody psb = new SoftBody(worldInfo, maxIndex, vertices, null);
 
         BitArray chks = new BitArray(maxIndex * maxIndex);
         for (int i = 0; i < numTriangleIndices; i += 3)
         {
-            int[] idx = new int[] { triangles[i], triangles[i + 1], triangles[i + 2] };
+            int[] idx = [triangles[i], triangles[i + 1], triangles[i + 2]];
             for (int j = 2, k = 0; k < 3; j = k++)
             {
-                int chkIndex = maxIndex * idx[k] + idx[j];
+                int chkIndex = (maxIndex * idx[k]) + idx[j];
                 if (!chks[chkIndex])
                 {
                     chks[chkIndex] = true;
-                    chks[maxIndex * idx[j] + idx[k]] = true;
+                    chks[(maxIndex * idx[j]) + idx[k]] = true;
                     psb.AppendLink(idx[j], idx[k]);
                 }
             }
+
             psb.AppendFace(idx[0], idx[1], idx[2]);
         }
 
@@ -224,6 +217,7 @@ public sealed class SoftBodyHelpers
         {
             psb.RandomizeConstraints();
         }
+
         return psb;
     }
 
@@ -232,14 +226,17 @@ public sealed class SoftBodyHelpers
         List<Vector3> points = [];
         List<int[]> cells = [];
 
-        using (var reader = new StreamReader(fileName))
+        using (StreamReader reader = new StreamReader(fileName))
         {
             bool readingPoints = false;
             bool readingCells = false;
             string line;
             while ((line = reader.ReadLine()) != null)
             {
-                if (line.Length == 0) continue;
+                if (line.Length == 0)
+                {
+                    continue;
+                }
 
                 string[] lineParts = line.Split(' ');
                 if (lineParts[0] == "POINTS")
@@ -275,11 +272,13 @@ public sealed class SoftBodyHelpers
                     {
                         cell[i] = int.Parse(lineParts[i + 1]);
                     }
+
                     cells.Add(cell);
                 }
             }
         }
-        SoftBody body = new SoftBody(worldInfo, points.Count, points.ToArray(), null);
+
+        SoftBody body = new SoftBody(worldInfo, points.Count, [.. points], null);
 
         foreach (int[] cell in cells)
         {
@@ -302,97 +301,21 @@ public sealed class SoftBodyHelpers
         //Console.WriteLine($"Tetras: {body.Tetras.Count}");
 
         return body;
-
     }
 
-    private static double ParseDouble(string value) => double.Parse(value, CultureInfo.InvariantCulture);
-
-    private static void GenerateBoundaryFaces(SoftBody body)
-    {
-        int counter = 0;
-        foreach (Node node in body.Nodes)
-        {
-            node.Index = counter++;
-        }
-
-        List<int[]> indices = new List<int[]>(body.Tetras.Count);
-        foreach (Tetra tetra in body.Tetras)
-        {
-            NodePtrArray nodes = tetra.Nodes;
-            int[] index = new int[] {
-                nodes[0].Index,
-                nodes[1].Index,
-                nodes[2].Index,
-                nodes[3].Index,
-            };
-            indices.Add(index);
-        }
-
-        var faceMap = new List<KeyValuePair<int[], int[]>>();
-        foreach (int[] tetraIndices in indices)
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                int[] face;
-                switch (i)
-                {
-                    case 0:
-                        face = new int[] { tetraIndices[1], tetraIndices[0], tetraIndices[2] };
-                        break;
-                    case 1:
-                        face = new int[] { tetraIndices[3], tetraIndices[0], tetraIndices[1] };
-                        break;
-                    case 2:
-                        face = new int[] { tetraIndices[3], tetraIndices[1], tetraIndices[2] };
-                        break;
-                    default:
-                        face = new int[] { tetraIndices[2], tetraIndices[0], tetraIndices[3] };
-                        break;
-                }
-
-                List<int> faceSorted = [.. face];
-                faceSorted.Sort();
-
-                bool removed = false;
-                for (int j = 0; j < faceMap.Count; j++)
-                {
-                    KeyValuePair<int[], int[]> f = faceMap[j];
-                    int[] faceInMap = f.Key;
-                    if (faceInMap[0] == faceSorted[0] && faceInMap[1] == faceSorted[1] && faceInMap[2] == faceSorted[2])
-                    {
-                        faceMap.RemoveAt(j);
-                        j--;
-                        removed = true;
-                        break;
-                    }
-                }
-                if (!removed)
-                {
-                    faceMap.Add(new KeyValuePair<int[], int[]>(faceSorted.ToArray(), face));
-                }
-            }
-        }
-
-        foreach (var faceInMap in faceMap)
-        {
-            int[] face = faceInMap.Value;
-            body.AppendFace(face[0], face[1], face[2]);
-        }
-    }
-
-    public static SoftBody CreatePatch(SoftBodyWorldInfo worldInfo, Vector3 corner00,
-        Vector3 corner10, Vector3 corner01, Vector3 corner11, int resolutionX, int resolutionY,
-        int fixedCorners, bool generateDiagonals)
+    public static SoftBody? CreatePatch(SoftBodyWorldInfo worldInfo, Vector3 corner00, Vector3 corner10, Vector3 corner01, Vector3 corner11, int resolutionX, int resolutionY, int fixedCorners, bool generateDiagonals)
     {
         // Create nodes
         if ((resolutionX < 2) || (resolutionY < 2))
+        {
             return null;
+        }
 
         int rx = resolutionX;
         int ry = resolutionY;
         int total = rx * ry;
-        var positions = new Vector3[total];
-        var masses = new float[total];
+        Vector3[] positions = new Vector3[total];
+        float[] masses = new float[total];
 
         for (int y = 0; y < ry; y++)
         {
@@ -402,38 +325,55 @@ public sealed class SoftBodyHelpers
             for (int ix = 0; ix < rx; ix++)
             {
                 float tx = ix / (float)(rx - 1);
-                int index = rx * y + ix;
+                int index = (rx * y) + ix;
                 positions[index] = Vector3.Lerp(py0, py1, tx);
                 masses[index] = 1;
             }
         }
 
-        var body = new SoftBody(worldInfo, total, positions, masses);
+        SoftBody body = new SoftBody(worldInfo, total, positions, masses);
 
         if ((fixedCorners & 1) != 0)
+        {
             body.SetMass(0, 0);
+        }
+
         if ((fixedCorners & 2) != 0)
+        {
             body.SetMass(rx - 1, 0);
+        }
+
         if ((fixedCorners & 4) != 0)
+        {
             body.SetMass(rx * (ry - 1), 0);
+        }
+
         if ((fixedCorners & 8) != 0)
-            body.SetMass(rx * (ry - 1) + rx - 1, 0);
+        {
+            body.SetMass((rx * (ry - 1)) + rx - 1, 0);
+        }
 
         // Create links and faces
         for (int y = 0; y < ry; ++y)
         {
             for (int x = 0; x < rx; ++x)
             {
-                int ixy = rx * y + x;
+                int ixy = (rx * y) + x;
                 int ix1y = ixy + 1;
-                int ixy1 = rx * (y + 1) + x;
+                int ixy1 = (rx * (y + 1)) + x;
 
                 bool mdx = (x + 1) < rx;
                 bool mdy = (y + 1) < ry;
                 if (mdx)
+                {
                     body.AppendLink(ixy, ix1y);
+                }
+
                 if (mdy)
+                {
                     body.AppendLink(ixy, ixy1);
+                }
+
                 if (mdx && mdy)
                 {
                     int ix1y1 = ixy1 + 1;
@@ -462,26 +402,18 @@ public sealed class SoftBodyHelpers
         return body;
     }
 
-    public static SoftBody CreatePatchUV(SoftBodyWorldInfo worldInfo, Vector3 corner00,
-        Vector3 corner10, Vector3 corner01, Vector3 corner11, int resolutionX, int resolutionY,
-        int fixedCorners, bool generateDiagonals, float[] texCoords = null)
+    public static SoftBody CreatePatchUV(SoftBodyWorldInfo worldInfo, Vector3 corner00, Vector3 corner10, Vector3 corner01, Vector3 corner11, int resolutionX, int resolutionY, int fixedCorners, bool generateDiagonals, float[]? texCoords = null)
     {
-        var body = new SoftBody(btSoftBodyHelpers_CreatePatchUV(worldInfo.Native,
-            ref corner00, ref corner10, ref corner01, ref corner11, resolutionX, resolutionY,
-            fixedCorners, generateDiagonals, texCoords))
-        {
-            WorldInfo = worldInfo,
-        };
+        SoftBody body = new SoftBody(btSoftBodyHelpers_CreatePatchUV(worldInfo.Native, ref corner00, ref corner10, ref corner01, ref corner11, resolutionX, resolutionY, fixedCorners, generateDiagonals, texCoords), worldInfo);
         return body;
     }
 
-    public static SoftBody CreateRope(SoftBodyWorldInfo worldInfo, Vector3 from,
-        Vector3 to, int resolution, int fixedTips)
+    public static SoftBody CreateRope(SoftBodyWorldInfo worldInfo, Vector3 from, Vector3 to, int resolution, int fixedTips)
     {
         // Create nodes
         int numLinks = resolution + 2;
-        var positions = new Vector3[numLinks];
-        var masses = new float[numLinks];
+        Vector3[] positions = new Vector3[numLinks];
+        float[] masses = new float[numLinks];
 
         for (int i = 0; i < numLinks; i++)
         {
@@ -489,11 +421,16 @@ public sealed class SoftBodyHelpers
             masses[i] = 1;
         }
 
-        var body = new SoftBody(worldInfo, numLinks, positions, masses);
+        SoftBody body = new SoftBody(worldInfo, numLinks, positions, masses);
         if ((fixedTips & 1) != 0)
+        {
             body.SetMass(0, 0);
+        }
+
         if ((fixedTips & 2) != 0)
+        {
             body.SetMass(numLinks - 1, 0);
+        }
 
         // Create links
         for (int i = 1; i < numLinks; i++)
@@ -504,20 +441,20 @@ public sealed class SoftBodyHelpers
         return body;
     }
 
-    public static void Draw(SoftBody psb, DebugDraw iDraw, DrawFlags drawFlags = DrawFlags.Std) => btSoftBodyHelpers_Draw(psb.Native, iDraw.Native, drawFlags);
+    public static void Draw(SoftBody psb, DebugDraw iDraw, DrawFlags drawFlags = DrawFlags.Std)
+        => btSoftBodyHelpers_Draw(psb.Native, iDraw.Native, drawFlags);
 
-    public static void DrawClusterTree(SoftBody psb, DebugDraw iDraw, int minDepth = 0,
-        int maxDepth = -1) => btSoftBodyHelpers_DrawClusterTree(psb.Native, iDraw.Native,
-            minDepth, maxDepth);
+    public static void DrawClusterTree(SoftBody psb, DebugDraw iDraw, int minDepth = 0, int maxDepth = -1)
+        => btSoftBodyHelpers_DrawClusterTree(psb.Native, iDraw.Native, minDepth, maxDepth);
 
-    public static void DrawFaceTree(SoftBody psb, DebugDraw iDraw, int minDepth = 0,
-        int maxDepth = -1) => btSoftBodyHelpers_DrawFaceTree(psb.Native, iDraw.Native,
-            minDepth, maxDepth);
+    public static void DrawFaceTree(SoftBody psb, DebugDraw iDraw, int minDepth = 0, int maxDepth = -1)
+        => btSoftBodyHelpers_DrawFaceTree(psb.Native, iDraw.Native, minDepth, maxDepth);
 
     public static void DrawFrame(SoftBody psb, DebugDraw iDraw) => btSoftBodyHelpers_DrawFrame(psb.Native, iDraw.Native);
 
-    public static void DrawInfos(SoftBody psb, DebugDraw iDraw, bool masses,
-        bool areas, bool stress)
+#pragma warning disable IDE0060 // Remove unused parameter
+    public static void DrawInfos(SoftBody psb, DebugDraw iDraw, bool masses, bool areas, bool stress)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         if (masses || areas)
         {
@@ -528,34 +465,28 @@ public sealed class SoftBodyHelpers
                 {
                     text = $" M({node.InverseMass:F2})";
                 }
+
                 if (areas)
                 {
                     text += $" A({node.Area:F2})";
                 }
+
                 Vector3 location = node.Position;
                 iDraw.Draw3DText(ref location, text);
             }
         }
     }
 
-    public static void DrawNodeTree(SoftBody psb, DebugDraw iDraw, int minDepth = 0,
-        int maxDepth = -1) => btSoftBodyHelpers_DrawNodeTree(psb.Native, iDraw.Native,
-            minDepth, maxDepth);
-
-    private class LinkDep
-    {
-        public bool LinkB { get; set; }
-        public LinkDep Next { get; set; }
-        public Link Value { get; set; }
-    }
+    public static void DrawNodeTree(SoftBody psb, DebugDraw iDraw, int minDepth = 0, int maxDepth = -1)
+        => btSoftBodyHelpers_DrawNodeTree(psb.Native, iDraw.Native, minDepth, maxDepth);
 
     // ReoptimizeLinkOrder minimizes the cases where links L and L+1 share a common node.
     public static void ReoptimizeLinkOrder(SoftBody psb)
     {
         AlignedLinkArray links = psb.Links;
-        AlignedNodeArray nodes = psb.Nodes;
-        int nLinks = links.Count;
-        int nNodes = nodes.Count;
+        //AlignedNodeArray nodes = psb.Nodes;
+        //int nLinks = links.Count;
+        //int nNodes = nodes.Count;
 
         List<Link> readyList = [];
         Dictionary<Link, Link> linkBuffer = [];
@@ -623,6 +554,7 @@ public sealed class SoftBodyHelpers
                 {
                     readyList.Add(link);
                 }
+
                 linkDep = linkDep.Next;
             }
         }
@@ -631,5 +563,82 @@ public sealed class SoftBodyHelpers
         {
             btSoftBody_Link_delete(link.Native);
         }
+    }
+
+    private static double ParseDouble(string value)
+        => double.Parse(value, CultureInfo.InvariantCulture);
+
+    private static void GenerateBoundaryFaces(SoftBody body)
+    {
+        int counter = 0;
+        foreach (Node node in body.Nodes)
+        {
+            node.Index = counter++;
+        }
+
+        List<int[]> indices = new List<int[]>(body.Tetras.Count);
+        foreach (Tetra tetra in body.Tetras)
+        {
+            NodePtrArray nodes = tetra.Nodes;
+            int[] index = [
+                nodes[0].Index,
+                nodes[1].Index,
+                nodes[2].Index,
+                nodes[3].Index,
+            ];
+            indices.Add(index);
+        }
+
+        List<KeyValuePair<int[], int[]>> faceMap = [];
+        foreach (int[] tetraIndices in indices)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                int[] face = i switch
+                {
+                    0 => [tetraIndices[1], tetraIndices[0], tetraIndices[2]],
+                    1 => [tetraIndices[3], tetraIndices[0], tetraIndices[1]],
+                    2 => [tetraIndices[3], tetraIndices[1], tetraIndices[2]],
+                    _ => [tetraIndices[2], tetraIndices[0], tetraIndices[3]],
+                };
+
+                int[] faceSorted = [.. face];
+                Array.Sort(faceSorted);
+
+                bool removed = false;
+                for (int j = 0; j < faceMap.Count; j++)
+                {
+                    KeyValuePair<int[], int[]> f = faceMap[j];
+                    int[] faceInMap = f.Key;
+                    if (faceInMap[0] == faceSorted[0] && faceInMap[1] == faceSorted[1] && faceInMap[2] == faceSorted[2])
+                    {
+                        faceMap.RemoveAt(j);
+                        j--;
+                        removed = true;
+                        break;
+                    }
+                }
+
+                if (!removed)
+                {
+                    faceMap.Add(new KeyValuePair<int[], int[]>(faceSorted, face));
+                }
+            }
+        }
+
+        foreach (KeyValuePair<int[], int[]> faceInMap in faceMap)
+        {
+            int[] face = faceInMap.Value;
+            body.AppendFace(face[0], face[1], face[2]);
+        }
+    }
+
+    private class LinkDep
+    {
+        public bool LinkB { get; set; }
+
+        public required LinkDep Next { get; set; }
+
+        public required Link Value { get; set; }
     }
 }

@@ -8,5 +8,6 @@ public abstract class DeformableLagrangianForce : BulletDisposableObject
     {
     }
 
-    protected override void Dispose(bool disposing) => btDeformableLagrangianForce_delete(Native);
+    protected override void Dispose(bool disposing)
+        => btDeformableLagrangianForce_delete(Native);
 }
