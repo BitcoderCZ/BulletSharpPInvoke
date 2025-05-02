@@ -6,11 +6,13 @@ Param (
 
 Push-Location -Path './libbulletc'
 
-md -Force 'build'
+mkdir -Force 'build'
 
 Push-Location -Path './build'
 
-cmake -DCMAKE_BUILD_TYPE=$Configuration ..
+$bullet3_path = Resolve-Path -Path "../../bullet3/src/"
+
+cmake -DCMAKE_BUILD_TYPE="$Configuration" -DBULLET_INCLUDE_DIR="$bullet3_path" ..
 
 cmake --build . --config $Configuration
 
