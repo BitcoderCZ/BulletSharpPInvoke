@@ -4,6 +4,12 @@ Param (
 	[string]$Configuration = 'Release'
 )
 
+$os = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows) ? "win" :
+      [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Linux) ? "linux" :
+      [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX) ? "osx" : "unknown"
+
+$arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower()
+
 Push-Location -Path './libbulletc'
 
 mkdir -Force 'build'
@@ -25,14 +31,26 @@ dotnet build -c $Configuration BulletSharp.csproj
 
 Pop-Location
 
-$targets = 'netstandard2.1', 'net8.0', 'net9.0'
-foreach ($target in $targets) {
-	if ($Configuration -eq 'Debug')
-	{
-		Copy-Item "./libbulletc/build/lib/$Configuration/libbulletc_Debug.dll" "./BulletSharp/bin/$Configuration/$target/libbulletc.dll"
-	}
-	else
-	{
-		Copy-Item "./libbulletc/build/lib/$Configuration/libbulletc.dll" -Destination "./BulletSharp/bin/$Configuration/$target"
-	}
+$fileExt = ""
+
+if ($os -eq "win") {
+	$fileExt = ".dll"
+} elseif ($os -eq "linux") {
+	$fileExt = ".so"
+} elseif ($os -eq "osx") {
+	$fileExt = ".dylib"
 }
+
+$srcFileName = ""
+if ($Configuration -eq 'Debug')
+{
+	$srcFileName = "libbulletc_Debug$fileExt"
+}
+else
+{
+	$srcFileName = "libbulletc$fileExt"
+}
+
+New-Item -Path "./BulletSharp/runtimes/$os-$arch" -ItemType Directory -Force
+
+Copy-Item "./libbulletc/build/lib/$Configuration/$srcFileName" "./BulletSharp/runtimes/$os-$arch/libbulletc.dll"
